@@ -14,6 +14,7 @@ import {
 } from "../services/GameManagerService"
 
 const Home: NextPage = () => {
+  console.log(process.env.MONGODB_URI)
   const router = useRouter()
   const [status, setStatus] = useState("")
   const [user, setUser] = useState<string | null>(null)
