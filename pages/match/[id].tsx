@@ -62,7 +62,8 @@ const MatchView = () => {
   const hasStarted = match.status === "started"
   const hasMap = match.map !== undefined
   const allPlayersJoined =
-    match.players.filter((player: string | null) => player != null).length === 2
+    match.players.filter((player: string | null) => player !== null).length ===
+    2
 
   const onStartGameClick = async () => {
     if (!userId) {

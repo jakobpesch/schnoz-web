@@ -24,7 +24,7 @@ export default async function handler(
   const { userId, tileId } = body
 
   if (!userId || !tileId) {
-    res.status(500).end(`Query is not complete`)
+    res.status(500).end("Query is not complete")
     return
   }
 
