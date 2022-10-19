@@ -2,11 +2,11 @@ import { Box, Text } from "@chakra-ui/react"
 import { RenderSettings } from "../services/SettingsService"
 import { Tile } from "../types/tile"
 
-const getBackgroundColor = (tile: Tile) => {
-  if (tile.unit?.playerId === 0) {
+const getBackgroundColor = (tile: Tile, players: string[]) => {
+  if (tile.unit?.playerId === players[0]) {
     return "red.300"
   }
-  if (tile.unit?.playerId === 1) {
+  if (tile.unit?.playerId === players[1]) {
     return "blue.300"
   }
   return (tile.row + tile.col) % 2 === 0 ? "gray.700" : "gray.800"
@@ -18,11 +18,12 @@ const getTextColor = (tile: Tile) => {
 
 interface TileProps {
   tile: Tile
+  players: string[]
   onClick: (tile: Tile["id"]) => void
 }
 
 const TileView = (props: TileProps) => {
-  const { tile, onClick } = props
+  const { tile, players, onClick } = props
 
   return (
     <Box
@@ -31,7 +32,7 @@ const TileView = (props: TileProps) => {
       alignItems="center"
       width={RenderSettings.tileSize + "px"}
       height={RenderSettings.tileSize + "px"}
-      background={getBackgroundColor(tile)}
+      background={getBackgroundColor(tile, players)}
       fontSize="sm"
       fontWeight="bold"
       onClick={() => onClick(tile.id)}

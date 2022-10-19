@@ -1,0 +1,159 @@
+import { PlayerId } from "../types/player"
+import { Tile } from "../types/tile"
+
+export const signInAnonymously = async () => {
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "false",
+  }
+
+  const response = await fetch("http://localhost:3000/api/users", options)
+  return await response.json()
+}
+
+export const getMatches = async () => {
+  const options = {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  }
+
+  const response = await (
+    await fetch("http://localhost:3000/api/matches", options)
+  ).json()
+
+  return response
+}
+
+export const startGame = async (matchId: string, userId: string) => {
+  const options = {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "start",
+      userId,
+      settings: { rowCount: 5, columnCount: 5 },
+    }),
+  }
+
+  const response = await fetch(
+    "http://localhost:3000/api/match/" + matchId,
+    options
+  )
+  console.log(response.status)
+
+  if (response.status !== 200) {
+    throw new Error("Failed to start match")
+  }
+
+  return await response.json()
+}
+
+export const joinMatch = async (matchId: string, userId: string) => {
+  const options = {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "join",
+      userId,
+    }),
+  }
+
+  const response = await fetch(
+    "http://localhost:3000/api/match/" + matchId,
+    options
+  )
+
+  if (response.status !== 200) {
+    throw new Error("Failed to join match")
+  }
+
+  return await response.json()
+}
+
+export const createMatch = async (userId: string) => {
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+    }),
+  }
+
+  const response = await fetch("http://localhost:3000/api/matches", options)
+
+  if (response.status !== 201) {
+    throw new Error("Failed to create match")
+  }
+
+  return await response.json()
+}
+export const deleteMatch = async (matchId: string, userId: string) => {
+  const options = {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      matchId,
+    }),
+  }
+
+  const response = await fetch(
+    "http://localhost:3000/api/match/" + matchId,
+    options
+  )
+
+  if (response.status !== 200) {
+    throw new Error("Failed to delete match")
+  }
+
+  return await response.json()
+}
+
+export const getMatch = async (matchId: string) => {
+  const options = {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  }
+
+  const response = await fetch(
+    "http://localhost:3000/api/match/" + matchId,
+    options
+  )
+
+  if (response.status !== 200) {
+    throw new Error("Failed to create match")
+  }
+
+  return await response.json()
+}
+
+export const getMap = () => {
+  console.log("getMap not yet implemented")
+}
+
+export const makeMove = async (
+  matchId: string,
+  tileId: Tile["id"],
+  userId: string
+) => {
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      tileId,
+    }),
+  }
+
+  const response = await fetch(
+    "http://localhost:3000/api/match/" + matchId + "/moves",
+    options
+  )
+
+  if (response.status !== 201) {
+    throw new Error(await response.text())
+  }
+
+  return await response.json()
+}
