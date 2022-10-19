@@ -91,7 +91,7 @@ const MatchView = () => {
         <Center height="full">
           <VStack spacing="4">
             <Heading>Not Started</Heading>
-            {userId !== match.creator ? (
+            {userId !== match.createdBy ? (
               <Text>Waiting for creator to start the game</Text>
             ) : (
               <>

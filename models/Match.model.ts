@@ -3,7 +3,7 @@ import mongoose from "mongoose"
 import { mapSchema } from "./Map.model"
 
 const matchSchema = new mongoose.Schema({
-  creator: String,
+  createdBy: String,
   status: String,
   players: {
     type: Array,
@@ -11,6 +11,7 @@ const matchSchema = new mongoose.Schema({
   },
   map: mapSchema,
   activePlayer: String,
+  turn: Number,
 })
 
 export default mongoose.models["Match"] || mongoose.model("Match", matchSchema)

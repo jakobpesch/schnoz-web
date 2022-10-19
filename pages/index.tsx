@@ -1,8 +1,7 @@
-import { Button, Flex, Stack, Text } from "@chakra-ui/react"
+import { Button, Flex, Heading, Stack, Text } from "@chakra-ui/react"
 import type { NextPage } from "next"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
-import MapView from "../components/MapView"
 import MatchList from "../components/MatchList"
 import { getCookie, setCookie } from "../services/CookieService"
 import {
@@ -14,7 +13,6 @@ import {
 } from "../services/GameManagerService"
 
 const Home: NextPage = () => {
-  console.log(process.env.MONGODB_URI)
   const router = useRouter()
   const [status, setStatus] = useState("")
   const [user, setUser] = useState<string | null>(null)
@@ -75,6 +73,16 @@ const Home: NextPage = () => {
       setStatus(e.message)
     }
   }
+  const handleGoToMatch = async (matchId: string) => {
+    try {
+      if (!user) {
+        return
+      }
+      router.push("/match/" + matchId)
+    } catch (e: any) {
+      setStatus(e.message)
+    }
+  }
   return (
     <Flex width="full" height="100vh" justify="center" align="center">
       <Text position="absolute" bottom="4" right="4">
@@ -86,16 +94,21 @@ const Home: NextPage = () => {
         </Text>
       )}
 
-      <Stack>
+      <Stack spacing="4" alignItems="center">
+        <Heading size="4xl">Schnoz</Heading>
         {matches && user && (
           <MatchList
-            user={user}
+            userId={user}
             matches={matches}
             onJoinClick={(matchId) => handleJoinMatch(matchId)}
             onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+            onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
           />
         )}
-        <Button onClick={handleCreateMatch}>Create Match</Button>
+        <Stack direction="row">
+          <Button onClick={handleCreateMatch}>Create Match</Button>
+          <Button onClick={() => fetchMatches()}>Refresh</Button>
+        </Stack>
       </Stack>
     </Flex>
   )

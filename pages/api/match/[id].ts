@@ -46,7 +46,7 @@ export default async function handler(
             res.status(500).end("Match has already started")
             break
           }
-          if (match.creator !== body.userId) {
+          if (match.createdBy !== body.userId) {
             res.status(500).end("Only the match's creator can start the match")
             break
           }
@@ -66,11 +66,14 @@ export default async function handler(
       break
     case "DELETE":
       await connectDb()
-      // if (match.creator !== body.userId) {
+      // if (match.createdBy !== body.userId) {
       // }
-      match = await Match.deleteOne({ _id: req.query.id, creator: body.userId })
+      match = await Match.deleteOne({
+        _id: req.query.id,
+        createdBy: body.userId,
+      })
       if (match.deletedCount === 0) {
-        res.status(500).end("Only the creator can delete")
+        res.status(500).end("Only the createdBy can delete")
         break
       }
       res.status(200).json(match)

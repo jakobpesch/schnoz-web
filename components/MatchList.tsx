@@ -10,18 +10,22 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react"
+import { Match } from "../types/match"
 
 interface MatchListProps {
-  user: string
-  matches: any[]
+  userId: string
+  matches: Match[]
   onJoinClick: (id: string) => void
   onDeleteClick: (id: string) => void
+  onGoToMatchClick: (id: string) => void
 }
 
 const MatchList = (props: MatchListProps) => {
-  const { user, matches, onJoinClick, onDeleteClick } = props
-  const canJoin = (match: any) => match.players.length === 1
-  const canDelete = (match: any, user: string) => match.creator === user
+  const { userId, matches, onJoinClick, onDeleteClick, onGoToMatchClick } =
+    props
+  const canJoin = (match: Match) => match.players.length === 1
+  const canDelete = (match: Match, user: string) => match.createdBy === user
+  const hasJoined = (match: Match, user: string) => match.players.includes(user)
   if (matches.length === 0) {
     return (
       <Text p={10} textAlign="center" color="gray.200">
@@ -37,8 +41,9 @@ const MatchList = (props: MatchListProps) => {
           <Tr>
             <Th>Match ID</Th>
             <Th>Status</Th>
-            <Th>Creator</Th>
+            <Th>Created by</Th>
             <Th>Players</Th>
+            <Th></Th>
             <Th></Th>
             <Th></Th>
           </Tr>
@@ -52,7 +57,9 @@ const MatchList = (props: MatchListProps) => {
                   <Badge>{match.status}</Badge>
                 </Td>
                 <Td>
-                  {match.creator === user ? "Me" : match.creator.slice(-5)}
+                  {match.createdBy === userId
+                    ? "Me"
+                    : match.createdBy.slice(-5)}
                 </Td>
                 <Td>{match.players.length} / 2</Td>
                 <Td>
@@ -67,10 +74,19 @@ const MatchList = (props: MatchListProps) => {
                 <Td>
                   <Button
                     variant="link"
-                    disabled={!canDelete(match, user)}
+                    disabled={!canDelete(match, userId)}
                     onClick={() => onDeleteClick(match._id)}
                   >
                     Delete
+                  </Button>
+                </Td>
+                <Td>
+                  <Button
+                    variant="link"
+                    disabled={!hasJoined(match, userId)}
+                    onClick={() => onGoToMatchClick(match._id)}
+                  >
+                    Go to match
                   </Button>
                 </Td>
               </Tr>

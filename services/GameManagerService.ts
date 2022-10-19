@@ -1,7 +1,9 @@
-import { PlayerId } from "../types/player"
 import { Tile } from "../types/tile"
 
-const BASE_URL = "https://schnoz-web-jakobpesch.vercel.app/api"
+const BASE_URL =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3000/api"
+    : "https://schnoz-web-jakobpesch.vercel.app/api"
 
 export const signInAnonymously = async () => {
   const options = {

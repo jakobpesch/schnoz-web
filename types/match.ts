@@ -3,7 +3,7 @@ import { Move } from "./move"
 
 export interface Match {
   _id: string
-  creator: string
+  createdBy: string
   activePlayer: string
   players: string[]
   status: string
