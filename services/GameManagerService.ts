@@ -1,6 +1,8 @@
 import { PlayerId } from "../types/player"
 import { Tile } from "../types/tile"
 
+const BASE_URL = "https://schnoz-web-jakobpesch.vercel.app/api"
+
 export const signInAnonymously = async () => {
   const options = {
     method: "POST",
@@ -8,7 +10,7 @@ export const signInAnonymously = async () => {
     body: "false",
   }
 
-  const response = await fetch("http://localhost:3000/api/users", options)
+  const response = await fetch(BASE_URL + "/users", options)
   return await response.json()
 }
 
@@ -18,9 +20,7 @@ export const getMatches = async () => {
     headers: { "Content-Type": "application/json" },
   }
 
-  const response = await (
-    await fetch("http://localhost:3000/api/matches", options)
-  ).json()
+  const response = await (await fetch(BASE_URL + "/matches", options)).json()
 
   return response
 }
@@ -36,10 +36,7 @@ export const startGame = async (matchId: string, userId: string) => {
     }),
   }
 
-  const response = await fetch(
-    "http://localhost:3000/api/match/" + matchId,
-    options
-  )
+  const response = await fetch(BASE_URL + "/match/" + matchId, options)
   console.log(response.status)
 
   if (response.status !== 200) {
@@ -59,10 +56,7 @@ export const joinMatch = async (matchId: string, userId: string) => {
     }),
   }
 
-  const response = await fetch(
-    "http://localhost:3000/api/match/" + matchId,
-    options
-  )
+  const response = await fetch(BASE_URL + "/match/" + matchId, options)
 
   if (response.status !== 200) {
     throw new Error("Failed to join match")
@@ -80,7 +74,7 @@ export const createMatch = async (userId: string) => {
     }),
   }
 
-  const response = await fetch("http://localhost:3000/api/matches", options)
+  const response = await fetch(BASE_URL + "/matches", options)
 
   if (response.status !== 201) {
     throw new Error("Failed to create match")
@@ -98,10 +92,7 @@ export const deleteMatch = async (matchId: string, userId: string) => {
     }),
   }
 
-  const response = await fetch(
-    "http://localhost:3000/api/match/" + matchId,
-    options
-  )
+  const response = await fetch(BASE_URL + "/match/" + matchId, options)
 
   if (response.status !== 200) {
     throw new Error("Failed to delete match")
@@ -116,10 +107,7 @@ export const getMatch = async (matchId: string) => {
     headers: { "Content-Type": "application/json" },
   }
 
-  const response = await fetch(
-    "http://localhost:3000/api/match/" + matchId,
-    options
-  )
+  const response = await fetch(BASE_URL + "/match/" + matchId, options)
 
   if (response.status !== 200) {
     throw new Error("Failed to create match")
@@ -147,7 +135,7 @@ export const makeMove = async (
   }
 
   const response = await fetch(
-    "http://localhost:3000/api/match/" + matchId + "/moves",
+    BASE_URL + "/match/" + matchId + "/moves",
     options
   )
 
