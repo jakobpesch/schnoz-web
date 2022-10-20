@@ -22,9 +22,13 @@ export const getMatches = async () => {
     headers: { "Content-Type": "application/json" },
   }
 
-  const response = await (await fetch(BASE_URL + "/matches", options)).json()
+  const response = await fetch(BASE_URL + "/matches", options)
 
-  return response
+  if (response.status !== 200) {
+    throw new Error("Failed to get matches")
+  }
+
+  return await response.json()
 }
 
 export const startGame = async (matchId: string, userId: string) => {
