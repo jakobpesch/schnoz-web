@@ -13,20 +13,12 @@ interface MapProps {
 }
 const MapView = (props: MapProps) => {
   const { map, activePlayer, players, onTileClick, userId } = props
-
-  const tileLookup: { [id: ITile["id"]]: ITile } = map.tiles.reduce(
-    (acc, cur) => {
-      return { ...acc, [cur.id]: cur }
-    },
-    {}
-  )
-
   const mapWidth = RenderSettings.tileSize * map.rowCount
   const mapHeight = RenderSettings.tileSize * map.columnCount
 
   return (
     <>
-      <Center height="100vh">
+      <Center>
         <Box
           display="flex"
           flexWrap="wrap"
@@ -38,6 +30,7 @@ const MapView = (props: MapProps) => {
             return (
               <TileView
                 key={tile.id}
+                activePlayer={activePlayer}
                 players={players}
                 tile={tile}
                 onClick={onTileClick}

@@ -22,6 +22,7 @@ import { ITile } from "../../types/tile"
 import { IMatch } from "../../types/match"
 
 const MatchView = () => {
+  const router = useRouter()
   const [status, setStatus] = useState("")
   let userId: string | null = null
   try {
@@ -58,7 +59,7 @@ const MatchView = () => {
   if (!match) {
     return null
   }
-
+  const hasFinished = match.status === "finished"
   const hasStarted = match.status === "started"
   const hasMap = match.map !== undefined
   const allPlayersJoined =
@@ -70,6 +71,9 @@ const MatchView = () => {
       return
     }
     setMatch(await startGame(match._id, userId))
+  }
+  const onBackToMenuClick = async () => {
+    router.push("/")
   }
 
   const onTileClick = async (tileId: ITile["id"]) => {
@@ -85,7 +89,7 @@ const MatchView = () => {
     }
   }
 
-  if (!hasMap || !hasStarted) {
+  if (!hasMap && !hasStarted) {
     return (
       <Container height="100vh" color="white">
         <Center height="full">
@@ -96,17 +100,19 @@ const MatchView = () => {
             ) : (
               <>
                 {allPlayersJoined ? (
-                  <Text>Game is full. Ready to start game.</Text>
+                  <>
+                    <Text>Game is full. Ready to start game.</Text>
+                    <Button
+                      onClick={() => {
+                        onStartGameClick()
+                      }}
+                    >
+                      Start Game
+                    </Button>
+                  </>
                 ) : (
                   <Text>Waiting for other player to join</Text>
                 )}
-                <Button
-                  onClick={() => {
-                    onStartGameClick()
-                  }}
-                >
-                  Start Game
-                </Button>
               </>
             )}
           </VStack>
@@ -116,20 +122,42 @@ const MatchView = () => {
   }
 
   return (
-    <>
-      <Text position="absolute" bottom="4" right="4">
-        {status}
-      </Text>
-      <MapView
-        players={match.players}
-        userId={userId}
-        onTileClick={(tileId) => {
-          onTileClick(tileId)
-        }}
-        activePlayer={match.activePlayer}
-        map={match.map}
-      />
-    </>
+    <Container height="100vh" color="white">
+      <Center height="full">
+        <Text position="absolute" bottom="4" right="4">
+          {status}
+        </Text>
+        <MapView
+          players={match.players}
+          userId={userId}
+          onTileClick={(tileId) => {
+            onTileClick(tileId)
+          }}
+          activePlayer={match.activePlayer}
+          map={match.map}
+        />
+        {hasFinished && (
+          <VStack
+            p="4"
+            bg="gray.800"
+            spacing="4"
+            position="absolute"
+            borderRadius="lg"
+            top="10"
+          >
+            <Heading>Finished</Heading>
+            <Text>Someone has won. 🤷‍♀️</Text>
+            <Button
+              onClick={() => {
+                onBackToMenuClick()
+              }}
+            >
+              Back to menu
+            </Button>
+          </VStack>
+        )}
+      </Center>
+    </Container>
   )
 }
 
