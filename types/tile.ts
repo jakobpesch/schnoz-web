@@ -1,6 +1,6 @@
 import { Unit } from "./unit"
 
-export interface Tile {
+export interface ITile {
   id: string
   row: number
   col: number

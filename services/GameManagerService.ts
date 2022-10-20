@@ -1,4 +1,4 @@
-import { Tile } from "../types/tile"
+import { ITile } from "../types/tile"
 
 const BASE_URL =
   process.env.NODE_ENV === "development"
@@ -124,7 +124,7 @@ export const getMap = () => {
 
 export const makeMove = async (
   matchId: string,
-  tileId: Tile["id"],
+  tileId: ITile["id"],
   userId: string
 ) => {
   const options = {

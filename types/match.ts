@@ -1,12 +1,12 @@
-import { Map } from "./map"
-import { Move } from "./move"
+import { IMap } from "./map"
+import { IMove } from "./move"
 
-export interface Match {
+export interface IMatch {
   _id: string
   createdBy: string
   activePlayer: string
   players: string[]
   status: string
-  map: Map
-  moves: Move[]
+  map: IMap
+  moves: IMove[]
 }

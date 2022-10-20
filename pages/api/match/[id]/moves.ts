@@ -1,23 +1,13 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 import connectDb from "../../../../services/MongoService"
-import { Map } from "../../../../types/map"
-import { PlayerId } from "../../../../types/player"
-import { Tile } from "../../../../types/tile"
+import { IMap } from "../../../../types/map"
+
 import Match from "../../../../models/Match.model"
-
-type MoveType = "place_unit"
-
-type Data = {
-  map: Map
-  moveType: MoveType
-  playerId: PlayerId
-  tileId: Tile["id"]
-}
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Map>
+  res: NextApiResponse<IMap>
 ) {
   const { body, method } = req
   let match: any

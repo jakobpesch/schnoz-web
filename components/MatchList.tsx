@@ -10,11 +10,11 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react"
-import { Match } from "../types/match"
+import { IMatch } from "../types/match"
 
 interface MatchListProps {
   userId: string
-  matches: Match[]
+  matches: IMatch[]
   onJoinClick: (id: string) => void
   onDeleteClick: (id: string) => void
   onGoToMatchClick: (id: string) => void
@@ -23,9 +23,10 @@ interface MatchListProps {
 const MatchList = (props: MatchListProps) => {
   const { userId, matches, onJoinClick, onDeleteClick, onGoToMatchClick } =
     props
-  const canJoin = (match: Match) => match.players.length === 1
-  const canDelete = (match: Match, user: string) => match.createdBy === user
-  const hasJoined = (match: Match, user: string) => match.players.includes(user)
+  const canJoin = (match: IMatch) => match.players.length === 1
+  const canDelete = (match: IMatch, user: string) => match.createdBy === user
+  const hasJoined = (match: IMatch, user: string) =>
+    match.players.includes(user)
   if (matches.length === 0) {
     return (
       <Text p={10} textAlign="center" color="gray.200">

@@ -1,7 +1,7 @@
-import { Tile } from "./tile"
+import { ITile } from "./tile"
 
-export interface Map {
+export interface IMap {
   rowCount: number
   columnCount: number
-  tiles: Tile[]
+  tiles: ITile[]
 }

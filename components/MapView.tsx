@@ -1,11 +1,11 @@
 import { Box, Center } from "@chakra-ui/react"
 import { RenderSettings } from "../services/SettingsService"
-import { Map } from "../types/map"
-import { Tile } from "../types/tile"
+import { IMap } from "../types/map"
+import { ITile } from "../types/tile"
 import TileView from "./TileView"
 
 interface MapProps {
-  map: Map
+  map: IMap
   userId: string
   players: string[]
   activePlayer: string
@@ -14,7 +14,7 @@ interface MapProps {
 const MapView = (props: MapProps) => {
   const { map, activePlayer, players, onTileClick, userId } = props
 
-  const tileLookup: { [id: Tile["id"]]: Tile } = map.tiles.reduce(
+  const tileLookup: { [id: ITile["id"]]: ITile } = map.tiles.reduce(
     (acc, cur) => {
       return { ...acc, [cur.id]: cur }
     },

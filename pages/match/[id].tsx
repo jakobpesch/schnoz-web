@@ -18,8 +18,8 @@ import {
   makeMove,
   startGame,
 } from "../../services/GameManagerService"
-import { Tile } from "../../types/tile"
-import { Match } from "../../types/match"
+import { ITile } from "../../types/tile"
+import { IMatch } from "../../types/match"
 
 const MatchView = () => {
   const [status, setStatus] = useState("")
@@ -28,7 +28,7 @@ const MatchView = () => {
     userId = getCookie("userId")
   } catch {}
 
-  const [match, setMatch] = useState<Match | null>(null)
+  const [match, setMatch] = useState<IMatch | null>(null)
   const fetchMatch = async (matchId: string) => {
     try {
       const match = await getMatch(matchId)
@@ -72,7 +72,7 @@ const MatchView = () => {
     setMatch(await startGame(match._id, userId))
   }
 
-  const onTileClick = async (tileId: Tile["id"]) => {
+  const onTileClick = async (tileId: ITile["id"]) => {
     if (!userId) {
       return
     }

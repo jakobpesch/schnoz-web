@@ -1,6 +1,6 @@
-import { Tile } from "./tile"
+import { ITile } from "./tile"
 
-export interface Move {
-  tileId: Tile["id"]
+export interface IMove {
+  tileId: ITile["id"]
   userId: string
 }
