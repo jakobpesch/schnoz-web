@@ -34,6 +34,11 @@ export default async function handler(
       const tileIndex = match.map.tiles.findIndex(
         (tile: any) => tile.id === tileId
       )
+
+      if (match.map.tiles[tileIndex].unit) {
+        res.status(500).end("Tile is blocked by another unit.")
+        break
+      }
       match.map.tiles[tileIndex] = {
         ...match.map.tiles[tileIndex],
         unit: { playerId: userId },
