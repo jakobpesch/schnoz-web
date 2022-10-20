@@ -34,7 +34,7 @@ export const startGame = async (matchId: string, userId: string) => {
     body: JSON.stringify({
       action: "start",
       userId,
-      settings: { rowCount: 5, columnCount: 5 },
+      settings: { rowCount: 5, columnCount: 5, maxTurns: 3 },
     }),
   }
 

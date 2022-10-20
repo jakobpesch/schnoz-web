@@ -12,6 +12,7 @@ const matchSchema = new mongoose.Schema({
   map: mapSchema,
   activePlayer: String,
   turn: Number,
+  maxTurns: Number,
 })
 
 export default mongoose.models["Match"] || mongoose.model("Match", matchSchema)

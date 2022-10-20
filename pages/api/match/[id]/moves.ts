@@ -51,6 +51,10 @@ export default async function handler(
       match.activePlayer = match.players.find(
         (playerId: string[]) => playerId !== match.activePlayer
       )
+      match.turn = (match.turn ?? 0) + 1
+      if (match.turn > match.maxTurns) {
+        match.status = "finished"
+      }
       await match.save()
       res.status(201).json(match)
       break

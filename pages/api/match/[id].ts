@@ -60,6 +60,8 @@ export default async function handler(
           )
           match.status = "started"
           match.activePlayer = body.userId
+          match.turn = 0
+          match.maxTurns = body.settings.maxTurns
           await match.save()
           res.status(200).json(match)
       }
