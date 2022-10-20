@@ -1,8 +1,5 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
-import Map from "../../../../models/Map.model"
-import connectDb from "../../../../services/MongoService"
-// import { Map } from "../../../../types/map"
 type Data = {
   name: string
 }

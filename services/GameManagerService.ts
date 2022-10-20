@@ -1,4 +1,4 @@
-import { ITile } from "../types/tile"
+import { ITile } from "../models/Tile.model"
 
 const BASE_URL =
   process.env.NODE_ENV === "development"

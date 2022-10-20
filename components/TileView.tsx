@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react"
 import { getCookie } from "../services/CookieService"
 import { RenderSettings } from "../services/SettingsService"
-import { ITile } from "../types/tile"
+import { ITile } from "../models/Tile.model"
 
 const getBackgroundColor = (
   row: number,

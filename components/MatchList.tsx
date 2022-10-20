@@ -10,7 +10,7 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react"
-import { IMatch } from "../types/match"
+import { IMatch } from "../models/Match.model"
 
 interface MatchListProps {
   userId: string
