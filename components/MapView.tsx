@@ -1,6 +1,6 @@
 import { Box, Center } from "@chakra-ui/react"
 import { RenderSettings } from "../services/SettingsService"
-import { IMap } from "../types/map"
+import { IMap } from "../models/Map.model"
 import TileView from "./TileView"
 
 interface MapProps {

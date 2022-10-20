@@ -1,5 +1,11 @@
 import mongoose from "mongoose"
-import { tileSchema } from "./Tile.model"
+import { tileSchema, ITile } from "./Tile.model"
+
+export interface IMap {
+  rowCount: number
+  columnCount: number
+  tiles: ITile[]
+}
 
 export const mapSchema = new mongoose.Schema({
   rowCount: Number,

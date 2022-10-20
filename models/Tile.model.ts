@@ -1,4 +1,12 @@
 import mongoose from "mongoose"
+import { IUnit } from "./Unit.model"
+
+export interface ITile {
+  id: string
+  row: number
+  col: number
+  unit?: IUnit
+}
 
 export const tileSchema = new mongoose.Schema({
   id: String,

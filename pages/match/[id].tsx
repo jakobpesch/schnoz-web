@@ -1,25 +1,22 @@
 import {
-  Box,
   Button,
   Center,
   Container,
-  FormControl,
   Heading,
-  Input,
   Text,
   VStack,
 } from "@chakra-ui/react"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import MapView from "../../components/MapView"
+import { IMatch } from "../../models/Match.model"
+import { ITile } from "../../models/Tile.model"
 import { getCookie } from "../../services/CookieService"
 import {
   getMatch,
   makeMove,
   startGame,
 } from "../../services/GameManagerService"
-import { ITile } from "../../types/tile"
-import { IMatch } from "../../types/match"
 
 const MatchView = () => {
   const router = useRouter()

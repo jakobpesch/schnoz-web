@@ -1,6 +1,15 @@
 import mongoose from "mongoose"
-
-import { mapSchema } from "./Map.model"
+import { mapSchema, IMap } from "./Map.model"
+import { IMove } from "./Move.model"
+export interface IMatch {
+  _id: string
+  createdBy: string
+  activePlayer: string
+  players: string[]
+  status: string
+  map: IMap
+  moves: IMove[]
+}
 
 const matchSchema = new mongoose.Schema({
   createdBy: String,

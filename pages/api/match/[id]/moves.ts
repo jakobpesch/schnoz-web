@@ -1,8 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 import connectDb from "../../../../services/MongoService"
-import { IMap } from "../../../../types/map"
-
+import { IMap } from "../../../../models/Map.model"
 import Match from "../../../../models/Match.model"
 
 export default async function handler(
