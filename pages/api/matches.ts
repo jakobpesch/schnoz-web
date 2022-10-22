@@ -13,7 +13,11 @@ export default async function handler(
     case "POST":
       const userId = body.userId ?? new mongoose.Types.ObjectId()
       await connectDb()
-      const match = new Match({ createdBy: userId, players: [userId] })
+      const match = new Match({
+        createdBy: userId,
+        players: [userId],
+        status: "created",
+      })
       await match.save()
       res.status(201).json(match)
       break
