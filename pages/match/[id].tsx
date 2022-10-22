@@ -1,5 +1,6 @@
 import {
   Button,
+  ButtonGroup,
   Center,
   Container,
   Heading,
@@ -21,6 +22,9 @@ import {
 const MatchView = () => {
   const router = useRouter()
   const [status, setStatus] = useState("")
+  const [settings, setSettings] = useState({
+    mapSize: 11,
+  })
   let userId: string | null = null
   try {
     userId = getCookie("userId")
@@ -57,7 +61,6 @@ const MatchView = () => {
     return null
   }
 
-  const hasMap = match.map !== undefined
   const allPlayersJoined =
     match.players.filter((player: string | null) => player !== null).length ===
     2
@@ -66,8 +69,9 @@ const MatchView = () => {
     if (!userId) {
       return
     }
-    setMatch(await startGame(match._id, userId))
+    setMatch(await startGame(match._id, userId, settings.mapSize))
   }
+
   const onBackToMenuClick = async () => {
     router.push("/")
   }
@@ -85,29 +89,70 @@ const MatchView = () => {
     }
   }
 
+  const GameSettingsView = () => {
+    return (
+      <>
+        <VStack>
+          <Text fontWeight="bold">Map size</Text>
+          <ButtonGroup isAttached>
+            <Button
+              variant="outline"
+              size="sm"
+              colorScheme={settings.mapSize === 11 ? "blue" : "gray"}
+              onClick={() => setSettings({ ...settings, mapSize: 11 })}
+            >
+              Small
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              colorScheme={settings.mapSize === 21 ? "blue" : "gray"}
+              onClick={() => setSettings({ ...settings, mapSize: 21 })}
+            >
+              Medium
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              colorScheme={settings.mapSize === 31 ? "blue" : "gray"}
+              onClick={() => setSettings({ ...settings, mapSize: 31 })}
+            >
+              Large
+            </Button>
+          </ButtonGroup>
+        </VStack>
+      </>
+    )
+  }
+
   const PreMatchView = () => {
     return (
-      <VStack spacing="4">
+      <VStack spacing="8">
         <Heading>Not Started</Heading>
         {userId !== match.createdBy ? (
           <Text>Waiting for creator to start the game</Text>
         ) : (
           <>
             {allPlayersJoined ? (
-              <>
-                <Text>Game is full. Ready to start game.</Text>
-                <Button
-                  onClick={() => {
-                    onStartGameClick()
-                  }}
-                >
-                  Start Game
-                </Button>
-              </>
+              <Text>Game is full. Ready to start game.</Text>
             ) : (
-              <Text>Waiting for other player to join</Text>
+              <Text color="gray.300">Waiting for other player to join</Text>
             )}
           </>
+        )}
+        <GameSettingsView />
+
+        {userId === match.createdBy && (
+          <Button
+            size="lg"
+            colorScheme="blue"
+            disabled={!allPlayersJoined}
+            onClick={() => {
+              onStartGameClick()
+            }}
+          >
+            Start Game
+          </Button>
         )}
       </VStack>
     )
@@ -139,9 +184,10 @@ const MatchView = () => {
   return (
     <Container height="100vh" color="white">
       <Center height="full">
-        <Text position="absolute" bottom="4" right="4">
+        <Text position="fixed" bottom="4" right="4">
           {status}
         </Text>
+
         {match.status === "created" && <PreMatchView />}
 
         {match.status === "started" && (

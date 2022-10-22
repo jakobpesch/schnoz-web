@@ -1,4 +1,4 @@
-import { Box, Center } from "@chakra-ui/react"
+import { Box, Center, Text } from "@chakra-ui/react"
 import { RenderSettings } from "../services/SettingsService"
 import { IMap } from "../models/Map.model"
 import TileView from "./TileView"
@@ -138,9 +138,9 @@ const MapView = (props: MapProps) => {
           })}
         </Box>
       </Center>
-      <Box p="4" position="absolute" top="0" left="0">
+      <Text p="4" position="fixed" top="0" left="0">
         {userId === activePlayer ? "Your turn" : "Opponents turn"}
-      </Box>
+      </Text>
     </>
   )
 }

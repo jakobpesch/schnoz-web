@@ -31,14 +31,18 @@ export const getMatches = async () => {
   return await response.json()
 }
 
-export const startGame = async (matchId: string, userId: string) => {
+export const startGame = async (
+  matchId: string,
+  userId: string,
+  mapSize: number
+) => {
   const options = {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       action: "start",
       userId,
-      settings: { rowCount: 5, columnCount: 5, maxTurns: 3 },
+      settings: { rowCount: mapSize, columnCount: mapSize, maxTurns: 3 },
     }),
   }
 
