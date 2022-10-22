@@ -56,8 +56,7 @@ const MatchView = () => {
   if (!match) {
     return null
   }
-  const hasFinished = match.status === "finished"
-  const hasStarted = match.status === "started"
+
   const hasMap = match.map !== undefined
   const allPlayersJoined =
     match.players.filter((player: string | null) => player !== null).length ===
@@ -86,35 +85,54 @@ const MatchView = () => {
     }
   }
 
-  if (!hasMap && !hasStarted) {
+  const PreMatchView = () => {
     return (
-      <Container height="100vh" color="white">
-        <Center height="full">
-          <VStack spacing="4">
-            <Heading>Not Started</Heading>
-            {userId !== match.createdBy ? (
-              <Text>Waiting for creator to start the game</Text>
-            ) : (
+      <VStack spacing="4">
+        <Heading>Not Started</Heading>
+        {userId !== match.createdBy ? (
+          <Text>Waiting for creator to start the game</Text>
+        ) : (
+          <>
+            {allPlayersJoined ? (
               <>
-                {allPlayersJoined ? (
-                  <>
-                    <Text>Game is full. Ready to start game.</Text>
-                    <Button
-                      onClick={() => {
-                        onStartGameClick()
-                      }}
-                    >
-                      Start Game
-                    </Button>
-                  </>
-                ) : (
-                  <Text>Waiting for other player to join</Text>
-                )}
+                <Text>Game is full. Ready to start game.</Text>
+                <Button
+                  onClick={() => {
+                    onStartGameClick()
+                  }}
+                >
+                  Start Game
+                </Button>
               </>
+            ) : (
+              <Text>Waiting for other player to join</Text>
             )}
-          </VStack>
-        </Center>
-      </Container>
+          </>
+        )}
+      </VStack>
+    )
+  }
+
+  const PostMatchView = () => {
+    return (
+      <VStack
+        p="4"
+        bg="gray.800"
+        spacing="4"
+        position="absolute"
+        borderRadius="lg"
+        top="10"
+      >
+        <Heading>Finished</Heading>
+        <Text>Someone has won. 🤷‍♀️</Text>
+        <Button
+          onClick={() => {
+            onBackToMenuClick()
+          }}
+        >
+          Back to menu
+        </Button>
+      </VStack>
     )
   }
 
@@ -124,35 +142,21 @@ const MatchView = () => {
         <Text position="absolute" bottom="4" right="4">
           {status}
         </Text>
-        <MapView
-          players={match.players}
-          userId={userId}
-          onTileClick={(tileId) => {
-            onTileClick(tileId)
-          }}
-          activePlayer={match.activePlayer}
-          map={match.map}
-        />
-        {hasFinished && (
-          <VStack
-            p="4"
-            bg="gray.800"
-            spacing="4"
-            position="absolute"
-            borderRadius="lg"
-            top="10"
-          >
-            <Heading>Finished</Heading>
-            <Text>Someone has won. 🤷‍♀️</Text>
-            <Button
-              onClick={() => {
-                onBackToMenuClick()
-              }}
-            >
-              Back to menu
-            </Button>
-          </VStack>
+        {match.status === "created" && <PreMatchView />}
+
+        {match.status === "started" && (
+          <MapView
+            players={match.players}
+            userId={userId}
+            onTileClick={(tileId) => {
+              onTileClick(tileId)
+            }}
+            activePlayer={match.activePlayer}
+            map={match.map}
+          />
         )}
+
+        {match.status === "finished" && <PostMatchView />}
       </Center>
     </Container>
   )
