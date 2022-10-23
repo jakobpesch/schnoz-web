@@ -82,6 +82,8 @@ const MapView = (props: MapProps) => {
     <>
       <Center>
         <Box
+          borderRadius="xl"
+          overflow="hidden"
           display="flex"
           flexWrap="wrap"
           boxShadow="0 0 0px 10px #555555"
@@ -96,9 +98,10 @@ const MapView = (props: MapProps) => {
                 position="absolute"
                 top={row * RenderSettings.tileSize + "px"}
                 left={col * RenderSettings.tileSize + "px"}
-                background="gray.600"
-                borderRadius="3xl"
+                background={getPlayerColor(players, userId)}
+                borderRadius="xl"
                 pointerEvents="none"
+                boxShadow="0 0 5px 4px inset white"
               />
             )
           })}
@@ -108,6 +111,7 @@ const MapView = (props: MapProps) => {
                 id={tile.id}
                 key={tile.id}
                 cursor={hoveringTile ? "none" : "default"}
+                borderRadius={tile.unit ? "xl" : undefined}
                 background={getBackgroundColor(
                   tile.row,
                   tile.col,

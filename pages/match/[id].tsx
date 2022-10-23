@@ -111,12 +111,12 @@ const availableConstellations: Coordinate2D[][] = [
     [0, 2],
     [1, 2],
   ],
-  [
-    [0, 0],
-    [0, 1],
-    [0, 0],
-    [1, 2],
-  ],
+  // [ MAKES A WEIRD BUG
+  //   [0, 0],
+  //   [0, 1],
+  //   [0, 0],
+  //   [1, 2],
+  // ],
   [
     [0, 0],
     [0, 1],
@@ -309,7 +309,7 @@ const MatchView = () => {
         {match.status === "created" && <PreMatchView />}
 
         {match.status === "started" && (
-          <Stack spacing="10">
+          <VStack spacing="10">
             <MapView
               selectedConstellation={selectedConstellation}
               players={match.players}
@@ -344,7 +344,7 @@ const MatchView = () => {
                 )
               })}
             </HStack>
-          </Stack>
+          </VStack>
         )}
 
         {match.status === "finished" && <PostMatchView />}
