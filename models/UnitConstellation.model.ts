@@ -1,2 +1,8 @@
 export type Coordinate2D = [row: number, col: number]
-export type Constellation = Coordinate2D[]
+
+export interface IUnitConstellation {
+  coordinates: Coordinate2D[]
+  // mirroredY: boolean
+  // mirroredX: boolean
+  rotatedClockwise: 0 | 1 | 2 | 3
+}

@@ -4,6 +4,7 @@ specifiers:
   '@chakra-ui/react': ^2.3.5
   '@emotion/react': ^11.10.4
   '@emotion/styled': ^11.10.4
+  '@types/mousetrap': ^1.6.9
   '@types/node': 18.11.0
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
@@ -12,6 +13,7 @@ specifiers:
   eslint-config-prettier: ^8.5.0
   framer-motion: ^7.5.3
   mongoose: ^6.6.5
+  mousetrap: ^1.6.5
   next: 12.3.1
   react: 18.2.0
   react-dom: 18.2.0
@@ -23,11 +25,13 @@ dependencies:
   '@emotion/styled': 11.10.4_g3tud4ene45llglqap74b5kkse
   framer-motion: 7.5.3_biqbaboplfbrettd7655fr4n2y
   mongoose: 6.6.5
+  mousetrap: 1.6.5
   next: 12.3.1_biqbaboplfbrettd7655fr4n2y
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
 
 devDependencies:
+  '@types/mousetrap': 1.6.9
   '@types/node': 18.11.0
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
@@ -1509,6 +1513,10 @@ packages:
     resolution: {integrity: sha512-eHcVlLXP0c2FlMPm56ITode2AgLMSa6aJ05JTTbYbI+7EMkCEE5qk2E41d5g2lCVTqRe0GnnRFurmlCsDODrPw==}
     dev: false
 
+  /@types/mousetrap/1.6.9:
+    resolution: {integrity: sha512-HUAiN65VsRXyFCTicolwb5+I7FM6f72zjMWr+ajGk+YTvzBgXqa2A5U7d+rtsouAkunJ5U4Sb5lNJjo9w+nmXg==}
+    dev: true
+
   /@types/node/18.11.0:
     resolution: {integrity: sha512-IOXCvVRToe7e0ny7HpT/X9Rb2RYtElG1a+VshjwT00HxrM2dWBApHQoqsI6WiY7Q03vdf2bCrIGzVrkF/5t10w==}
 
@@ -2872,6 +2880,10 @@ packages:
       sift: 16.0.0
     transitivePeerDependencies:
       - supports-color
+    dev: false
+
+  /mousetrap/1.6.5:
+    resolution: {integrity: sha512-QNo4kEepaIBwiT8CDhP98umTetp+JNfQYBWvC1pc6/OAibuXtRcxZ58Qz8skvEHYvURne/7R8T5VoOI7rDsEUA==}
     dev: false
 
   /mpath/0.9.0:

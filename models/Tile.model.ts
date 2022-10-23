@@ -8,6 +8,8 @@ export interface ITile {
   unit?: IUnit
 }
 
+export interface ITileDoc extends ITile, Document {}
+
 export const tileSchema = new mongoose.Schema({
   id: String,
   row: Number,

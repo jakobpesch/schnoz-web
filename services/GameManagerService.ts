@@ -1,4 +1,5 @@
 import { ITile } from "../models/Tile.model"
+import { IUnitConstellation } from "../models/UnitConstellation.model"
 
 const BASE_URL =
   process.env.NODE_ENV === "development"
@@ -42,7 +43,7 @@ export const startGame = async (
     body: JSON.stringify({
       action: "start",
       userId,
-      settings: { rowCount: mapSize, columnCount: mapSize, maxTurns: 3 },
+      settings: { rowCount: mapSize, columnCount: mapSize, maxTurns: 11 },
     }),
   }
 
@@ -133,7 +134,8 @@ export const getMap = () => {
 export const makeMove = async (
   matchId: string,
   tileId: ITile["id"],
-  userId: string
+  userId: string,
+  unitConstellation: IUnitConstellation
 ) => {
   const options = {
     method: "POST",
@@ -141,6 +143,7 @@ export const makeMove = async (
     body: JSON.stringify({
       userId,
       tileId,
+      unitConstellation,
     }),
   }
 

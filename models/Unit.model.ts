@@ -3,6 +3,8 @@ export interface IUnit {
   playerId: string
 }
 
+export interface IUnitDoc extends IUnit, Document {}
+
 const unitSchema = new mongoose.Schema({
   playerId: String,
 })

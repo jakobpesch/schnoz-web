@@ -7,6 +7,8 @@ export interface IMap {
   tiles: ITile[]
 }
 
+export interface IMapDoc extends IMap, Document {}
+
 export const mapSchema = new mongoose.Schema({
   rowCount: Number,
   columnCount: Number,

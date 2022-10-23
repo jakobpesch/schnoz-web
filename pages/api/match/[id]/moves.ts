@@ -1,17 +1,26 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
+import Match, { IMatch, IMatchDoc } from "../../../../models/Match.model"
+import {
+  Coordinate2D,
+  IUnitConstellation,
+} from "../../../../models/UnitConstellation.model"
 import connectDb from "../../../../services/MongoService"
-import { IMap } from "../../../../models/Map.model"
-import Match from "../../../../models/Match.model"
+import {
+  positionCoordinatesAt,
+  transformCoordinates,
+} from "../../../../utils/constallationTransformer"
 
 export type MatchStatus = "created" | "started" | "finished"
 
+const increment = (x: number) => x + 1
+
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<IMap>
+  res: NextApiResponse<IMatch>
 ) {
   const { body, method } = req
-  let match: any
+  let match: IMatchDoc | null
   const { userId, tileId } = body
 
   if (!userId || !tileId) {
@@ -23,7 +32,13 @@ export default async function handler(
     case "POST":
       // Create a new move
       await connectDb()
-      match = await Match.findById(req.query.id)
+      match = await Match.findById(req.query.id).exec()
+
+      if (match === null) {
+        res.status(500).end("Could not find match")
+        break
+      }
+
       if (match.status !== "started") {
         res.status(500).end("Match is not started")
         break
@@ -32,25 +47,65 @@ export default async function handler(
         res.status(500).end("It's not your turn")
         break
       }
+
+      const { coordinates, rotatedClockwise }: IUnitConstellation =
+        body.unitConstellation
+
+      const transformedCoordinates = transformCoordinates(coordinates, {
+        clockwiseRotationCount: rotatedClockwise,
+      })
+
       const tileIndex = match.map.tiles.findIndex(
-        (tile: any) => tile.id === tileId
+        (tile: any) => tileId === tile.id
       )
 
-      if (match.map.tiles[tileIndex].unit) {
-        res.status(500).end("Tile is blocked by another unit.")
+      const target: Coordinate2D = [
+        match.map.tiles[tileIndex].row,
+        match.map.tiles[tileIndex].col,
+      ]
+
+      const positionedCoordinates = positionCoordinatesAt(
+        target,
+        transformedCoordinates
+      )
+
+      let canPlace = true
+      for (let i = 0; i < positionedCoordinates.length; i++) {
+        const [row, col] = positionedCoordinates[i]
+        console.log(row, col)
+
+        const tileIndex = match.map.tiles.findIndex(
+          (tile) => tile.row === row && tile.col === col
+        )
+        const isInBounds = tileIndex !== -1
+        const hasUnit = !!match.map.tiles[tileIndex].unit
+        const isPlaceable = isInBounds && !hasUnit
+        if (!isInBounds || !isPlaceable) {
+          canPlace = false
+          break
+        }
+
+        match.map.tiles[tileIndex] = {
+          ...match.map.tiles[tileIndex],
+          unit: { playerId: userId },
+        }
+      }
+
+      if (!canPlace) {
+        res.status(500).end("At least one tile cannot be placed.")
         break
       }
-
-      match.map.tiles[tileIndex] = {
-        ...match.map.tiles[tileIndex],
-        unit: { playerId: userId },
-      }
-
-      match.activePlayer = match.players.find(
-        (playerId: string[]) => playerId !== match.activePlayer
+      const activePlayer = match.players.find(
+        (playerId) => playerId !== match!.activePlayer
       )
 
-      match.turn = (match.turn ?? 0) + 1
+      if (!activePlayer) {
+        res.status(500).end("Error while changing turns")
+        break
+      }
+      match.activePlayer = activePlayer
+
+      match.turn = increment(match.turn)
 
       const isGameFinished = match.turn > match.maxTurns
       if (isGameFinished) {

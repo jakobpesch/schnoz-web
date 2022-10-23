@@ -82,7 +82,6 @@ export default async function handler(
       break
     case "GET":
       await connectDb()
-      console.log(req.query)
       const matchId = req.query.id
 
       if (
