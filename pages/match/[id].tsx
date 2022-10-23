@@ -78,6 +78,7 @@ export const UnitConstellationView = (props: UnitConstellationViewProps) => {
 
         return (
           <Box
+            key={"unitConstellation_" + row + "_" + col}
             position="absolute"
             top={topOffset}
             left={leftOffset}
@@ -330,6 +331,7 @@ const MatchView = () => {
                   : {}
                 return (
                   <UnitConstellationView
+                    key={"unitConstellationView " + constellation}
                     // {...selectedBackgroundColor}
                     boxShadow={selected ? "0 0 0 3px white" : undefined}
                     _hover={

@@ -119,11 +119,12 @@ const MapView = (props: MapProps) => {
                   tile.unit?.playerId
                 )}
                 onClick={() => {
-                  if (selectedConstellation)
+                  if (selectedConstellation) {
                     onTileClick(tile.id, {
                       coordinates: selectedConstellation,
                       rotatedClockwise: rotationCount,
                     })
+                  }
                 }}
                 onMouseEnter={(e) => {
                   const tileId = (e.target as any).id as ITile["id"]
