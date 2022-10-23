@@ -6,6 +6,7 @@ interface TileProps extends BoxProps {}
 const TileView = (props: TileProps) => {
   return (
     <Box
+      borderRadius="xl"
       display="flex"
       justifyContent="center"
       alignItems="center"
