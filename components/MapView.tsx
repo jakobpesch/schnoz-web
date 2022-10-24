@@ -29,8 +29,7 @@ const getBackgroundColor = (
 const getPlayerColor = (players: string[], player: string) => {
   if (player === players[0]) {
     return "red.300"
-  }
-  if (player === players[1]) {
+  } else {
     return "blue.300"
   }
 }
@@ -101,7 +100,7 @@ const MapView = (props: MapProps) => {
                 background={getPlayerColor(players, userId)}
                 borderRadius="xl"
                 pointerEvents="none"
-                boxShadow="0 0 5px 4px inset white"
+                boxShadow={"0 0 0 4px inset white "}
               />
             )
           })}
@@ -110,8 +109,11 @@ const MapView = (props: MapProps) => {
               <TileView
                 id={tile.id}
                 key={tile.id}
+                unit={tile.unit}
                 cursor={hoveringTile ? "none" : "default"}
-                borderRadius={tile.unit ? "xl" : undefined}
+                borderRadius={
+                  tile.unit?.type === "playerUnit" ? "xl" : undefined
+                }
                 background={getBackgroundColor(
                   tile.row,
                   tile.col,

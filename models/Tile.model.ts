@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import { IUnit } from "./Unit.model"
+import { IUnit, unitSchema } from "./Unit.model"
 
 export interface ITile {
   id: string
@@ -14,6 +14,7 @@ export const tileSchema = new mongoose.Schema({
   id: String,
   row: Number,
   col: Number,
+  unit: unitSchema,
 })
 
 export default mongoose.models["Tile"] || mongoose.model("Tile", tileSchema)

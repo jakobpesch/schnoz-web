@@ -7,14 +7,13 @@ import {
   Container,
   Heading,
   HStack,
-  Stack,
   Text,
   VStack,
 } from "@chakra-ui/react"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import MapView from "../../components/MapView"
-import { IMatch, IMatchDoc } from "../../models/Match.model"
+import { IMatchDoc } from "../../models/Match.model"
 import { ITile } from "../../models/Tile.model"
 import {
   Coordinate2D,
@@ -27,7 +26,6 @@ import {
   startGame,
 } from "../../services/GameManagerService"
 import { RenderSettings } from "../../services/SettingsService"
-import { separateCoordinates } from "../../utils/constallationTransformer"
 
 const FollowMouse = (props: BoxProps) => {
   const [mousePosition, setMousePosition] = useState([0, 0])
@@ -255,11 +253,20 @@ const MatchView = () => {
             {allPlayersJoined ? (
               <Text>Game is full. Ready to start game.</Text>
             ) : (
-              <Text color="gray.300">Waiting for other player to join</Text>
+              <>
+                <Text color="gray.300">Waiting for other player to join</Text>
+                <GameSettingsView />
+              </>
             )}
           </>
         )}
-        <GameSettingsView />
+
+        <VStack>
+          <Text>{match.players[0].slice(-5)}</Text>
+          <Text fontStyle={!match.players[1] ? "italic" : "normal"}>
+            {match.players[1] ? match.players[1].slice(-5) : "Empty..."}
+          </Text>
+        </VStack>
 
         {userId === match.createdBy && (
           <Button

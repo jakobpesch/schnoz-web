@@ -1,12 +1,16 @@
 import mongoose from "mongoose"
+
+export type UnitType = "playerUnit" | "mainBuilding"
 export interface IUnit {
-  playerId: string
+  playerId?: string
+  type: UnitType
 }
 
 export interface IUnitDoc extends IUnit, Document {}
 
-const unitSchema = new mongoose.Schema({
+export const unitSchema = new mongoose.Schema({
   playerId: String,
+  type: String,
 })
 
 export default mongoose.models["Unit"] || mongoose.model("Unit", unitSchema)
