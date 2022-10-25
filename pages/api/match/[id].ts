@@ -29,7 +29,40 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
   })
   return new Map({ rowCount, columnCount, tiles })
 }
+const checkConditionsForCreation = (
+  match: IMatchDoc,
+  userId: string,
+  settings: any
+) => {
+  if (match.status === "started") {
+    return { error: "Match has already started" }
+  }
 
+  if (match.createdBy !== userId) {
+    return { error: "Only the match's creator can start the match" }
+  }
+
+  if (match.players.length < 2) {
+    return { error: "Match is not full yet" }
+  }
+
+  const isEven = (x: number) => x % 2 === 0
+  if (isEven(settings.rowCount)) {
+    return { error: "Row count needs to be an odd integer" }
+  }
+
+  if (isEven(settings.columnCount)) {
+    return { error: "Column count needs to be an odd integer" }
+  }
+  return { error: null }
+}
+
+const checkConditionsForJoining = (match: IMatchDoc) => {
+  if (match.players.length === 2) {
+    return { error: "Match already full" }
+  }
+  return { error: null }
+}
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -40,18 +73,20 @@ export default async function handler(
 
   switch (method) {
     case "PUT":
+      await connectDb()
+      match = await Match.findById(matchId)
+
+      if (match === null) {
+        res.status(404).end(`Match with id ${matchId} not found.`)
+        return
+      }
+
       switch (body.action) {
         case "join":
-          await connectDb()
-          match = await Match.findById(matchId)
+          const { error: joinError } = checkConditionsForJoining(match)
 
-          if (match === null) {
-            res.status(500).end("Match could not be found")
-            break
-          }
-
-          if (match.players.length === 2) {
-            res.status(500).end("Match already full")
+          if (joinError) {
+            res.status(500).end(joinError)
             break
           }
 
@@ -60,52 +95,33 @@ export default async function handler(
           await match.save()
           res.status(200).json(match)
           break
+
         case "start":
-          await connectDb()
-          match = await Match.findById(matchId)
-
-          if (match === null) {
-            res.status(500).end("Match could not be found")
-            break
-          }
-
-          if (match.status === "started") {
-            res.status(500).end("Match has already started")
-            break
-          }
-
-          if (match.createdBy !== body.userId) {
-            res.status(500).end("Only the match's creator can start the match")
-            break
-          }
-
-          if (match.players.length < 2) {
-            res.status(500).end("Match is not full yet")
-            break
-          }
-
-          match.map = initialiseMap(
-            body.settings.rowCount,
-            body.settings.columnCount
+          const { error: startError } = checkConditionsForCreation(
+            match,
+            body.userId,
+            body.settings
           )
 
-          const isEven = (x: number) => x % 2 === 0
-          if (isEven(match.map.rowCount)) {
-            res.status(500).end("Row count needs to be an odd integer")
-            break
-          }
-
-          if (isEven(match.map.columnCount)) {
-            res.status(500).end("Column count needs to be an odd integer")
+          if (startError) {
+            res.status(500).end(startError)
             break
           }
 
           match.status = "started"
+          match.map = initialiseMap(
+            body.settings.rowCount,
+            body.settings.columnCount
+          )
           match.activePlayer = body.userId
           match.turn = 0
           match.maxTurns = body.settings.maxTurns
+
           await match.save()
           res.status(200).json(match)
+          break
+        default:
+          res.status(500).end("Possible PUT actions: 'join', 'start'")
       }
       break
     case "DELETE":
