@@ -13,6 +13,7 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
       map[id] = { id: id, row: iRow, col: iCol, unit: null }
     })
   })
+
   return map
 }
 export default async function handler(
