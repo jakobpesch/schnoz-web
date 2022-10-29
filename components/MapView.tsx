@@ -12,16 +12,25 @@ import {
   positionCoordinatesAt,
   transformCoordinates,
 } from "../utils/constallationTransformer"
+import {
+  getAdjacentCoordinatesOfConstellation,
+  includes,
+} from "../utils/coordinateUtils"
 import TileView from "./TileView"
 
 const getBackgroundColor = (
   row: number,
   column: number,
   players: string[],
-  player?: string
+  player: string,
+  yourTurn: boolean,
+  placeableCoordinates: Coordinate2D[]
 ) => {
   if (player) {
     return getPlayerColor(players, player)
+  }
+  if (yourTurn && includes(placeableCoordinates, [row, column])) {
+    return "gray.500"
   }
   return (row + column) % 2 === 0 ? "gray.700" : "gray.800"
 }
@@ -77,6 +86,15 @@ const MapView = (props: MapProps) => {
     Mousetrap.bind("r", rotate)
   })
 
+  const yourTurn = userId === activePlayer
+  const alliedTiles = map.tiles.filter(
+    (tile) =>
+      tile.unit?.playerId === userId || tile?.unit?.type === "mainBuilding"
+  )
+  const placeableCoordinates = getAdjacentCoordinatesOfConstellation(
+    alliedTiles.map((tile) => [tile.row, tile.col])
+  )
+
   return (
     <>
       <Center>
@@ -118,7 +136,9 @@ const MapView = (props: MapProps) => {
                   tile.row,
                   tile.col,
                   players,
-                  tile.unit?.playerId
+                  tile.unit?.playerId ?? "",
+                  yourTurn,
+                  placeableCoordinates
                 )}
                 onClick={() => {
                   if (selectedConstellation) {
@@ -144,7 +164,7 @@ const MapView = (props: MapProps) => {
         </Box>
       </Center>
       <Text p="4" position="fixed" top="0" left="0">
-        {userId === activePlayer ? "Your turn" : "Opponents turn"}
+        {yourTurn ? "Your turn" : "Opponents turn"}
       </Text>
     </>
   )
