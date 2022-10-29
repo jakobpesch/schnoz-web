@@ -61,7 +61,7 @@ const MapView = (props: MapProps) => {
   let hoveredTiles: Coordinate2D[] = []
   if (selectedConstellation && hoveringTile) {
     const transformed = transformCoordinates(selectedConstellation, {
-      clockwiseRotationCount: rotationCount,
+      rotatedClockwise: rotationCount,
     })
     const translated = positionCoordinatesAt(hoveringTile, transformed)
     hoveredTiles = translated

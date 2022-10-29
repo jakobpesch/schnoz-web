@@ -1,11 +1,13 @@
 import mongoose, { Document } from "mongoose"
 import { mapSchema, IMap } from "./Map.model"
 import { IMove } from "./Move.model"
+
+export type MatchStatus = "created" | "started" | "finished"
 export interface IMatch {
   createdBy: string
   activePlayer: string
   players: string[]
-  status: string
+  status: MatchStatus
   map: IMap
   moves: IMove[]
   turn: number

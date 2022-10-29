@@ -15,13 +15,12 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
       const id = `${row}_${col}`
       const tilePayload: ITile = { id, row, col }
       if (
-        row == Math.floor(rowCount / 2) &&
-        col == Math.floor(columnCount / 2)
+        row === Math.floor(rowCount / 2) &&
+        col === Math.floor(columnCount / 2)
       ) {
         tilePayload.unit = {
           type: "mainBuilding",
         }
-        console.log(tilePayload)
       }
 
       tiles.push(new Tile(tilePayload))
@@ -140,14 +139,6 @@ export default async function handler(
       break
     case "GET":
       await connectDb()
-
-      if (
-        !matchId ||
-        typeof matchId !== "string" ||
-        !mongoose.Types.ObjectId.isValid(matchId)
-      ) {
-        console.log("falsey match id", matchId)
-      }
 
       match = await Match.findById(matchId)
 

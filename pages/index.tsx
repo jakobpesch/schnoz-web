@@ -17,7 +17,6 @@ const Home: NextPage = () => {
   const [status, setStatus] = useState("")
   const [user, setUser] = useState<string | null>(null)
   const [matches, setMatches] = useState<any[]>([])
-  const map = null
   const fetchAnonymousUserId = async () => {
     const anonymousUserId = await signInAnonymously()
     setUser(anonymousUserId)

@@ -15,15 +15,17 @@ export const normaliseCoordinates: TransformationFunction = (coordinates) => {
   )
 }
 
+/** Rotates and/or mirrors the coordinates. Negative coordinates likely.
+ * Example clockwise rotation: `[[0,0],[1,1],[1,2]] => [[0,-0],[1,-1],[2,-0]]` */
 export const transformCoordinates = (
   coordinates: Coordinate2D[],
   transformation: {
-    clockwiseRotationCount?: number
+    rotatedClockwise?: number
   }
 ) => {
   let transformedCoordinates: Coordinate2D[] = coordinates
-  if (transformation.clockwiseRotationCount) {
-    for (let i = 0; i < transformation.clockwiseRotationCount; i++) {
+  if (transformation.rotatedClockwise) {
+    for (let i = 0; i < transformation.rotatedClockwise; i++) {
       transformedCoordinates = rotateClockwise(transformedCoordinates)
     }
   }
@@ -33,6 +35,7 @@ export const transformCoordinates = (
 export const addCoordinates = (x: Coordinate2D, y: Coordinate2D) =>
   [x[0] + y[0], x[1] + y[1]] as Coordinate2D
 
+/** Translates the coordinates to the target tile. The constellation needs to be normalised (first coordinate equals [0,0]) to be positioned at the target as expected. */
 export const positionCoordinatesAt = (
   target: Coordinate2D,
   constellation: Coordinate2D[]

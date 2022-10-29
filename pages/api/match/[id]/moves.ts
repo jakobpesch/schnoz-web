@@ -1,19 +1,62 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
+import { IMap } from "../../../../models/Map.model"
 import Match, { IMatch, IMatchDoc } from "../../../../models/Match.model"
-import {
-  Coordinate2D,
-  IUnitConstellation,
-} from "../../../../models/UnitConstellation.model"
+import { ITile } from "../../../../models/Tile.model"
+import { Coordinate2D } from "../../../../models/UnitConstellation.model"
 import connectDb from "../../../../services/MongoService"
 import {
-  positionCoordinatesAt,
+  positionCoordinatesAt as translateCoordinatesTo,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
+import {
+  getAdjacentCoordinatesOfConstellation,
+  isEqual,
+} from "../../../../utils/coordinateUtils"
 
 export type MatchStatus = "created" | "started" | "finished"
 
 const increment = (x: number) => x + 1
+
+const inBounds: PlacementRule = (constellation, map) =>
+  constellation.every(
+    ([row, col]) =>
+      row >= 0 && col >= 0 && row < map.rowCount && col < map.columnCount
+  )
+
+type PlacementRule = (
+  constellation: Coordinate2D[],
+  map: IMap,
+  playerId: string
+) => boolean
+
+const noUnit: PlacementRule = (constellation, map) => {
+  const hasUnit = constellation.some(
+    ([row, col]) =>
+      !!map.tiles.find((tile) => tile.row === row && tile.col === col)?.unit
+  )
+  return !hasUnit
+}
+
+const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
+  const adjacentCoordinates =
+    getAdjacentCoordinatesOfConstellation(constellation)
+
+  const adjacentTiles = adjacentCoordinates
+    .map((coordinate) =>
+      map.tiles.find((tile) => isEqual([tile.row, tile.col], coordinate))
+    )
+    .filter((tile): tile is ITile => !!tile)
+
+  const isAdjacentToAlly = adjacentTiles.some(
+    (tile) =>
+      tile.unit?.playerId === playerId || tile.unit?.type === "mainBuilding"
+  )
+  return isAdjacentToAlly
+}
+
+const standardGameRules = {
+  placementRules: [inBounds, noUnit, adjacentToAlly],
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -48,57 +91,59 @@ export default async function handler(
         break
       }
 
-      const { coordinates, rotatedClockwise }: IUnitConstellation =
-        body.unitConstellation
-
-      const transformedCoordinates = transformCoordinates(coordinates, {
-        clockwiseRotationCount: rotatedClockwise,
-      })
-
-      const tileIndex = match.map.tiles.findIndex(
-        (tile: any) => tileId === tile.id
+      let targetTile = match.map.tiles.find(
+        (tile: ITile) => body.tileId === tile.id
       )
 
-      const target: Coordinate2D = [
-        match.map.tiles[tileIndex].row,
-        match.map.tiles[tileIndex].col,
+      if (!targetTile) {
+        return false
+      }
+
+      const { coordinates, rotatedClockwise } = body.unitConstellation
+
+      const transformedCoordinates = transformCoordinates(coordinates, {
+        rotatedClockwise,
+      })
+
+      const targetTileCoordinate: Coordinate2D = [
+        targetTile.row,
+        targetTile.col,
       ]
 
-      const positionedCoordinates = positionCoordinatesAt(
-        target,
+      const translatedCoordinates = translateCoordinatesTo(
+        targetTileCoordinate,
         transformedCoordinates
       )
 
-      let canPlace = true
-      for (let i = 0; i < positionedCoordinates.length; i++) {
-        const [row, col] = positionedCoordinates[i]
-        console.log(row, col)
+      const canBePlaced = standardGameRules.placementRules.every((rule) =>
+        rule(translatedCoordinates, match!.map, userId)
+      )
 
-        const tileIndex = match.map.tiles.findIndex(
-          (tile) => tile.row === row && tile.col === col
-        )
-        const isInBounds = tileIndex !== -1
-        const hasUnit = !!match.map.tiles[tileIndex].unit
-        const isPlaceable = isInBounds && !hasUnit
-        if (!isInBounds || !isPlaceable) {
-          canPlace = false
-          break
-        }
-
-        match.map.tiles[tileIndex] = {
-          ...match.map.tiles[tileIndex],
-          unit: { playerId: userId },
-        }
-      }
-
-      if (!canPlace) {
+      if (!canBePlaced) {
         res.status(500).end("At least one tile cannot be placed.")
         break
       }
+
+      for (let i = 0; i < translatedCoordinates.length; i++) {
+        const [row, col] = translatedCoordinates[i]
+        const tileIndex = match.map.tiles.findIndex(
+          (tile) => tile.row === row && tile.col === col
+        )
+        if (tileIndex === -1) {
+          res.status(500).end("Error while placing")
+          break
+        }
+
+        // mongoose saves it only this way *shrug*
+        match.map.tiles[tileIndex] = {
+          ...match.map.tiles[tileIndex],
+          unit: { type: "playerUnit", playerId: userId },
+        }
+      }
+
       const activePlayer = match.players.find(
         (playerId) => playerId !== match!.activePlayer
       )
-
       if (!activePlayer) {
         res.status(500).end("Error while changing turns")
         break
