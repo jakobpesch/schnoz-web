@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next"
-import { IMap } from "../../../../models/Map.model"
+import { defaultGame } from "../../../../gameLogic/GameVariants"
 import Match, { IMatch, IMatchDoc } from "../../../../models/Match.model"
 import { ITile } from "../../../../models/Tile.model"
 import { Coordinate2D } from "../../../../models/UnitConstellation.model"
@@ -8,55 +8,10 @@ import {
   positionCoordinatesAt as translateCoordinatesTo,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
-import {
-  getAdjacentCoordinatesOfConstellation,
-  isEqual,
-} from "../../../../utils/coordinateUtils"
 
 export type MatchStatus = "created" | "started" | "finished"
 
 const increment = (x: number) => x + 1
-
-const inBounds: PlacementRule = (constellation, map) =>
-  constellation.every(
-    ([row, col]) =>
-      row >= 0 && col >= 0 && row < map.rowCount && col < map.columnCount
-  )
-
-type PlacementRule = (
-  constellation: Coordinate2D[],
-  map: IMap,
-  playerId: string
-) => boolean
-
-const noUnit: PlacementRule = (constellation, map) => {
-  const hasUnit = constellation.some(
-    ([row, col]) =>
-      !!map.tiles.find((tile) => tile.row === row && tile.col === col)?.unit
-  )
-  return !hasUnit
-}
-
-const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
-  const adjacentCoordinates =
-    getAdjacentCoordinatesOfConstellation(constellation)
-
-  const adjacentTiles = adjacentCoordinates
-    .map((coordinate) =>
-      map.tiles.find((tile) => isEqual([tile.row, tile.col], coordinate))
-    )
-    .filter((tile): tile is ITile => !!tile)
-
-  const isAdjacentToAlly = adjacentTiles.some(
-    (tile) =>
-      tile.unit?.playerId === playerId || tile.unit?.type === "mainBuilding"
-  )
-  return isAdjacentToAlly
-}
-
-const standardGameRules = {
-  placementRules: [inBounds, noUnit, adjacentToAlly],
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -115,7 +70,7 @@ export default async function handler(
         transformedCoordinates
       )
 
-      const canBePlaced = standardGameRules.placementRules.every((rule) =>
+      const canBePlaced = defaultGame.placementRules.every((rule) =>
         rule(translatedCoordinates, match!.map, userId)
       )
 
