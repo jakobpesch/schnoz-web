@@ -60,6 +60,7 @@ const MapView = (props: MapProps) => {
     onTileClick,
     userId,
   } = props
+
   const [hoveringTile, setHoveringTile] = useState<Coordinate2D | null>(null)
   const [rotationCount, setRotationCount] =
     useState<IUnitConstellation["rotatedClockwise"]>(0)
@@ -128,6 +129,7 @@ const MapView = (props: MapProps) => {
                 id={tile.id}
                 key={tile.id}
                 unit={tile.unit}
+                terrain={tile.terrain}
                 cursor={hoveringTile ? "none" : "default"}
                 borderRadius={
                   tile.unit?.type === "playerUnit" ? "xl" : undefined

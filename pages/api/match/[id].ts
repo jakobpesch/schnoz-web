@@ -4,20 +4,52 @@ import Match, { IMatchDoc } from "../../../models/Match.model"
 import Map from "../../../models/Map.model"
 import Tile, { ITile } from "../../../models/Tile.model"
 import connectDb from "../../../services/MongoService"
-import mongoose from "mongoose"
+import { Terrain } from "../../../models/Terrain.model"
 
+const getRandomTerrain = () => {
+  const nullProbability = 10
+  const waterProbability = 3
+  const treeProbability = 3
+  const stoneProbability = 1
+
+  const probabilityArray = [
+    ...Array(nullProbability).fill(null),
+    ...Array(waterProbability).fill(Terrain.water),
+    ...Array(treeProbability).fill(Terrain.tree),
+    ...Array(stoneProbability).fill(Terrain.stone),
+  ]
+
+  const randomNumber = Math.random()
+  const threshold = 1 / probabilityArray.length
+  for (let i = 0; i < probabilityArray.length; i++) {
+    if (randomNumber < i * threshold) {
+      return probabilityArray[i]
+    }
+  }
+  return null
+}
 const initialiseMap = (rowCount: number, columnCount: number) => {
+  const safeArea = 5
   const rowIndices = [...Array(rowCount).keys()]
   const columnIndices = [...Array(columnCount).keys()]
   const tiles = [] as any
   rowIndices.forEach((row) => {
     columnIndices.forEach((col) => {
       const id = `${row}_${col}`
+      const centerCoordinate = [
+        Math.floor(rowCount / 2),
+        Math.floor(columnCount / 2),
+      ]
       const tilePayload: ITile = { id, row, col }
       if (
-        row === Math.floor(rowCount / 2) &&
-        col === Math.floor(columnCount / 2)
+        Math.sqrt(
+          (row - centerCoordinate[0]) ** 2 + (col - centerCoordinate[1]) ** 2
+        ) > safeArea
       ) {
+        tilePayload.terrain = getRandomTerrain()
+      }
+
+      if (centerCoordinate[0] === row && centerCoordinate[1] === col) {
         tilePayload.unit = {
           type: "mainBuilding",
         }
@@ -26,6 +58,7 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
       tiles.push(new Tile(tilePayload))
     })
   })
+
   return new Map({ rowCount, columnCount, tiles })
 }
 const checkConditionsForCreation = (
