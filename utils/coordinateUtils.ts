@@ -1,5 +1,23 @@
+import { ITile } from "../models/Tile.model"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { addCoordinates } from "./constallationTransformer"
+
+export const buildTileId = (coordinate: Coordinate2D) => {
+  return `${coordinate[0]}_${coordinate[1]}`
+}
+
+export interface TileLookup {
+  [tileId: string]: ITile
+}
+
+export const getTileLookup = (tiles: ITile[]) => {
+  return tiles.reduce<TileLookup>((acc, cur) => {
+    return {
+      ...acc,
+      [cur.id]: cur,
+    }
+  }, {})
+}
 
 export const includes = (
   coordinates: Coordinate2D[],

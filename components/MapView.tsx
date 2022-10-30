@@ -35,7 +35,7 @@ const getBackgroundColor = (
   return (row + column) % 2 === 0 ? "gray.700" : "gray.800"
 }
 
-const getPlayerColor = (players: string[], player: string) => {
+export const getPlayerColor = (players: string[], player: string) => {
   if (player === players[0]) {
     return "red.300"
   } else {
@@ -109,10 +109,10 @@ const MapView = (props: MapProps) => {
           height={mapHeight + "px"}
           position="relative"
         >
-          {hoveredTiles.map(([row, col]) => {
+          {hoveredTiles.map(([row, col], index) => {
             return (
               <TileView
-                key={"highlight_" + row + "_" + col}
+                key={"highlight_" + row + "_" + col + "_" + index}
                 position="absolute"
                 top={row * RenderSettings.tileSize + "px"}
                 left={col * RenderSettings.tileSize + "px"}

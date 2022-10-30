@@ -8,6 +8,7 @@ import {
   positionCoordinatesAt as translateCoordinatesTo,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
+import { getTileLookup } from "../../../../utils/coordinateUtils"
 
 export type MatchStatus = "created" | "started" | "finished"
 
@@ -45,6 +46,8 @@ export default async function handler(
         res.status(500).end("It's not your turn")
         break
       }
+
+      const tileLookup = getTileLookup(match.map.tiles)
 
       let targetTile = match.map.tiles.find(
         (tile: ITile) => body.tileId === tile.id
@@ -94,6 +97,23 @@ export default async function handler(
           ...match.map.tiles[tileIndex],
           unit: { type: "playerUnit", playerId: userId },
         }
+      }
+      const scoreIndex = match.scores.findIndex(
+        (score) => score.playerId === match!.activePlayer
+      )
+
+      const prevScore = match.scores[scoreIndex].score
+
+      const newScore =
+        prevScore +
+        defaultGame.scoringRules.reduce((totalScore, rule) => {
+          const ruleScore = rule(translatedCoordinates, tileLookup)
+          return totalScore + ruleScore
+        }, 0)
+
+      match.scores[scoreIndex] = {
+        ...match.scores[scoreIndex],
+        score: newScore,
       }
 
       const activePlayer = match.players.find(

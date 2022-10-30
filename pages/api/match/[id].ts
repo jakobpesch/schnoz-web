@@ -1,6 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 import Match, { IMatchDoc } from "../../../models/Match.model"
+import Score from "../../../models/Score.model"
 import Map from "../../../models/Map.model"
 import Tile, { ITile } from "../../../models/Tile.model"
 import connectDb from "../../../services/MongoService"
@@ -29,7 +30,7 @@ const getRandomTerrain = () => {
   return null
 }
 const initialiseMap = (rowCount: number, columnCount: number) => {
-  const safeArea = 5
+  const safeArea = 3
   const rowIndices = [...Array(rowCount).keys()]
   const columnIndices = [...Array(columnCount).keys()]
   const tiles = [] as any
@@ -141,6 +142,15 @@ export default async function handler(
           }
 
           match.status = "started"
+
+          const scores = match.players.map((player) => {
+            return new Score({
+              playerId: player,
+              score: 0,
+            })
+          })
+          match.scores = scores
+
           match.map = initialiseMap(
             body.settings.rowCount,
             body.settings.columnCount

@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import MapView from "../../components/MapView"
+import { ScoreView } from "../../components/ScoreView"
 import { IMatchDoc } from "../../models/Match.model"
 import { ITile } from "../../models/Tile.model"
 import {
@@ -310,10 +311,6 @@ const MatchView = () => {
   return (
     <Container height="100vh" color="white">
       <Center height="full">
-        <Text position="fixed" bottom="4" right="4">
-          {status}
-        </Text>
-
         {match.status === "created" && <PreMatchView />}
 
         {match.status === "started" && (
@@ -333,9 +330,6 @@ const MatchView = () => {
                 const selected =
                   JSON.stringify(constellation) ===
                   JSON.stringify(selectedConstellation)
-                const selectedBackgroundColor = selected
-                  ? { background: "green" }
-                  : {}
                 return (
                   <UnitConstellationView
                     key={"unitConstellationView " + constellation}
@@ -357,6 +351,11 @@ const MatchView = () => {
         )}
 
         {match.status === "finished" && <PostMatchView />}
+
+        <Text position="fixed" bottom="4" right="4">
+          {status}
+        </Text>
+        <ScoreView players={match.players} scores={match.scores} />
       </Center>
     </Container>
   )
