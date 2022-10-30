@@ -1,4 +1,5 @@
-import { Box, Center, Text } from "@chakra-ui/react"
+import { Box, Center, Text, theme } from "@chakra-ui/react"
+import { getColor } from "@chakra-ui/theme-tools"
 import Mousetrap from "mousetrap"
 import { useEffect, useState } from "react"
 import { IMap } from "../models/Map.model"
@@ -32,7 +33,7 @@ const getBackgroundColor = (
   if (yourTurn && includes(placeableCoordinates, [row, column])) {
     return "gray.500"
   }
-  return (row + column) % 2 === 0 ? "gray.700" : "gray.800"
+  return (row + column) % 2 === 0 ? "gray.800" : "gray.800"
 }
 
 export const getPlayerColor = (players: string[], player: string) => {
@@ -68,13 +69,13 @@ const MapView = (props: MapProps) => {
   const mapWidth = RenderSettings.tileSize * map.rowCount
   const mapHeight = RenderSettings.tileSize * map.columnCount
 
-  let hoveredTiles: Coordinate2D[] = []
+  let hoveredCoordinates: Coordinate2D[] = []
   if (selectedConstellation && hoveringTile) {
     const transformed = transformCoordinates(selectedConstellation, {
       rotatedClockwise: rotationCount,
     })
     const translated = positionCoordinatesAt(hoveringTile, transformed)
-    hoveredTiles = translated
+    hoveredCoordinates = translated
   }
 
   useEffect(() => {
@@ -104,22 +105,28 @@ const MapView = (props: MapProps) => {
           overflow="hidden"
           display="flex"
           flexWrap="wrap"
-          boxShadow="0 0 0px 10px #555555"
+          boxShadow={
+            "0 0 0px 10px " +
+            getColor(theme, getPlayerColor(players, activePlayer))
+          }
           width={mapWidth + "px"}
           height={mapHeight + "px"}
           position="relative"
+          onMouseLeave={() => setHoveringTile(null)}
         >
-          {hoveredTiles.map(([row, col], index) => {
+          {hoveredCoordinates.map(([row, col], index) => {
             return (
               <TileView
                 key={"highlight_" + row + "_" + col + "_" + index}
                 position="absolute"
                 top={row * RenderSettings.tileSize + "px"}
                 left={col * RenderSettings.tileSize + "px"}
-                background={getPlayerColor(players, userId)}
+                background={
+                  yourTurn ? getPlayerColor(players, userId) : "gray.500"
+                }
                 borderRadius="xl"
                 pointerEvents="none"
-                boxShadow={"0 0 0 4px inset white "}
+                boxShadow={yourTurn ? "0 0 0 4px inset white" : "unset"}
               />
             )
           })}
@@ -156,9 +163,6 @@ const MapView = (props: MapProps) => {
                     .split("_")
                     .map((value) => parseInt(value)) as Coordinate2D
                   setHoveringTile(coordinate)
-                }}
-                onMouseLeave={(e) => {
-                  setHoveringTile(null)
                 }}
               />
             )
