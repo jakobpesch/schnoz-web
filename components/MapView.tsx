@@ -14,7 +14,9 @@ import {
   transformCoordinates,
 } from "../utils/constallationTransformer"
 import {
+  buildTileId,
   getAdjacentCoordinatesOfConstellation,
+  getTileLookup,
   includes,
 } from "../utils/coordinateUtils"
 import TileView from "./TileView"
@@ -31,9 +33,9 @@ const getBackgroundColor = (
     return getPlayerColor(players, player)
   }
   if (yourTurn && includes(placeableCoordinates, [row, column])) {
-    return "gray.500"
+    return "green.900"
   }
-  return (row + column) % 2 === 0 ? "gray.800" : "gray.800"
+  return "unset"
 }
 
 export const getPlayerColor = (players: string[], player: string) => {
@@ -61,7 +63,7 @@ const MapView = (props: MapProps) => {
     onTileClick,
     userId,
   } = props
-
+  const tileLookup = getTileLookup(map.tiles)
   const [hoveringTile, setHoveringTile] = useState<Coordinate2D | null>(null)
   const [rotationCount, setRotationCount] =
     useState<IUnitConstellation["rotatedClockwise"]>(0)
@@ -95,7 +97,11 @@ const MapView = (props: MapProps) => {
   )
   const placeableCoordinates = getAdjacentCoordinatesOfConstellation(
     alliedTiles.map((tile) => [tile.row, tile.col])
-  )
+  ).filter((coordinate) => {
+    const hasTerrain = tileLookup[buildTileId(coordinate)]?.terrain ?? false
+    const hasUnit = tileLookup[buildTileId(coordinate)]?.unit ?? false
+    return !hasTerrain && !hasUnit
+  })
 
   return (
     <>
@@ -114,22 +120,6 @@ const MapView = (props: MapProps) => {
           position="relative"
           onMouseLeave={() => setHoveringTile(null)}
         >
-          {hoveredCoordinates.map(([row, col], index) => {
-            return (
-              <TileView
-                key={"highlight_" + row + "_" + col + "_" + index}
-                position="absolute"
-                top={row * RenderSettings.tileSize + "px"}
-                left={col * RenderSettings.tileSize + "px"}
-                background={
-                  yourTurn ? getPlayerColor(players, userId) : "gray.500"
-                }
-                borderRadius="xl"
-                pointerEvents="none"
-                boxShadow={yourTurn ? "0 0 0 4px inset white" : "unset"}
-              />
-            )
-          })}
           {map.tiles.map((tile) => {
             return (
               <TileView
@@ -137,9 +127,11 @@ const MapView = (props: MapProps) => {
                 key={tile.id}
                 unit={tile.unit}
                 terrain={tile.terrain}
-                cursor={hoveringTile ? "none" : "default"}
+                cursor={
+                  selectedConstellation && hoveringTile ? "none" : "default"
+                }
                 borderRadius={
-                  tile.unit?.type === "playerUnit" ? "xl" : undefined
+                  tile.unit?.type === "playerUnit" ? "md" : undefined
                 }
                 background={getBackgroundColor(
                   tile.row,
@@ -167,11 +159,25 @@ const MapView = (props: MapProps) => {
               />
             )
           })}
+          {hoveredCoordinates.map(([row, col], index) => {
+            return (
+              <TileView
+                key={"highlight_" + row + "_" + col + "_" + index}
+                position="absolute"
+                zIndex={1}
+                top={row * RenderSettings.tileSize + "px"}
+                left={col * RenderSettings.tileSize + "px"}
+                background={
+                  yourTurn ? getPlayerColor(players, userId) : "gray.500"
+                }
+                borderRadius="xl"
+                pointerEvents="none"
+                opacity={0.7}
+              />
+            )
+          })}
         </Box>
       </Center>
-      <Text p="4" position="fixed" top="0" left="0">
-        {yourTurn ? "Your turn" : "Opponents turn"}
-      </Text>
     </>
   )
 }

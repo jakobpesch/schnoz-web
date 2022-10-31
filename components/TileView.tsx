@@ -16,21 +16,22 @@ const TileView = (props: TileProps) => {
   let terrain = null
 
   if (props.terrain === Terrain.water) {
-    terrain = "🔷"
+    terrain = "🧿"
   }
   if (props.terrain === Terrain.tree) {
     terrain = "🌳"
   }
   if (props.terrain === Terrain.stone) {
-    terrain = "🗿"
+    terrain = "⚪️"
   }
+  const size = RenderSettings.tileSize + "px"
   return (
     <Box
       display="flex"
       justifyContent="center"
       alignItems="center"
-      width={RenderSettings.tileSize + "px"}
-      height={RenderSettings.tileSize + "px"}
+      width={size}
+      height={size}
       {...props}
     >
       {unit && <Heading>{unit}</Heading>}

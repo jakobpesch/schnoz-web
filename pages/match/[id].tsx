@@ -58,7 +58,10 @@ export const UnitConstellationView = (props: UnitConstellationViewProps) => {
   const padding = 8
   const containerSize =
     tileSize *
-      (Math.max(...coordinates.map(([row, col]) => Math.max(row, col))) + 1) +
+      Math.max(
+        3,
+        Math.max(...coordinates.map(([row, col]) => Math.max(row, col))) + 1
+      ) +
     2 * padding +
     "px"
 
@@ -139,7 +142,7 @@ const MatchView = () => {
   })
   const [selectedConstellation, setSelectedConstellation] = useState<
     Coordinate2D[] | null
-  >(availableConstellations[0])
+  >(null)
   let userId: string | null = null
   try {
     userId = getCookie("userId")
@@ -200,12 +203,15 @@ const MatchView = () => {
     }
     try {
       setMatch(await makeMove(match._id, tileId, userId, unitConstellation))
+      setSelectedConstellation(null)
       setStatus("Placed unit on tile " + tileId)
     } catch (e: any) {
       setStatus(e.message)
       console.log(e.message)
     }
   }
+
+  const yourTurn = userId === match.activePlayer
 
   const GameSettingsView = () => {
     return (
@@ -314,44 +320,50 @@ const MatchView = () => {
         {match.status === "created" && <PreMatchView />}
 
         {match.status === "started" && (
-          <VStack spacing="10">
-            <MapView
-              selectedConstellation={selectedConstellation}
-              players={match.players}
-              userId={userId}
-              onTileClick={(tileId, unitConstellation) => {
-                onTileClick(tileId, unitConstellation)
-              }}
-              activePlayer={match.activePlayer}
-              map={match.map}
-            />
-            <HStack>
-              {availableConstellations.map((constellation) => {
-                const selected =
-                  JSON.stringify(constellation) ===
-                  JSON.stringify(selectedConstellation)
-                return (
-                  <UnitConstellationView
-                    key={"unitConstellationView " + constellation}
-                    // {...selectedBackgroundColor}
-                    boxShadow={selected ? "0 0 0 3px white" : undefined}
-                    _hover={
-                      !selected
-                        ? { boxShadow: "0 0 0 3px darkgray" }
-                        : undefined
-                    }
-                    coordinates={constellation}
-                    tileSize={20}
-                    onClick={() => setSelectedConstellation(constellation)}
-                  />
-                )
-              })}
-            </HStack>
-          </VStack>
+          <MapView
+            selectedConstellation={selectedConstellation}
+            players={match.players}
+            userId={userId}
+            onTileClick={(tileId, unitConstellation) => {
+              onTileClick(tileId, unitConstellation)
+            }}
+            activePlayer={match.activePlayer}
+            map={match.map}
+          />
         )}
 
         {match.status === "finished" && <PostMatchView />}
-
+        <HStack
+          position="fixed"
+          bottom="0"
+          p="4"
+          m="4"
+          bg="gray.700"
+          borderRadius="lg"
+          borderWidth="1px"
+        >
+          {availableConstellations.map((constellation) => {
+            const selected =
+              JSON.stringify(constellation) ===
+              JSON.stringify(selectedConstellation)
+            return (
+              <UnitConstellationView
+                key={"unitConstellationView " + constellation}
+                // {...selectedBackgroundColor}
+                boxShadow={selected ? "0 0 0 3px white" : undefined}
+                _hover={
+                  !selected ? { boxShadow: "0 0 0 3px darkgray" } : undefined
+                }
+                coordinates={constellation}
+                tileSize={20}
+                onClick={() => setSelectedConstellation(constellation)}
+              />
+            )
+          })}
+        </HStack>
+        <Text p="4" position="fixed" top="0" left="0">
+          {yourTurn ? "Your turn" : "Opponents turn"}
+        </Text>
         <Text position="fixed" bottom="4" right="4">
           {status}
         </Text>
