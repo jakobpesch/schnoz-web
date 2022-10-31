@@ -110,11 +110,9 @@ const MapView = (props: MapProps) => {
           overflow="hidden"
           display="flex"
           flexWrap="wrap"
-          boxShadow={
-            "0 0 0px 10px " + activePlayer === players[0]
-              ? "#FC8181"
-              : "#63B3ED"
-          }
+          boxShadow={`0 0 0px 10px ${
+            activePlayer === players[0] ? "#FC8181" : "#63B3ED"
+          }`}
           width={mapWidth + "px"}
           height={mapHeight + "px"}
           position="relative"
