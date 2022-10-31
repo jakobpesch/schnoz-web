@@ -1,5 +1,4 @@
-import { Box, Center, Text, theme } from "@chakra-ui/react"
-import { getColor } from "@chakra-ui/theme-tools"
+import { Box, Center } from "@chakra-ui/react"
 import Mousetrap from "mousetrap"
 import { useEffect, useState } from "react"
 import { IMap } from "../models/Map.model"
@@ -112,8 +111,9 @@ const MapView = (props: MapProps) => {
           display="flex"
           flexWrap="wrap"
           boxShadow={
-            "0 0 0px 10px " +
-            getColor(theme, getPlayerColor(players, activePlayer))
+            "0 0 0px 10px " + activePlayer === players[0]
+              ? "#FC8181"
+              : "#63B3ED"
           }
           width={mapWidth + "px"}
           height={mapHeight + "px"}
