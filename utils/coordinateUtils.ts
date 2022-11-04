@@ -6,6 +6,10 @@ export const buildTileId = (coordinate: Coordinate2D) => {
   return `${coordinate[0]}_${coordinate[1]}`
 }
 
+export const coordinateFromTileId = (tileId: ITile["id"]) => {
+  return tileId.split("_").map((x) => parseInt(x)) as Coordinate2D
+}
+
 export interface TileLookup {
   [tileId: string]: ITile
 }

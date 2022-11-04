@@ -5,16 +5,19 @@ import {
   ButtonGroup,
   Center,
   Container,
+  Flex,
   Heading,
   HStack,
   Text,
   VStack,
 } from "@chakra-ui/react"
+import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
-import { useEffect, useState } from "react"
-import MapView from "../../components/MapView"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { MapContainer } from "../../components/MapContainer"
 import { ScoreView } from "../../components/ScoreView"
 import { IMatchDoc } from "../../models/Match.model"
+import { Terrain } from "../../models/Terrain.model"
 import { ITile } from "../../models/Tile.model"
 import {
   Coordinate2D,
@@ -22,11 +25,17 @@ import {
 } from "../../models/UnitConstellation.model"
 import { getCookie } from "../../services/CookieService"
 import {
+  checkForMatchUpdates,
   getMatch,
   makeMove,
   startGame,
 } from "../../services/GameManagerService"
 import { RenderSettings } from "../../services/SettingsService"
+import {
+  positionCoordinatesAt,
+  transformCoordinates,
+} from "../../utils/constallationTransformer"
+import { buildTileId, getTileLookup } from "../../utils/coordinateUtils"
 
 const FollowMouse = (props: BoxProps) => {
   const [mousePosition, setMousePosition] = useState([0, 0])
@@ -45,6 +54,16 @@ const FollowMouse = (props: BoxProps) => {
       {...props}
     />
   )
+}
+
+const mousePositionToMapCoordinates = (
+  mouseX: number,
+  mouseY: number,
+  tileSizeInPx: number
+) => {
+  const row = Math.floor(mouseX / tileSizeInPx)
+  const col = Math.floor(mouseY / tileSizeInPx)
+  return [row, col] as Coordinate2D
 }
 
 interface UnitConstellationViewProps extends BoxProps {
@@ -134,21 +153,266 @@ const availableConstellations: Coordinate2D[][] = [
   ],
 ]
 
+const MapTerrains = (props: { terrainTiles: ITile[] }) => {
+  let terrain = ""
+  return (
+    <>
+      {props.terrainTiles.map((tile) => {
+        if (tile.terrain === Terrain.water) {
+          terrain = "🧿"
+        }
+        if (tile.terrain === Terrain.tree) {
+          terrain = "🌳"
+        }
+        if (tile.terrain === Terrain.stone) {
+          terrain = "⚪️"
+        }
+        return (
+          <Flex
+            key={tile.row + "_" + tile.col}
+            position="absolute"
+            align="center"
+            justify="center"
+            top={tile.row * RenderSettings.tileSize + "px"}
+            left={tile.col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            pointerEvents="none"
+          >
+            <Heading>{terrain}</Heading>
+          </Flex>
+        )
+      })}
+    </>
+  )
+}
+
+const MapUnits = (props: { match: IMatchDoc; unitTiles: ITile[] }) => {
+  return (
+    <>
+      {props.unitTiles.map((tile) => {
+        let unit = ""
+        let background = ""
+        if (tile.unit?.playerId === props.match.players[0]) {
+          unit = "🦁"
+          background = "orange.900"
+        } else if (tile.unit?.playerId === props.match.players[1]) {
+          unit = "🐵"
+          background = "teal.900"
+        } else {
+          unit = "🛖"
+          background = "gray.700"
+        }
+
+        return (
+          <Flex
+            key={tile.row + "_" + tile.col}
+            position="absolute"
+            align="center"
+            justify="center"
+            top={tile.row * RenderSettings.tileSize + "px"}
+            left={tile.col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            pointerEvents="none"
+            bg={background}
+          >
+            <Heading>{unit}</Heading>
+          </Flex>
+        )
+      })}
+    </>
+  )
+}
+
+const MapHighlights = (props: {
+  match: IMatchDoc
+  hoveringCoordinate: Coordinate2D | null
+  constellation: Coordinate2D[]
+  onTileClick: (
+    tileId: ITile["id"],
+    rotatedClockwise: IUnitConstellation["rotatedClockwise"]
+  ) => void
+}) => {
+  const [hoveredCoordinate, setHoveredCoordinate] =
+    useState<Coordinate2D | null>(null)
+  const [rotatedClockwise, setRotationCount] =
+    useState<IUnitConstellation["rotatedClockwise"]>(0)
+
+  const mapContainerElement = document.getElementById("map-container")
+  const bounds = mapContainerElement?.getBoundingClientRect()
+
+  useEffect(() => {
+    const rotate = () => {
+      const correctedRotationCount = (
+        rotatedClockwise === 3 ? 0 : rotatedClockwise + 1
+      ) as IUnitConstellation["rotatedClockwise"]
+
+      setRotationCount(correctedRotationCount)
+    }
+    Mousetrap.bind("r", rotate)
+  })
+
+  document.onmousemove = (event: MouseEvent) => {
+    if (!bounds) {
+      return
+    }
+    const coordinate = mousePositionToMapCoordinates(
+      event.clientY - bounds.top,
+      event.clientX - bounds.left,
+      RenderSettings.tileSize
+    )
+
+    setHoveredCoordinate(coordinate)
+  }
+
+  const hoveredCoordinates = useMemo(() => {
+    if (props.constellation && hoveredCoordinate) {
+      const transformed = transformCoordinates(props.constellation, {
+        rotatedClockwise,
+      })
+      const translated = positionCoordinatesAt(hoveredCoordinate, transformed)
+
+      return translated
+    }
+    return []
+  }, [hoveredCoordinate, rotatedClockwise])
+
+  return (
+    <>
+      {hoveredCoordinates.map(([row, col]) => {
+        return (
+          <Flex
+            key={row + "_" + col}
+            position="absolute"
+            zIndex={1}
+            align="center"
+            justify="center"
+            top={row * RenderSettings.tileSize + "px"}
+            left={col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            bg={"gray"}
+            opacity={0.4}
+            onClick={() =>
+              props.onTileClick(buildTileId([row, col]), rotatedClockwise)
+            }
+          />
+        )
+      })}
+    </>
+  )
+}
+
+const MapGrid = (props: {
+  match: IMatchDoc
+  onTileClick: (tileId: ITile["id"]) => void
+}) => {
+  return (
+    <>
+      {props.match.map.tiles.map((tile) => {
+        return (
+          <Flex
+            key={tile.row + "_" + tile.col}
+            position="absolute"
+            align="center"
+            justify="center"
+            top={tile.row * RenderSettings.tileSize + "px"}
+            left={tile.col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            onClick={() => {
+              props.onTileClick(tile.id)
+            }}
+          />
+        )
+      })}
+    </>
+  )
+}
+
 const MatchView = () => {
   const router = useRouter()
   const [status, setStatus] = useState("")
   const [settings, setSettings] = useState({
     mapSize: 11,
   })
+
+  const [match, setMatch] = useState<IMatchDoc | null>(null)
   const [selectedConstellation, setSelectedConstellation] = useState<
     Coordinate2D[] | null
-  >(null)
+  >(availableConstellations[3])
+  const hoveringCoordinate = useRef<Coordinate2D | null>(null)
+
+  const terrainTiles = useMemo(() => {
+    return match?.map?.tiles.filter((tile) => tile.terrain)
+  }, [match?.updatedAt])
+
+  const unitTiles = useMemo(() => {
+    return match?.map?.tiles.filter((tile) => tile.unit)
+  }, [match?.updatedAt])
+
+  const tileLookup = useMemo(() => {
+    return getTileLookup(match?.map?.tiles ?? [])
+  }, [match?.updatedAt])
+
+  const changeInHover = hoveringCoordinate.current?.toString()
+  const changeInSelected = selectedConstellation?.toString()
+  // const changeInRotation = rotationCount?.toString()
+
+  // const hoveredCoordinates = useMemo(() => {
+  //   if (selectedConstellation && hoveringCoordinate.current) {
+  //     const transformed = transformCoordinates(selectedConstellation, {
+  //       rotatedClockwise: rotationCount,
+  //     })
+  //     const translated = positionCoordinatesAt(
+  //       hoveringCoordinate.current,
+  //       transformed
+  //     )
+
+  //     return translated
+  //   }
+  //   return []
+  // }, [changeInHover, changeInSelected])
+
+  // const onClick = useCallback(() => {
+  //   if (selectedConstellation && hoveringCoordinate.current) {
+  //     onTileClick(buildTileId(hoveringCoordinate.current), {
+  //       coordinates: selectedConstellation,
+  //       rotatedClockwise: rotationCount,
+  //     })
+  //   }
+  // }, [changeInRotation])
+
+  const onMouseEnter = useCallback(
+    (e: any) => {
+      const tileId = e.target.id as ITile["id"]
+      const coordinate = tileId
+        .split("_")
+        .map((value) => parseInt(value)) as Coordinate2D
+      hoveringCoordinate.current = coordinate
+    },
+    [match?.updatedAt]
+  )
+
+  // const cursor = useMemo(
+  //   () => (selectedConstellation && hoveringCoordinate.current ? "none" : "default"),
+  //   [changeInHover, changeInSelected]
+  // )
+
+  // const onTileHover = useCallback((e: any) => {
+  //   const tileId = e.target.id as ITile["id"]
+  //   const coordinate = tileId
+  //     .split("_")
+  //     .map((value) => parseInt(value)) as Coordinate2D
+  //   setHoveringCoordinate(coordinate)
+  // }, [])
+
   let userId: string | null = null
   try {
     userId = getCookie("userId")
   } catch {}
 
-  const [match, setMatch] = useState<IMatchDoc | null>(null)
   const fetchMatch = async (matchId: string) => {
     try {
       const match = await getMatch(matchId)
@@ -157,37 +421,43 @@ const MatchView = () => {
       console.log(e.message)
     }
   }
+
+  const checkForUpdates = async (match: IMatchDoc) => {
+    const updatedMatch = await checkForMatchUpdates(match._id, match.updatedAt)
+
+    if (updatedMatch) {
+      setMatch(updatedMatch)
+    }
+  }
+
   useEffect(() => {
     const matchId = window.location.pathname.split("/").pop()
-    if (!matchId) {
-      return
-    }
-    fetchMatch(matchId)
-    const interval = setInterval(() => {
+    if (matchId) {
       fetchMatch(matchId)
-    }, 1000)
-    return () => {
-      clearInterval(interval)
     }
   }, [])
 
-  if (!userId) {
-    return null
-  }
-
-  if (!match) {
-    return null
-  }
+  useEffect(() => {
+    let interval: NodeJS.Timer
+    if (match) {
+      interval = setInterval(() => {
+        checkForUpdates(match)
+      }, 1000)
+    }
+    return () => {
+      clearInterval(interval)
+    }
+  }, [match])
 
   const allPlayersJoined =
-    match.players.filter((player: string | null) => player !== null).length ===
+    match?.players.filter((player: string | null) => player !== null).length ===
     2
 
   const onStartGameClick = async () => {
     if (!userId) {
       return
     }
-    setMatch(await startGame(match._id, userId, settings.mapSize))
+    setMatch(await startGame(match?._id, userId, settings.mapSize))
   }
 
   const onBackToMenuClick = async () => {
@@ -196,13 +466,24 @@ const MatchView = () => {
 
   const onTileClick = async (
     tileId: ITile["id"],
-    unitConstellation: IUnitConstellation
+    rotatedClockwise: IUnitConstellation["rotatedClockwise"]
   ) => {
+    console.log(tileId, rotatedClockwise)
+
     if (!userId) {
       return
     }
+
+    if (!selectedConstellation) {
+      return
+    }
+
+    const unitConstellation: IUnitConstellation = {
+      coordinates: selectedConstellation,
+      rotatedClockwise,
+    }
     try {
-      setMatch(await makeMove(match._id, tileId, userId, unitConstellation))
+      setMatch(await makeMove(match?._id, tileId, userId, unitConstellation))
       setSelectedConstellation(null)
       setStatus("Placed unit on tile " + tileId)
     } catch (e: any) {
@@ -211,7 +492,7 @@ const MatchView = () => {
     }
   }
 
-  const yourTurn = userId === match.activePlayer
+  const yourTurn = userId === match?.activePlayer
 
   const GameSettingsView = () => {
     return (
@@ -253,7 +534,7 @@ const MatchView = () => {
     return (
       <VStack spacing="8">
         <Heading>Not Started</Heading>
-        {userId !== match.createdBy ? (
+        {userId !== match?.createdBy ? (
           <Text>Waiting for creator to start the game</Text>
         ) : (
           <>
@@ -269,13 +550,13 @@ const MatchView = () => {
         )}
 
         <VStack>
-          <Text>{match.players[0].slice(-5)}</Text>
-          <Text fontStyle={!match.players[1] ? "italic" : "normal"}>
-            {match.players[1] ? match.players[1].slice(-5) : "Empty..."}
+          <Text>{match?.players[0].slice(-5)}</Text>
+          <Text fontStyle={!match?.players[1] ? "italic" : "normal"}>
+            {match?.players[1] ? match?.players[1].slice(-5) : "Empty..."}
           </Text>
         </VStack>
 
-        {userId === match.createdBy && (
+        {userId === match?.createdBy && (
           <Button
             size="lg"
             colorScheme="blue"
@@ -314,22 +595,40 @@ const MatchView = () => {
     )
   }
 
+  if (!userId) {
+    return null
+  }
+
+  if (!match) {
+    return null
+  }
+
   return (
     <Container height="100vh" color="white">
       <Center height="full">
         {match.status === "created" && <PreMatchView />}
-
         {match.status === "started" && (
-          <MapView
-            selectedConstellation={selectedConstellation}
-            players={match.players}
-            userId={userId}
-            onTileClick={(tileId, unitConstellation) => {
-              onTileClick(tileId, unitConstellation)
-            }}
-            activePlayer={match.activePlayer}
-            map={match.map}
-          />
+          <MapContainer id="map-container" match={match}>
+            {/* {match && <MapGrid match={match} onTileClick={onTileClick} />} */}
+            {match && selectedConstellation && (
+              <MapHighlights
+                match={match}
+                hoveringCoordinate={hoveringCoordinate.current}
+                constellation={selectedConstellation}
+                onTileClick={onTileClick}
+              />
+            )}
+            {terrainTiles && <MapTerrains terrainTiles={terrainTiles} />}
+            {unitTiles && <MapUnits match={match} unitTiles={unitTiles} />}
+            {/* <MapView
+              match={match}
+              selectedConstellation={selectedConstellation}
+              userId={userId}
+              onTileClick={onClick}
+              onTileHover={onTileHover}
+            /> */}
+            {/* <HighlightView coordinates={hoveredCoordinates} color={"gray"} /> */}
+          </MapContainer>
         )}
 
         {match.status === "finished" && <PostMatchView />}

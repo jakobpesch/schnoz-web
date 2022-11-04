@@ -7,17 +7,75 @@ import {
 } from "../utils/coordinateUtils"
 
 type ScoringRule = (
+  playerId: string,
   coordinates: Coordinate2D[],
   tileLookup: TileLookup
 ) => number
 
-export const waterRule: ScoringRule = (coordinates, tileLookup) => {
+export const waterRule: ScoringRule = (playerId, coordinates, tileLookup) => {
   const adjacentCoordinates = getAdjacentCoordinatesOfConstellation(coordinates)
-  const adjacentWaterTiles = adjacentCoordinates.filter((coordinate) => {
+  const adjacentWaterCoordinates = adjacentCoordinates.filter((coordinate) => {
     return (
       tileLookup[buildTileId(coordinate)]?.terrain === Terrain.water ?? false
     )
   })
-  const scoredPoints = adjacentWaterTiles.length
+  const scoredPoints = adjacentWaterCoordinates.length
+  return scoredPoints
+}
+
+export const stoneRule: ScoringRule = (playerId, coordinates, tileLookup) => {
+  const adjacentCoordinates = getAdjacentCoordinatesOfConstellation(coordinates)
+
+  const adjacentStoneCoordinates = adjacentCoordinates.filter((coordinate) => {
+    return (
+      tileLookup[buildTileId(coordinate)]?.terrain === Terrain.stone ?? false
+    )
+  })
+  const scoredPoints = -adjacentStoneCoordinates.length
+  return scoredPoints
+}
+
+export const holeRule: ScoringRule = (playerId, coordinates, tileLookup) => {
+  const adjacentCoordinatesOfConstellation =
+    getAdjacentCoordinatesOfConstellation(coordinates)
+
+  const scoredPoints = adjacentCoordinatesOfConstellation.reduce(
+    (score, potentialHoleCoordinate) => {
+      const potentialHoleTile = tileLookup[buildTileId(potentialHoleCoordinate)]
+
+      if (!potentialHoleTile) {
+        return score
+      }
+
+      const isFree = !potentialHoleTile.terrain && !potentialHoleTile.unit
+
+      if (!isFree) {
+        return score
+      }
+
+      const adjacentsToPotentialHole = getAdjacentCoordinatesOfConstellation([
+        potentialHoleCoordinate,
+      ])
+
+      const adjacentTiles = adjacentsToPotentialHole
+        .map((coordinate) => tileLookup[buildTileId(coordinate)] ?? null)
+        .filter((tile) => !!tile)
+
+      const allAlly = adjacentTiles.every((tile) => {
+        const isAlly =
+          tile.unit?.playerId === playerId || tile.unit?.type === "mainBuilding"
+        const hasTerrain = !!tile.terrain
+        return isAlly || hasTerrain
+      })
+
+      if (!allAlly) {
+        return score
+      }
+
+      return score + 1
+    },
+    0
+  )
+
   return scoredPoints
 }

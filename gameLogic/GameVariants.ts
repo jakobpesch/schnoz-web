@@ -1,7 +1,7 @@
 import { inBounds, noUnit, adjacentToAlly, noTerrain } from "./PlacementRule"
-import { waterRule } from "./ScoringRule"
+import { holeRule, stoneRule, waterRule } from "./ScoringRule"
 
 export const defaultGame = {
-  scoringRules: [waterRule],
+  scoringRules: [waterRule, stoneRule, holeRule],
   placementRules: [inBounds, noUnit, noTerrain, adjacentToAlly],
 }

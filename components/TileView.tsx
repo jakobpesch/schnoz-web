@@ -1,11 +1,14 @@
 import { Box, BoxProps, Heading } from "@chakra-ui/react"
+import { useCallback, useEffect } from "react"
 import { Terrain } from "../models/Terrain.model"
 import { IUnit } from "../models/Unit.model"
 import { RenderSettings } from "../services/SettingsService"
 
 interface TileProps extends BoxProps {
+  tileId: string
   unit?: IUnit
   terrain?: Terrain
+  onTileClick?: (tileId: string) => void
 }
 
 const TileView = (props: TileProps) => {
@@ -25,6 +28,10 @@ const TileView = (props: TileProps) => {
     terrain = "⚪️"
   }
   const size = RenderSettings.tileSize + "px"
+  // const onClick = useCallback(() => {
+  //   props.onTileClick(props.tileId)
+  // }, [])
+  const tileClickProps = props.onTileClick ? { onClick: props.onTileClick } : {}
   return (
     <Box
       display="flex"
@@ -33,6 +40,7 @@ const TileView = (props: TileProps) => {
       width={size}
       height={size}
       {...props}
+      // {...tileClickProps}
     >
       {unit && <Heading>{unit}</Heading>}
       {terrain && <Heading>{terrain}</Heading>}

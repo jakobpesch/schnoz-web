@@ -1,3 +1,4 @@
+import { IMatchDoc } from "../models/Match.model"
 import { ITile } from "../models/Tile.model"
 import { IUnitConstellation } from "../models/UnitConstellation.model"
 
@@ -48,7 +49,6 @@ export const startGame = async (
   }
 
   const response = await fetch(BASE_URL + "/match/" + matchId, options)
-  console.log(response.status)
 
   if (response.status !== 200) {
     throw new Error("Failed to start match")
@@ -110,6 +110,24 @@ export const deleteMatch = async (matchId: string, userId: string) => {
   }
 
   return await response.json()
+}
+
+export const checkForMatchUpdates = async (matchId: string, time: any) => {
+  const options = {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  }
+
+  const response = await fetch(
+    BASE_URL + "/match/" + matchId + "/check?time=" + time,
+    options
+  )
+
+  if (response.status === 304) {
+    return null
+  }
+
+  return (await response.json()).match as IMatchDoc
 }
 
 export const getMatch = async (matchId: string) => {

@@ -47,8 +47,6 @@ export default async function handler(
         break
       }
 
-      const tileLookup = getTileLookup(match.map.tiles)
-
       let targetTile = match.map.tiles.find(
         (tile: ITile) => body.tileId === tile.id
       )
@@ -102,12 +100,19 @@ export default async function handler(
         (score) => score.playerId === match!.activePlayer
       )
 
+      const tileLookup = getTileLookup(match.map.tiles)
+
       const prevScore = match.scores[scoreIndex].score
 
       const newScore =
         prevScore +
         defaultGame.scoringRules.reduce((totalScore, rule) => {
-          const ruleScore = rule(translatedCoordinates, tileLookup)
+          const ruleScore = rule(
+            match!.activePlayer,
+            translatedCoordinates,
+            tileLookup
+          )
+
           return totalScore + ruleScore
         }, 0)
 
