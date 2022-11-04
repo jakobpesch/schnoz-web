@@ -558,6 +558,18 @@ const MatchView = () => {
       </>
     )
   }
+  const isPreGame = match?.status === "created"
+
+  const wasCreated =
+    match?.status === "created" ||
+    match?.status === "started" ||
+    match?.status === "finished"
+
+  const wasStarted = match?.status === "started" || match?.status === "finished"
+
+  const isOngoing = match?.status === "started"
+
+  const isFinished = match?.status === "finished"
 
   const PreMatchView = () => {
     return (
@@ -570,20 +582,18 @@ const MatchView = () => {
             {allPlayersJoined ? (
               <Text>Game is full. Ready to start game.</Text>
             ) : (
-              <>
-                <Text color="gray.300">Waiting for other player to join</Text>
-                <GameSettingsView />
-              </>
+              <Text color="gray.300">Waiting for other player to join</Text>
             )}
+            <GameSettingsView />
           </>
         )}
 
-        <VStack>
+        {/* <VStack>
           <Text>{match?.players[0].slice(-5)}</Text>
           <Text fontStyle={!match?.players[1] ? "italic" : "normal"}>
             {match?.players[1] ? match?.players[1].slice(-5) : "Empty..."}
           </Text>
-        </VStack>
+        </VStack> */}
 
         {userId === match?.createdBy && (
           <Button
@@ -594,7 +604,7 @@ const MatchView = () => {
               onStartGameClick()
             }}
           >
-            Start Game
+            {allPlayersJoined ? "Start Game" : "Waiting for opponent..."}
           </Button>
         )}
       </VStack>
@@ -658,8 +668,8 @@ const MatchView = () => {
   return (
     <Container height="100vh" color="white">
       <Center height="full">
-        {match.status === "created" && <PreMatchView />}
-        {match.status === "started" && (
+        {isPreGame && <PreMatchView />}
+        {isOngoing && (
           <MapContainer id="map-container" match={match}>
             {match && selectedConstellation && (
               <MapHighlights
@@ -676,43 +686,48 @@ const MatchView = () => {
             {unitTiles && <MapUnits match={match} unitTiles={unitTiles} />}
           </MapContainer>
         )}
-
-        {match.status === "finished" && <PostMatchView />}
-        <HStack
-          position="fixed"
-          bottom="0"
-          p="4"
-          m="4"
-          bg="gray.700"
-          borderRadius="lg"
-          borderWidth="1px"
-        >
-          {availableConstellations.map((constellation) => {
-            const selected =
-              JSON.stringify(constellation) ===
-              JSON.stringify(selectedConstellation)
-            return (
-              <UnitConstellationView
-                key={"unitConstellationView " + constellation}
-                // {...selectedBackgroundColor}
-                boxShadow={selected ? "0 0 0 3px white" : undefined}
-                _hover={
-                  !selected ? { boxShadow: "0 0 0 3px darkgray" } : undefined
-                }
-                coordinates={constellation}
-                tileSize={20}
-                onClick={() => setSelectedConstellation(constellation)}
-              />
-            )
-          })}
-        </HStack>
-        <Text p="4" position="fixed" top="0" left="0">
-          {yourTurn ? "Your turn" : "Opponents turn"}
-        </Text>
+        {isFinished && <PostMatchView />}
+        {isOngoing && (
+          <>
+            <HStack
+              position="fixed"
+              bottom="0"
+              p="4"
+              m="4"
+              bg="gray.700"
+              borderRadius="lg"
+              borderWidth="1px"
+            >
+              {availableConstellations.map((constellation) => {
+                const selected =
+                  JSON.stringify(constellation) ===
+                  JSON.stringify(selectedConstellation)
+                return (
+                  <UnitConstellationView
+                    key={"unitConstellationView " + constellation}
+                    // {...selectedBackgroundColor}
+                    boxShadow={selected ? "0 0 0 3px white" : undefined}
+                    _hover={
+                      !selected
+                        ? { boxShadow: "0 0 0 3px darkgray" }
+                        : undefined
+                    }
+                    coordinates={constellation}
+                    tileSize={20}
+                    onClick={() => setSelectedConstellation(constellation)}
+                  />
+                )
+              })}
+            </HStack>
+            <ScoreView players={match.players} scores={match.scores} />
+            <Text p="4" position="fixed" top="0" left="0">
+              {yourTurn ? "Your turn" : "Opponents turn"}
+            </Text>
+          </>
+        )}
         <Text position="fixed" bottom="4" right="4">
           {status}
         </Text>
-        <ScoreView players={match.players} scores={match.scores} />
       </Center>
     </Container>
   )
