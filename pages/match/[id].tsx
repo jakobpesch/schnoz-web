@@ -35,7 +35,11 @@ import {
   positionCoordinatesAt,
   transformCoordinates,
 } from "../../utils/constallationTransformer"
-import { buildTileId, getTileLookup } from "../../utils/coordinateUtils"
+import {
+  buildTileId,
+  getAdjacentCoordinatesOfConstellation,
+  getTileLookup,
+} from "../../utils/coordinateUtils"
 
 const FollowMouse = (props: BoxProps) => {
   const [mousePosition, setMousePosition] = useState([0, 0])
@@ -219,6 +223,31 @@ const MapUnits = (props: { match: IMatchDoc; unitTiles: ITile[] }) => {
           >
             <Heading>{unit}</Heading>
           </Flex>
+        )
+      })}
+    </>
+  )
+}
+
+const MapPlaceableTiles = (props: { coordinates: Coordinate2D[] }) => {
+  return (
+    <>
+      {props.coordinates.map(([row, col]) => {
+        return (
+          <Flex
+            key={row + "_" + col}
+            position="absolute"
+            zIndex={1}
+            align="center"
+            justify="center"
+            top={row * RenderSettings.tileSize + "px"}
+            left={col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            bg="green"
+            pointerEvents="none"
+            opacity={0.4}
+          />
         )
       })}
     </>
@@ -594,6 +623,23 @@ const MatchView = () => {
       </VStack>
     )
   }
+  const placeableCoordinates = useMemo(() => {
+    if (!yourTurn) {
+      return []
+    }
+
+    const alliedTiles = match.map.tiles.filter(
+      (tile) =>
+        tile.unit?.playerId === userId || tile?.unit?.type === "mainBuilding"
+    )
+    return getAdjacentCoordinatesOfConstellation(
+      alliedTiles.map((tile) => [tile.row, tile.col])
+    ).filter((coordinate) => {
+      const hasTerrain = tileLookup[buildTileId(coordinate)]?.terrain ?? false
+      const hasUnit = tileLookup[buildTileId(coordinate)]?.unit ?? false
+      return !hasTerrain && !hasUnit
+    })
+  }, [match?.updatedAt])
 
   if (!userId) {
     return null
@@ -603,13 +649,18 @@ const MatchView = () => {
     return null
   }
 
+  // const hightlightColor = useMemo(() => {
+  //   return yourTurn
+  //     ? getPlayerColor(props.match.players, props.userId)
+  //     : "gray.500"
+  // }, [yourTurn])
+
   return (
     <Container height="100vh" color="white">
       <Center height="full">
         {match.status === "created" && <PreMatchView />}
         {match.status === "started" && (
           <MapContainer id="map-container" match={match}>
-            {/* {match && <MapGrid match={match} onTileClick={onTileClick} />} */}
             {match && selectedConstellation && (
               <MapHighlights
                 match={match}
@@ -618,16 +669,11 @@ const MatchView = () => {
                 onTileClick={onTileClick}
               />
             )}
+            {placeableCoordinates && (
+              <MapPlaceableTiles coordinates={placeableCoordinates} />
+            )}
             {terrainTiles && <MapTerrains terrainTiles={terrainTiles} />}
             {unitTiles && <MapUnits match={match} unitTiles={unitTiles} />}
-            {/* <MapView
-              match={match}
-              selectedConstellation={selectedConstellation}
-              userId={userId}
-              onTileClick={onClick}
-              onTileHover={onTileHover}
-            /> */}
-            {/* <HighlightView coordinates={hoveredCoordinates} color={"gray"} /> */}
           </MapContainer>
         )}
 
