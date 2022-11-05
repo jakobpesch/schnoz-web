@@ -8,6 +8,8 @@ export interface IMatch {
   createdBy: string
   createdAt: Date
   updatedAt: Date
+  startedAt: Date
+  finishedAt: Date
   activePlayer: string
   players: string[]
   status: MatchStatus
@@ -15,6 +17,7 @@ export interface IMatch {
   moves: IMove[]
   turn: number
   maxTurns: number
+  winner?: string
   scores: Score[]
 }
 
@@ -24,6 +27,8 @@ const matchSchema = new mongoose.Schema(
   {
     createdBy: String,
     status: String,
+    startedAt: Date,
+    finishedAt: Date,
     players: {
       type: Array,
       items: String,
@@ -32,6 +37,7 @@ const matchSchema = new mongoose.Schema(
     activePlayer: String,
     turn: Number,
     maxTurns: Number,
+    winner: String,
     scores: {
       type: Array,
       items: scoreSchema,

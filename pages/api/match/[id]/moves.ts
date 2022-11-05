@@ -132,9 +132,11 @@ export default async function handler(
 
       match.turn = increment(match.turn)
 
-      const isGameFinished = match.turn > match.maxTurns
-      if (isGameFinished) {
+      match.winner = match.scores.find((score) => score.score >= 5)?.playerId
+
+      if (match.winner) {
         match.status = "finished"
+        match.finishedAt = new Date()
       }
 
       await match.save()

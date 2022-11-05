@@ -8,7 +8,7 @@ import connectDb from "../../../services/MongoService"
 import { Terrain } from "../../../models/Terrain.model"
 
 const getRandomTerrain = () => {
-  const nullProbability = 10
+  const nullProbability = 30
   const waterProbability = 3
   const treeProbability = 3
   const stoneProbability = 1
@@ -142,6 +142,7 @@ export default async function handler(
           }
 
           match.status = "started"
+          match.startedAt = new Date()
 
           const scores = match.players.map((player) => {
             return new Score({
