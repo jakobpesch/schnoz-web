@@ -208,23 +208,30 @@ const MapTerrains = (props: { terrainTiles: ITile[] }) => {
   )
 }
 
+export const getPlayerAppearance = (playerId: string, players: string[]) => {
+  let unit = ""
+  let background = ""
+  if (playerId === players[0]) {
+    unit = "🦁"
+    background = "orange.900"
+  } else if (playerId === players[1]) {
+    unit = "🐵"
+    background = "teal.900"
+  } else {
+    unit = "🛖"
+    background = "gray.700"
+  }
+  return { unit, background }
+}
+
 const MapUnits = (props: { match: IMatchDoc; unitTiles: ITile[] }) => {
   return (
     <>
       {props.unitTiles.map((tile) => {
-        let unit = ""
-        let background = ""
-        if (tile.unit?.playerId === props.match.players[0]) {
-          unit = "🦁"
-          background = "orange.900"
-        } else if (tile.unit?.playerId === props.match.players[1]) {
-          unit = "🐵"
-          background = "teal.900"
-        } else {
-          unit = "🛖"
-          background = "gray.700"
-        }
-
+        const { unit, background } = getPlayerAppearance(
+          tile.unit?.playerId ?? "",
+          props.match.players
+        )
         return (
           <Flex
             key={tile.row + "_" + tile.col}
@@ -273,6 +280,7 @@ const MapPlaceableTiles = (props: { coordinates: Coordinate2D[] }) => {
 
 const MapHighlights = (props: {
   match: IMatchDoc
+  readonly?: boolean
   hoveringCoordinate: Coordinate2D | null
   constellation: Coordinate2D[]
   onTileClick: (
@@ -324,6 +332,9 @@ const MapHighlights = (props: {
     return []
   }, [hoveredCoordinate, rotatedClockwise])
 
+  if (props.readonly) {
+    return null
+  }
   return (
     <>
       {hoveredCoordinates.map(([row, col]) => {
@@ -603,15 +614,20 @@ const MatchView = () => {
   const PostMatchView = () => {
     return (
       <VStack
-        p="4"
+        p="1vw"
         bg="gray.800"
-        spacing="4"
+        spacing="1vw"
         position="absolute"
-        borderRadius="lg"
-        top="10"
+        borderRadius="0.5vw"
+        borderWidth="0.08vw"
+        zIndex={2}
+        top="10vw"
       >
         <Heading>Finished</Heading>
-        <Text>Someone has won. 🤷‍♀️</Text>
+        <Text fontSize="2vw">
+          {getPlayerAppearance(match?.winner ?? "", match?.players ?? []).unit}{" "}
+          wins!
+        </Text>
         <Button
           onClick={() => {
             onBackToMenuClick()
@@ -658,22 +674,26 @@ const MatchView = () => {
     <Container height="100vh" color="white">
       <Center height="full">
         {isPreGame && <PreMatchView />}
-        {isOngoing && (
-          <MapContainer id="map-container" match={match}>
-            {match && selectedConstellation && (
-              <MapHighlights
-                match={match}
-                hoveringCoordinate={hoveringCoordinate.current}
-                constellation={selectedConstellation}
-                onTileClick={onTileClick}
-              />
-            )}
-            {placeableCoordinates && (
-              <MapPlaceableTiles coordinates={placeableCoordinates} />
-            )}
-            {terrainTiles && <MapTerrains terrainTiles={terrainTiles} />}
-            {unitTiles && <MapUnits match={match} unitTiles={unitTiles} />}
-          </MapContainer>
+        {wasStarted && (
+          <>
+            <MapContainer id="map-container" match={match}>
+              {match && selectedConstellation && (
+                <MapHighlights
+                  match={match}
+                  readonly={isFinished}
+                  hoveringCoordinate={hoveringCoordinate.current}
+                  constellation={selectedConstellation}
+                  onTileClick={onTileClick}
+                />
+              )}
+              {placeableCoordinates && (
+                <MapPlaceableTiles coordinates={placeableCoordinates} />
+              )}
+              {terrainTiles && <MapTerrains terrainTiles={terrainTiles} />}
+              {unitTiles && <MapUnits match={match} unitTiles={unitTiles} />}
+            </MapContainer>
+            <ScoreView players={match.players} scores={match.scores} />
+          </>
         )}
         {isFinished && <PostMatchView />}
         {isOngoing && (
@@ -710,10 +730,6 @@ const MatchView = () => {
                 )
               })}
             </VStack>
-            <ScoreView players={match.players} scores={match.scores} />
-            {/* <Text p="4" position="fixed" top="0" left="0">
-              {yourTurn ? "Your turn" : "Opponents turn"}
-            </Text> */}
           </>
         )}
         <Flex
@@ -730,7 +746,9 @@ const MatchView = () => {
           borderRadius="0.5vw"
           borderWidth="0.08vw"
           borderColor="transparent"
+          color="gray.500"
           _hover={{
+            color: "white",
             bg: "gray.700",
             borderColor: "initial",
             maxHeight: "30vw",
