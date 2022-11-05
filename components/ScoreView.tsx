@@ -4,7 +4,7 @@ import { Score } from "../models/Score.model"
 import { getPlayerColor } from "./MapView"
 
 export const ScoreView = (props: { scores: Score[]; players: string[] }) => {
-  const viewPortWidthFactor = 0.04
+  const viewPortWidthFactor = 0.06
   return (
     <Flex width="full" justify="center" position="fixed" top="0" right="0">
       <VStack
