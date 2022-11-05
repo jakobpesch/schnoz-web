@@ -8,6 +8,7 @@ import {
   Flex,
   Heading,
   HStack,
+  Kbd,
   Text,
   VStack,
 } from "@chakra-ui/react"
@@ -72,34 +73,41 @@ const mousePositionToMapCoordinates = (
 
 interface UnitConstellationViewProps extends BoxProps {
   coordinates: Coordinate2D[]
+  hotkey: string
   tileSize?: number
 }
 
 export const UnitConstellationView = (props: UnitConstellationViewProps) => {
-  const { coordinates, tileSize = RenderSettings.tileSize } = props
+  const { coordinates, hotkey, tileSize = RenderSettings.tileSize } = props
 
-  const padding = 8
+  const viewPortWidthFactor = 0.05
+  const padding = 10
   const containerSize =
-    tileSize *
+    (tileSize *
       Math.max(
         3,
         Math.max(...coordinates.map(([row, col]) => Math.max(row, col))) + 1
       ) +
-    2 * padding +
-    "px"
+      2 * padding) *
+      viewPortWidthFactor +
+    "vw"
 
   return (
     <Box
-      background="gray.500"
-      borderRadius="lg"
+      background="gray.700"
+      borderRadius="0.5vw"
+      borderWidth="0.05vw"
+      borderColor="gray.500"
       position="relative"
       width={containerSize}
       height={containerSize}
       {...props}
     >
       {coordinates.map(([row, col]) => {
-        const topOffset = tileSize * row + padding + "px"
-        const leftOffset = tileSize * col + padding + "px"
+        const topOffset =
+          (tileSize * row + padding) * viewPortWidthFactor + "vw"
+        const leftOffset =
+          (tileSize * col + padding) * viewPortWidthFactor + "vw"
 
         return (
           <Box
@@ -107,12 +115,21 @@ export const UnitConstellationView = (props: UnitConstellationViewProps) => {
             position="absolute"
             top={topOffset}
             left={leftOffset}
-            width={tileSize + "px"}
-            height={tileSize + "px"}
+            width={tileSize * viewPortWidthFactor + "vw"}
+            height={tileSize * viewPortWidthFactor + "vw"}
             background="gray.300"
           />
         )
       })}
+      <Kbd
+        position="absolute"
+        bottom={-viewPortWidthFactor * 5 + "vw"}
+        right={-viewPortWidthFactor * 5 + "vw"}
+        fontSize={viewPortWidthFactor * 15 + "vw"}
+        bg="gray.600"
+      >
+        {hotkey}
+      </Kbd>
     </Box>
   )
 }
@@ -362,7 +379,13 @@ const MapGrid = (props: {
 
 const MatchView = () => {
   const router = useRouter()
-  const [status, setStatus] = useState("")
+  const setStatus = (status: string) => {
+    setStatusLog([
+      new Date().toLocaleTimeString() + ": " + status,
+      ...statusLog,
+    ])
+  }
+  const [statusLog, setStatusLog] = useState<string[]>([])
   const [settings, setSettings] = useState({
     mapSize: 11,
   })
@@ -384,58 +407,6 @@ const MatchView = () => {
   const tileLookup = useMemo(() => {
     return getTileLookup(match?.map?.tiles ?? [])
   }, [match?.updatedAt])
-
-  const changeInHover = hoveringCoordinate.current?.toString()
-  const changeInSelected = selectedConstellation?.toString()
-  // const changeInRotation = rotationCount?.toString()
-
-  // const hoveredCoordinates = useMemo(() => {
-  //   if (selectedConstellation && hoveringCoordinate.current) {
-  //     const transformed = transformCoordinates(selectedConstellation, {
-  //       rotatedClockwise: rotationCount,
-  //     })
-  //     const translated = positionCoordinatesAt(
-  //       hoveringCoordinate.current,
-  //       transformed
-  //     )
-
-  //     return translated
-  //   }
-  //   return []
-  // }, [changeInHover, changeInSelected])
-
-  // const onClick = useCallback(() => {
-  //   if (selectedConstellation && hoveringCoordinate.current) {
-  //     onTileClick(buildTileId(hoveringCoordinate.current), {
-  //       coordinates: selectedConstellation,
-  //       rotatedClockwise: rotationCount,
-  //     })
-  //   }
-  // }, [changeInRotation])
-
-  const onMouseEnter = useCallback(
-    (e: any) => {
-      const tileId = e.target.id as ITile["id"]
-      const coordinate = tileId
-        .split("_")
-        .map((value) => parseInt(value)) as Coordinate2D
-      hoveringCoordinate.current = coordinate
-    },
-    [match?.updatedAt]
-  )
-
-  // const cursor = useMemo(
-  //   () => (selectedConstellation && hoveringCoordinate.current ? "none" : "default"),
-  //   [changeInHover, changeInSelected]
-  // )
-
-  // const onTileHover = useCallback((e: any) => {
-  //   const tileId = e.target.id as ITile["id"]
-  //   const coordinate = tileId
-  //     .split("_")
-  //     .map((value) => parseInt(value)) as Coordinate2D
-  //   setHoveringCoordinate(coordinate)
-  // }, [])
 
   let userId: string | null = null
   try {
@@ -464,6 +435,24 @@ const MatchView = () => {
     if (matchId) {
       fetchMatch(matchId)
     }
+    Mousetrap.bind("1", () =>
+      setSelectedConstellation(availableConstellations[0])
+    )
+    Mousetrap.bind("2", () =>
+      setSelectedConstellation(availableConstellations[1])
+    )
+    Mousetrap.bind("3", () =>
+      setSelectedConstellation(availableConstellations[2])
+    )
+    Mousetrap.bind("4", () =>
+      setSelectedConstellation(availableConstellations[3])
+    )
+    Mousetrap.bind("5", () =>
+      setSelectedConstellation(availableConstellations[4])
+    )
+    Mousetrap.bind("6", () =>
+      setSelectedConstellation(availableConstellations[5])
+    )
   }, [])
 
   useEffect(() => {
@@ -689,27 +678,29 @@ const MatchView = () => {
         {isFinished && <PostMatchView />}
         {isOngoing && (
           <>
-            <HStack
+            <VStack
               position="fixed"
-              bottom="0"
-              p="4"
-              m="4"
+              zIndex={2}
+              left="0"
+              spacing="1vw"
+              p="1vw"
+              m="1vw"
               bg="gray.700"
-              borderRadius="lg"
-              borderWidth="1px"
+              borderRadius="0.5vw"
+              borderWidth="0.08vw"
             >
-              {availableConstellations.map((constellation) => {
+              {availableConstellations.map((constellation, index) => {
                 const selected =
                   JSON.stringify(constellation) ===
                   JSON.stringify(selectedConstellation)
                 return (
                   <UnitConstellationView
                     key={"unitConstellationView " + constellation}
-                    // {...selectedBackgroundColor}
-                    boxShadow={selected ? "0 0 0 3px white" : undefined}
+                    hotkey={`${index + 1}`}
+                    boxShadow={selected ? "0 0 0 0.1vw white" : undefined}
                     _hover={
                       !selected
-                        ? { boxShadow: "0 0 0 3px darkgray" }
+                        ? { boxShadow: "0 0 0 0.1vw darkgray" }
                         : undefined
                     }
                     coordinates={constellation}
@@ -718,16 +709,34 @@ const MatchView = () => {
                   />
                 )
               })}
-            </HStack>
+            </VStack>
             <ScoreView players={match.players} scores={match.scores} />
-            <Text p="4" position="fixed" top="0" left="0">
+            {/* <Text p="4" position="fixed" top="0" left="0">
               {yourTurn ? "Your turn" : "Opponents turn"}
-            </Text>
+            </Text> */}
           </>
         )}
-        <Text position="fixed" bottom="4" right="4">
-          {status}
-        </Text>
+        <Flex
+          position="fixed"
+          bottom="1vw"
+          right="1vw"
+          direction="column-reverse"
+          height="20vw"
+          overflowY="scroll"
+          pt="4vw"
+          css={{
+            "-webkit-mask-image":
+              "-webkit-gradient(linear, left bottom, left 50%, color-stop(0%, rgba(0,0,0,1)),color-stop(20%, rgba(0,0,0,1)), color-stop(40%, rgba(0,0,0,0)));",
+            "&:hover": {
+              "-webkit-mask-image":
+                "-webkit-gradient(linear, left bottom, left top, color-stop(0%, rgba(0,0,0,1)), color-stop(80%, rgba(0,0,0,1)), color-stop(100%, rgba(0,0,0,0)));",
+            },
+          }}
+        >
+          {statusLog.map((status) => (
+            <Text fontSize="0.9vw">{status}</Text>
+          ))}
+        </Flex>
       </Center>
     </Container>
   )
