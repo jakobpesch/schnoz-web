@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  name           String?       @db.VarChar(255)
+  email          String        @unique @db.VarChar(255)
+  createdMatches Match[]
+  participations Participant[]
+}
+
+model Participant {
+  id      String @id @default(uuid())
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id])
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  score   Int    @default(0)
+  move    Move[]
+}
+
+model Match {
+  id          String        @id @default(uuid())
+  createdAt   DateTime      @default(now())
+  createdById String
+  createdBy   User          @relation(fields: [createdById], references: [id])
+  maxPlayers  Int
+  status      MatchStatus   @default(CREATED)
+  players     Participant[]
+  map         Map?
+}
+
+model Map {
+  id       String @id @default(uuid())
+  rowCount Int
+  colCount Int
+  tiles    Tile[]
+  matchId  String @unique
+  match    Match  @relation(fields: [matchId], references: [id])
+}
+
+model Tile {
+  id      String   @id @default(uuid())
+  row     Int
+  col     Int
+  visible Boolean  @default(false)
+  terrain Terrain?
+  unit    Unit?
+  mapId   String
+  map     Map      @relation(fields: [mapId], references: [id])
+  move    Move[]
+}
+
+model Move {
+  id                    String            @id @default(uuid())
+  rotationCount         Int
+  initiatorId           String
+  initiator             Participant       @relation(fields: [initiatorId], references: [id])
+  targetId              String
+  target                Tile              @relation(fields: [targetId], references: [id])
+  unitConstellationName String
+  unitConstellation     UnitConstellation @relation(fields: [unitConstellationName], references: [name])
+}
+
+model Unit {
+  id     String   @id @default(uuid())
+  type   UnitType
+  tileId String   @unique
+  tile   Tile     @relation(fields: [tileId], references: [id])
+}
+
+model UnitConstellation {
+  name String @id
+
+  move Move[]
+
+  row1 Int
+  col1 Int
+
+  row2 Int?
+  col2 Int?
+
+  row3 Int?
+  col3 Int?
+
+  row4 Int?
+  col4 Int?
+
+  row5 Int?
+  col5 Int?
+
+  row6 Int?
+  col6 Int?
+
+  row7 Int?
+  col7 Int?
+
+  row8 Int?
+  col8 Int?
+
+  row9 Int?
+  col9 Int?
+}
+
+enum UnitType {
+  UNIT
+  MAIN_BUILDING
+}
+
+enum Terrain {
+  WATER
+  TREE
+  STONE
+}
+
+enum MatchStatus {
+  CREATED
+  STARTED
+  FINISHED
+}
