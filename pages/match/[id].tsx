@@ -761,8 +761,10 @@ const MatchView = () => {
             },
           }}
         >
-          {statusLog.map((status) => (
-            <Text fontSize="0.9vw">{status}</Text>
+          {statusLog.map((status, index) => (
+            <Text key={index} fontSize="0.9vw">
+              {status}
+            </Text>
           ))}
         </Flex>
       </Center>
