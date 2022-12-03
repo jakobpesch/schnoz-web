@@ -12,7 +12,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react"
-import { Match, MatchStatus, Terrain, UnitType } from "@prisma/client"
+import { Match, MatchStatus, Terrain, Tile, UnitType } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -29,7 +29,7 @@ import {
   checkForMatchUpdates,
   getMatch,
   makeMove,
-  startGame,
+  startMatch,
 } from "../../services/GameManagerService"
 import { RenderSettings } from "../../services/SettingsService"
 import { MatchRich } from "../../types/Match"
@@ -286,7 +286,8 @@ const MapHighlights = (props: {
   hoveringCoordinate: Coordinate2D | null
   constellation: Coordinate2D[]
   onTileClick: (
-    tileId: ITile["id"],
+    row: number,
+    col: number,
     rotatedClockwise: IUnitConstellation["rotatedClockwise"]
   ) => void
 }) => {
@@ -353,9 +354,7 @@ const MapHighlights = (props: {
             height={RenderSettings.tileSize + "px"}
             bg={"gray"}
             opacity={0.4}
-            onClick={() =>
-              props.onTileClick(buildTileId([row, col]), rotatedClockwise)
-            }
+            onClick={() => props.onTileClick(row, col, rotatedClockwise)}
           />
         )
       })}
@@ -473,7 +472,7 @@ const MatchView = () => {
     if (match) {
       interval = setInterval(() => {
         checkForUpdates(match)
-      }, 1000)
+      }, 5000)
     }
     return () => {
       clearInterval(interval)
@@ -483,18 +482,17 @@ const MatchView = () => {
   console.log(match)
 
   const allPlayersJoined =
-    match?.players.filter((player) => player !== null).length === 2
+    match?.players?.filter((player) => player !== null).length === 2
 
   const onBackToMenuClick = async () => {
     router.push("/")
   }
 
   const onTileClick = async (
-    tileId: ITile["id"],
+    row: number,
+    col: number,
     rotatedClockwise: IUnitConstellation["rotatedClockwise"]
   ) => {
-    console.log(tileId, rotatedClockwise)
-
     if (!userId) {
       return
     }
@@ -508,9 +506,17 @@ const MatchView = () => {
       rotatedClockwise,
     }
     try {
-      setMatch(await makeMove(match!.id, tileId, userId, unitConstellation))
+      const participantId = match?.players.find(
+        (player) => player.userId === userId
+      )?.id
+      if (!participantId) {
+        throw new Error("Participant not found")
+      }
+      setMatch(
+        await makeMove(match!.id, row, col, participantId, unitConstellation)
+      )
       setSelectedConstellation(null)
-      setStatus("Placed unit on tile " + tileId)
+      setStatus(`Placed unit on tile (${row}|${col})`)
     } catch (e: any) {
       setStatus(e.message)
       console.log(e.message)
@@ -674,7 +680,8 @@ const MatchView = () => {
     if (!userId) {
       return
     }
-    setMatch(await startGame(match.id, userId, settings.mapSize))
+
+    setMatch(await startMatch(match.id, userId, settings.mapSize))
   }
 
   // const hightlightColor = useMemo(() => {

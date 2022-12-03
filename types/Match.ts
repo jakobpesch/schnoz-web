@@ -14,4 +14,10 @@ const matchRich = Prisma.validator<Prisma.MatchArgs>()({
   },
 })
 
+export const matchRichInclude = {
+  players: true,
+  map: { include: { tiles: { include: { unit: true } } } },
+  activePlayer: true,
+}
+
 export type MatchRich = Prisma.MatchGetPayload<typeof matchRich>

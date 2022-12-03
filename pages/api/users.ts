@@ -3,10 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import connectDb from "../../services/MongoService"
 import Match from "../../models/Match.model"
 import mongoose from "mongoose"
-const { PrismaClient } = require("@prisma/client")
-
-const prisma = new PrismaClient()
-
+import { prisma } from "../../prisma/client"
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse

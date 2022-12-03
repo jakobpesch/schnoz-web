@@ -1,4 +1,4 @@
-import { Match, User } from "@prisma/client"
+import { Match, Tile, User } from "@prisma/client"
 import { IMatchDoc } from "../models/Match.model"
 import { ITile } from "../models/Tile.model"
 import { IUnitConstellation } from "../models/UnitConstellation.model"
@@ -36,7 +36,7 @@ export const getMatches = async () => {
   return await response.json()
 }
 
-export const startGame = async (
+export const startMatch = async (
   matchId: string,
   userId: string,
   mapSize: number
@@ -130,7 +130,7 @@ export const checkForMatchUpdates = async (matchId: string, time: any) => {
     return null
   }
 
-  const updatedMatch: MatchRich = await response.json()
+  const updatedMatch: MatchRich = (await response.json()).match
 
   return updatedMatch
 }
@@ -158,16 +158,18 @@ export const getMap = () => {
 
 export const makeMove = async (
   matchId: string,
-  tileId: ITile["id"],
-  userId: string,
+  row: number,
+  col: number,
+  participantId: string,
   unitConstellation: IUnitConstellation
 ) => {
   const options = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      userId,
-      tileId,
+      participantId,
+      row,
+      col,
       unitConstellation,
     }),
   }

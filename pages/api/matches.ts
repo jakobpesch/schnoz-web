@@ -3,9 +3,8 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import connectDb from "../../services/MongoService"
 import Match from "../../models/Match.model"
 import mongoose from "mongoose"
-
-const { PrismaClient } = require("@prisma/client")
-const prisma = new PrismaClient()
+import { matchRichInclude } from "../../types/Match"
+import { prisma } from "../../prisma/client"
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,10 +23,7 @@ export default async function handler(
             },
           },
         },
-        include: {
-          players: true,
-          map: { include: { tiles: true } },
-        },
+        include: matchRichInclude,
       })
       console.log(match)
 
@@ -42,10 +38,7 @@ export default async function handler(
       break
     case "GET":
       const matches = await prisma.match.findMany({
-        include: {
-          players: true,
-          map: { include: { tiles: true } },
-        },
+        include: matchRichInclude,
       })
       res.status(200).json(matches)
       break
