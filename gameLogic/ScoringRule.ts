@@ -1,4 +1,4 @@
-import { Terrain } from "../models/Terrain.model"
+import { Terrain, UnitType } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import {
   buildTileId,
@@ -16,7 +16,7 @@ export const waterRule: ScoringRule = (playerId, coordinates, tileLookup) => {
   const adjacentCoordinates = getAdjacentCoordinatesOfConstellation(coordinates)
   const adjacentWaterCoordinates = adjacentCoordinates.filter((coordinate) => {
     return (
-      tileLookup[buildTileId(coordinate)]?.terrain === Terrain.water ?? false
+      tileLookup[buildTileId(coordinate)]?.terrain === Terrain.WATER ?? false
     )
   })
   const scoredPoints = adjacentWaterCoordinates.length
@@ -28,7 +28,7 @@ export const stoneRule: ScoringRule = (playerId, coordinates, tileLookup) => {
 
   const adjacentStoneCoordinates = adjacentCoordinates.filter((coordinate) => {
     return (
-      tileLookup[buildTileId(coordinate)]?.terrain === Terrain.stone ?? false
+      tileLookup[buildTileId(coordinate)]?.terrain === Terrain.STONE ?? false
     )
   })
   const scoredPoints = -adjacentStoneCoordinates.length
@@ -63,7 +63,8 @@ export const holeRule: ScoringRule = (playerId, coordinates, tileLookup) => {
 
       const allAlly = adjacentTiles.every((tile) => {
         const isAlly =
-          tile.unit?.playerId === playerId || tile.unit?.type === "mainBuilding"
+          tile.unit?.ownerId === playerId ||
+          tile.unit?.type === UnitType.MAIN_BUILDING
         const hasTerrain = !!tile.terrain
         return isAlly || hasTerrain
       })

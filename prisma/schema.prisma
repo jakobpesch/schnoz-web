@@ -13,30 +13,41 @@ datasource db {
 model User {
   id             String        @id @default(uuid())
   name           String?       @db.VarChar(255)
-  email          String        @unique @db.VarChar(255)
+  email          String?       @unique @db.VarChar(255)
   createdMatches Match[]
   participations Participant[]
 }
 
 model Participant {
-  id      String @id @default(uuid())
-  matchId String
-  match   Match  @relation(fields: [matchId], references: [id])
-  userId  String
-  user    User   @relation(fields: [userId], references: [id])
-  score   Int    @default(0)
-  move    Move[]
+  id           String @id @default(uuid())
+  matchId      String
+  match        Match  @relation(fields: [matchId], references: [id], name: "match")
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+  score        Int    @default(0)
+  move         Move[]
+  Unit         Unit[]
+  activePlayer Match? @relation("activePlayer")
+  winner       Match? @relation("winner")
 }
 
 model Match {
-  id          String        @id @default(uuid())
-  createdAt   DateTime      @default(now())
-  createdById String
-  createdBy   User          @relation(fields: [createdById], references: [id])
-  maxPlayers  Int
-  status      MatchStatus   @default(CREATED)
-  players     Participant[]
-  map         Map?
+  id             String        @id @default(uuid())
+  updatedAt      DateTime      @default(now()) @updatedAt
+  startedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  createdById    String
+  createdBy      User          @relation(fields: [createdById], references: [id])
+  maxPlayers     Int
+  status         MatchStatus   @default(CREATED)
+  players        Participant[] @relation("match")
+  activePlayer   Participant?  @relation(fields: [activePlayerId], references: [id], name: "activePlayer")
+  activePlayerId String?       @unique
+  winner         Participant?  @relation(fields: [winnerId], references: [id], name: "winner")
+  winnerId       String?       @unique
+  map            Map?
+  turn           Int           @default(0)
+  maxTurns       Int           @default(12)
 }
 
 model Map {
@@ -72,10 +83,12 @@ model Move {
 }
 
 model Unit {
-  id     String   @id @default(uuid())
-  type   UnitType
-  tileId String   @unique
-  tile   Tile     @relation(fields: [tileId], references: [id])
+  id      String       @id @default(uuid())
+  type    UnitType
+  ownerId String?
+  owner   Participant? @relation(fields: [ownerId], references: [id])
+  tileId  String       @unique
+  tile    Tile         @relation(fields: [tileId], references: [id])
 }
 
 model UnitConstellation {

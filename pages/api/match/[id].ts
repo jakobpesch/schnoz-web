@@ -3,9 +3,12 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import Match, { IMatchDoc } from "../../../models/Match.model"
 import Score from "../../../models/Score.model"
 import Map from "../../../models/Map.model"
-import Tile, { ITile } from "../../../models/Tile.model"
+import { ITile } from "../../../models/Tile.model"
 import connectDb from "../../../services/MongoService"
-import { Terrain } from "../../../models/Terrain.model"
+
+import { MatchRich } from "../../../types/Match"
+import { MatchStatus, Terrain, Tile, UnitType } from "@prisma/client"
+import { TileRich } from "../../../types/Tile"
 
 const getRandomTerrain = () => {
   const nullProbability = 30
@@ -15,9 +18,9 @@ const getRandomTerrain = () => {
 
   const probabilityArray = [
     ...Array(nullProbability).fill(null),
-    ...Array(waterProbability).fill(Terrain.water),
-    ...Array(treeProbability).fill(Terrain.tree),
-    ...Array(stoneProbability).fill(Terrain.stone),
+    ...Array(waterProbability).fill(Terrain.WATER),
+    ...Array(treeProbability).fill(Terrain.TREE),
+    ...Array(stoneProbability).fill(Terrain.STONE),
   ]
 
   const randomNumber = Math.random()
@@ -33,7 +36,7 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
   const safeArea = 3
   const rowIndices = [...Array(rowCount).keys()]
   const columnIndices = [...Array(columnCount).keys()]
-  const tiles = [] as any
+  const tiles = [] as Tile[]
   rowIndices.forEach((row) => {
     columnIndices.forEach((col) => {
       const id = `${row}_${col}`
@@ -41,7 +44,7 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
         Math.floor(rowCount / 2),
         Math.floor(columnCount / 2),
       ]
-      const tilePayload: ITile = { id, row, col }
+      const tilePayload: any = { row, col }
       if (
         Math.sqrt(
           (row - centerCoordinate[0]) ** 2 + (col - centerCoordinate[1]) ** 2
@@ -52,26 +55,26 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
 
       if (centerCoordinate[0] === row && centerCoordinate[1] === col) {
         tilePayload.unit = {
-          type: "mainBuilding",
+          create: { type: UnitType.MAIN_BUILDING },
         }
       }
 
-      tiles.push(new Tile(tilePayload))
+      tiles.push(tilePayload)
     })
   })
 
-  return new Map({ rowCount, columnCount, tiles })
+  return { rowCount, columnCount, tiles }
 }
 const checkConditionsForCreation = (
-  match: IMatchDoc,
+  match: MatchRich,
   userId: string,
   settings: any
 ) => {
-  if (match.status === "started") {
+  if (match.status === MatchStatus.STARTED) {
     return { error: "Match has already started" }
   }
 
-  if (match.createdBy !== userId) {
+  if (match.createdById !== userId) {
     return { error: "Only the match's creator can start the match" }
   }
 
@@ -90,7 +93,11 @@ const checkConditionsForCreation = (
   return { error: null }
 }
 
-const checkConditionsForJoining = (match: IMatchDoc) => {
+const { PrismaClient } = require("@prisma/client")
+
+const prisma = new PrismaClient()
+
+const checkConditionsForJoining = (match: MatchRich) => {
   if (match.players.length === 2) {
     return { error: "Match already full" }
   }
@@ -101,13 +108,20 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { body, method } = req
-  let match: IMatchDoc | null
+  let match: MatchRich | null
   const matchId = req.query.id
+  console.log(req.query.id)
 
   switch (method) {
     case "PUT":
-      await connectDb()
-      match = await Match.findById(matchId)
+      match = await prisma.match.findUnique({
+        where: { id: matchId },
+        include: {
+          players: true,
+          map: { include: { tiles: true } },
+          activePlayer: true,
+        },
+      })
 
       if (match === null) {
         res.status(404).end(`Match with id ${matchId} not found.`)
@@ -123,10 +137,19 @@ export default async function handler(
             break
           }
 
-          match.players.push(body.userId)
-
-          await match.save()
-          res.status(200).json(match)
+          const joinedMatch = await prisma.match.update({
+            where: { id: matchId },
+            data: {
+              players: { create: { userId: body.userId } },
+              updatedAt: new Date(),
+            },
+            include: {
+              players: true,
+              map: { include: { tiles: true } },
+              activePlayer: true,
+            },
+          })
+          res.status(200).json(joinedMatch)
           break
 
         case "start":
@@ -141,27 +164,43 @@ export default async function handler(
             break
           }
 
-          match.status = "started"
-          match.startedAt = new Date()
-
-          const scores = match.players.map((player) => {
-            return new Score({
-              playerId: player,
-              score: 0,
-            })
-          })
-          match.scores = scores
-
-          match.map = initialiseMap(
-            body.settings.rowCount,
-            body.settings.columnCount
+          const status = MatchStatus.STARTED
+          const startedAt = new Date()
+          const map = initialiseMap(
+            5 ?? body.settings.rowCount,
+            5 ?? body.settings.columnCount
           )
-          match.activePlayer = body.userId
-          match.turn = 0
-          match.maxTurns = body.settings.maxTurns
+          const activePlayerId = body.userId
+          const turn = 0
+          const maxTurns = body.settings.maxTurns
 
-          await match.save()
-          res.status(200).json(match)
+          const startedMatch = await prisma.match.update({
+            where: { id: match.id },
+            data: {
+              status,
+              startedAt,
+              activePlayerId,
+              turn,
+              maxTurns,
+              map: {
+                create: {
+                  rowCount: map.rowCount,
+                  colCount: map.columnCount,
+                  tiles: {
+                    create: map.tiles,
+                  },
+                },
+              },
+            },
+            include: {
+              players: true,
+              map: { include: { tiles: true } },
+              activePlayer: true,
+            },
+          })
+          console.log(startedMatch)
+
+          res.status(200).json(startedMatch)
           break
         default:
           res.status(500).end("Possible PUT actions: 'join', 'start'")
@@ -182,10 +221,14 @@ export default async function handler(
       res.status(200).json(deletedMatch)
       break
     case "GET":
-      await connectDb()
-
-      match = await Match.findById(matchId)
-
+      match = await prisma.match.findUnique({
+        where: { id: req.query.id },
+        include: {
+          players: true,
+          map: { include: { tiles: true } },
+          activePlayer: true,
+        },
+      })
       if (!match) {
         res.status(404).end(`Match with id ${matchId} not found.`)
         break

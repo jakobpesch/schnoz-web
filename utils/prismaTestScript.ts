@@ -5,13 +5,18 @@ const prisma = new PrismaClient()
 async function main() {
   // await prisma.participant.deleteMany()
   // await prisma.match.deleteMany()
-  // await prisma.user.deleteMany()
+  await prisma.user.deleteMany()
   // const user1 = await prisma.user.create({
   //   data: {
-  //     email: "jakob@schnoz.gg",
+  //     email: undefined,
   //   },
   // })
   // const user2 = await prisma.user.create({
+  //   data: {
+  //     email: undefined,
+  //   },
+  // })
+  // const user3 = await prisma.user.create({
   //   data: {
   //     email: "isin@schnoz.gg",
   //   },
@@ -117,3 +122,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
+export {}

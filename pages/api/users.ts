@@ -3,16 +3,23 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import connectDb from "../../services/MongoService"
 import Match from "../../models/Match.model"
 import mongoose from "mongoose"
+const { PrismaClient } = require("@prisma/client")
+
+const prisma = new PrismaClient()
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { method } = req
+  const { body, method } = req
   switch (method) {
     case "POST":
-      // sign in anonymously
-      res.status(201).json(new mongoose.Types.ObjectId())
+      const user = await prisma.user.create({
+        data: {
+          email: body.email,
+        },
+      })
+      res.status(201).json(user)
       break
     default:
       res.setHeader("Allow", ["POST"])

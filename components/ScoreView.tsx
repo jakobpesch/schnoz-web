@@ -1,8 +1,9 @@
 import { Divider, Flex, Heading, HStack, VStack } from "@chakra-ui/react"
+import { Participant } from "@prisma/client"
 import { Score } from "../models/Score.model"
 import { getPlayerAppearance } from "../pages/match/[id]"
 
-export const ScoreView = (props: { scores: Score[]; players: string[] }) => {
+export const ScoreView = (props: { players: Participant[] }) => {
   const viewPortWidthFactor = 0.1
   return (
     <Flex width="full" justify="center" position="fixed" top="0" right="0">
@@ -17,27 +18,31 @@ export const ScoreView = (props: { scores: Score[]; players: string[] }) => {
       >
         <HStack spacing={viewPortWidthFactor * 16 + "vw"}>
           <HStack
-            key={props.scores[0].playerId}
+            key={props.players[0].id}
             spacing={viewPortWidthFactor * 16 + "vw"}
           >
             <Heading fontSize={viewPortWidthFactor * 25 + "vw"} size="md">
               {
-                getPlayerAppearance(props.scores[0].playerId, props.players)
-                  .unit
+                getPlayerAppearance(
+                  props.players[0].id,
+                  props.players.map((player) => player.id)
+                ).unit
               }{" "}
-              {props.scores[0].score}
+              {props.players[0].score}
             </Heading>
           </HStack>
           <Divider orientation="vertical"></Divider>
           <HStack
-            key={props.scores[1].playerId}
+            key={props.players[1].id}
             spacing={viewPortWidthFactor * 16 + "vw"}
           >
             <Heading fontSize={viewPortWidthFactor * 25 + "vw"} size="md">
-              {props.scores[1].score}{" "}
+              {props.players[1].score}{" "}
               {
-                getPlayerAppearance(props.scores[1].playerId, props.players)
-                  .unit
+                getPlayerAppearance(
+                  props.players[1].id,
+                  props.players.map((player) => player.id)
+                ).unit
               }
             </Heading>
           </HStack>

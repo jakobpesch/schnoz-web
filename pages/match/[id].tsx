@@ -12,13 +12,13 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react"
+import { Match, MatchStatus, Terrain, UnitType } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { MapContainer } from "../../components/MapContainer"
 import { ScoreView } from "../../components/ScoreView"
 import { IMatchDoc } from "../../models/Match.model"
-import { Terrain } from "../../models/Terrain.model"
 import { ITile } from "../../models/Tile.model"
 import {
   Coordinate2D,
@@ -32,6 +32,8 @@ import {
   startGame,
 } from "../../services/GameManagerService"
 import { RenderSettings } from "../../services/SettingsService"
+import { MatchRich } from "../../types/Match"
+import { TileRich } from "../../types/Tile"
 import {
   positionCoordinatesAt,
   transformCoordinates,
@@ -174,18 +176,18 @@ const availableConstellations: Coordinate2D[][] = [
   ],
 ]
 
-const MapTerrains = (props: { terrainTiles: ITile[] }) => {
+const MapTerrains = (props: { terrainTiles: TileRich[] }) => {
   let terrain = ""
   return (
     <>
       {props.terrainTiles.map((tile) => {
-        if (tile.terrain === Terrain.water) {
+        if (tile.terrain === Terrain.WATER) {
           terrain = "🧿"
         }
-        if (tile.terrain === Terrain.tree) {
+        if (tile.terrain === Terrain.TREE) {
           terrain = "🌳"
         }
-        if (tile.terrain === Terrain.stone) {
+        if (tile.terrain === Terrain.STONE) {
           terrain = "⚪️"
         }
         return (
@@ -224,13 +226,13 @@ export const getPlayerAppearance = (playerId: string, players: string[]) => {
   return { unit, background }
 }
 
-const MapUnits = (props: { match: IMatchDoc; unitTiles: ITile[] }) => {
+const MapUnits = (props: { match: MatchRich; unitTiles: TileRich[] }) => {
   return (
     <>
       {props.unitTiles.map((tile) => {
         const { unit, background } = getPlayerAppearance(
-          tile.unit?.playerId ?? "",
-          props.match.players
+          tile.unit?.ownerId ?? "",
+          props.match.players.map((player) => player.id)
         )
         return (
           <Flex
@@ -279,7 +281,7 @@ const MapPlaceableTiles = (props: { coordinates: Coordinate2D[] }) => {
 }
 
 const MapHighlights = (props: {
-  match: IMatchDoc
+  match: MatchRich
   readonly?: boolean
   hoveringCoordinate: Coordinate2D | null
   constellation: Coordinate2D[]
@@ -401,7 +403,7 @@ const MatchView = () => {
     mapSize: 11,
   })
 
-  const [match, setMatch] = useState<IMatchDoc | null>(null)
+  const [match, setMatch] = useState<MatchRich | null>(null)
   const [selectedConstellation, setSelectedConstellation] = useState<
     Coordinate2D[] | null
   >(availableConstellations[3])
@@ -422,7 +424,7 @@ const MatchView = () => {
   let userId: string | null = null
   try {
     userId = getCookie("userId")
-  } catch {}
+  } catch (e) {}
 
   const fetchMatch = async (matchId: string) => {
     try {
@@ -433,8 +435,8 @@ const MatchView = () => {
     }
   }
 
-  const checkForUpdates = async (match: IMatchDoc) => {
-    const updatedMatch = await checkForMatchUpdates(match._id, match.updatedAt)
+  const checkForUpdates = async (match: Match) => {
+    const updatedMatch = await checkForMatchUpdates(match.id, match.updatedAt)
 
     if (updatedMatch) {
       setMatch(updatedMatch)
@@ -478,16 +480,10 @@ const MatchView = () => {
     }
   }, [match])
 
-  const allPlayersJoined =
-    match?.players.filter((player: string | null) => player !== null).length ===
-    2
+  console.log(match)
 
-  const onStartGameClick = async () => {
-    if (!userId) {
-      return
-    }
-    setMatch(await startGame(match?._id, userId, settings.mapSize))
-  }
+  const allPlayersJoined =
+    match?.players.filter((player) => player !== null).length === 2
 
   const onBackToMenuClick = async () => {
     router.push("/")
@@ -512,7 +508,7 @@ const MatchView = () => {
       rotatedClockwise,
     }
     try {
-      setMatch(await makeMove(match?._id, tileId, userId, unitConstellation))
+      setMatch(await makeMove(match!.id, tileId, userId, unitConstellation))
       setSelectedConstellation(null)
       setStatus("Placed unit on tile " + tileId)
     } catch (e: any) {
@@ -558,24 +554,26 @@ const MatchView = () => {
       </>
     )
   }
-  const isPreGame = match?.status === "created"
+  const isPreGame = match?.status === MatchStatus.CREATED
 
   const wasCreated =
-    match?.status === "created" ||
-    match?.status === "started" ||
-    match?.status === "finished"
+    match?.status === MatchStatus.CREATED ||
+    match?.status === MatchStatus.STARTED ||
+    match?.status === MatchStatus.FINISHED
 
-  const wasStarted = match?.status === "started" || match?.status === "finished"
+  const wasStarted =
+    match?.status === MatchStatus.STARTED ||
+    match?.status === MatchStatus.FINISHED
 
-  const isOngoing = match?.status === "started"
+  const isOngoing = match?.status === MatchStatus.STARTED
 
-  const isFinished = match?.status === "finished"
+  const isFinished = match?.status === MatchStatus.FINISHED
 
   const PreMatchView = () => {
     return (
       <VStack spacing="8">
         <Heading>Not Started</Heading>
-        {userId !== match?.createdBy ? (
+        {userId !== match?.createdById ? (
           <Text>Waiting for creator to start the game</Text>
         ) : (
           <>
@@ -595,7 +593,7 @@ const MatchView = () => {
           </Text>
         </VStack> */}
 
-        {userId === match?.createdBy && (
+        {userId === match?.createdById && (
           <Button
             size="lg"
             colorScheme="blue"
@@ -625,7 +623,12 @@ const MatchView = () => {
       >
         <Heading>Finished</Heading>
         <Text fontSize="2vw">
-          {getPlayerAppearance(match?.winner ?? "", match?.players ?? []).unit}{" "}
+          {
+            getPlayerAppearance(
+              match?.winnerId ?? "",
+              match?.players.map((player) => player.id) ?? []
+            ).unit
+          }{" "}
           wins!
         </Text>
         <Button
@@ -639,14 +642,17 @@ const MatchView = () => {
     )
   }
   const placeableCoordinates = useMemo(() => {
-    if (!yourTurn) {
+    if (!yourTurn || !match || !match.map) {
       return []
     }
 
-    const alliedTiles = match.map.tiles.filter(
-      (tile) =>
-        tile.unit?.playerId === userId || tile?.unit?.type === "mainBuilding"
-    )
+    const alliedTiles =
+      match.map.tiles.filter(
+        (tile) =>
+          tile.unit?.ownerId === userId ||
+          tile?.unit?.type === UnitType.MAIN_BUILDING
+      ) ?? []
+
     return getAdjacentCoordinatesOfConstellation(
       alliedTiles.map((tile) => [tile.row, tile.col])
     ).filter((coordinate) => {
@@ -662,6 +668,13 @@ const MatchView = () => {
 
   if (!match) {
     return null
+  }
+
+  const onStartGameClick = async () => {
+    if (!userId) {
+      return
+    }
+    setMatch(await startGame(match.id, userId, settings.mapSize))
   }
 
   // const hightlightColor = useMemo(() => {
@@ -692,7 +705,7 @@ const MatchView = () => {
               {terrainTiles && <MapTerrains terrainTiles={terrainTiles} />}
               {unitTiles && <MapUnits match={match} unitTiles={unitTiles} />}
             </MapContainer>
-            <ScoreView players={match.players} scores={match.scores} />
+            <ScoreView players={match.players} />
           </>
         )}
         {isFinished && <PostMatchView />}

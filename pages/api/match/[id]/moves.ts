@@ -1,25 +1,24 @@
+import { MatchStatus } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { defaultGame } from "../../../../gameLogic/GameVariants"
-import Match, { IMatch, IMatchDoc } from "../../../../models/Match.model"
-import { ITile } from "../../../../models/Tile.model"
+import Match from "../../../../models/Match.model"
 import { Coordinate2D } from "../../../../models/UnitConstellation.model"
 import connectDb from "../../../../services/MongoService"
+import { MatchRich } from "../../../../types/Match"
+import { TileRich } from "../../../../types/Tile"
 import {
   positionCoordinatesAt as translateCoordinatesTo,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
-import { getTileLookup } from "../../../../utils/coordinateUtils"
-
-export type MatchStatus = "created" | "started" | "finished"
 
 const increment = (x: number) => x + 1
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<IMatch>
+  res: NextApiResponse<MatchRich>
 ) {
   const { body, method } = req
-  let match: IMatchDoc | null
+  let match: MatchRich | null
   const { userId, tileId } = body
 
   if (!userId || !tileId) {
@@ -38,7 +37,13 @@ export default async function handler(
         break
       }
 
-      if (match.status !== "started") {
+      if (!match.map) {
+        res.status(500).end("Map is missing")
+        break
+      }
+      const s = match.map
+
+      if (match.status !== MatchStatus.STARTED) {
         res.status(500).end("Match is not started")
         break
       }
@@ -48,7 +53,7 @@ export default async function handler(
       }
 
       let targetTile = match.map.tiles.find(
-        (tile: ITile) => body.tileId === tile.id
+        (tile: TileRich) => body.tileId === tile.id
       )
 
       if (!targetTile) {
@@ -72,7 +77,7 @@ export default async function handler(
       )
 
       const canBePlaced = defaultGame.placementRules.every((rule) =>
-        rule(translatedCoordinates, match!.map, userId)
+        rule(translatedCoordinates, match!.map!, userId)
       )
 
       if (!canBePlaced) {
@@ -80,66 +85,66 @@ export default async function handler(
         break
       }
 
-      for (let i = 0; i < translatedCoordinates.length; i++) {
-        const [row, col] = translatedCoordinates[i]
-        const tileIndex = match.map.tiles.findIndex(
-          (tile) => tile.row === row && tile.col === col
-        )
-        if (tileIndex === -1) {
-          res.status(500).end("Error while placing")
-          break
-        }
+      // for (let i = 0; i < translatedCoordinates.length; i++) {
+      //   const [row, col] = translatedCoordinates[i]
+      //   const tileIndex = match.map.tiles.findIndex(
+      //     (tile) => tile.row === row && tile.col === col
+      //   )
+      //   if (tileIndex === -1) {
+      //     res.status(500).end("Error while placing")
+      //     break
+      //   }
 
-        // mongoose saves it only this way *shrug*
-        match.map.tiles[tileIndex] = {
-          ...match.map.tiles[tileIndex],
-          unit: { type: "playerUnit", playerId: userId },
-        }
-      }
-      const scoreIndex = match.scores.findIndex(
-        (score) => score.playerId === match!.activePlayer
-      )
+      // mongoose saves it only this way *shrug*
+      //   match.map.tiles[tileIndex] = {
+      //     ...match.map.tiles[tileIndex],
+      //     unit: { type: UnitType.UNIT, ownerId: userId },
+      //   }
+      // }
+      // const scoreIndex = match.scores.findIndex(
+      //   (score) => score.playerId === match!.activePlayer
+      // )
 
-      const tileLookup = getTileLookup(match.map.tiles)
+      // const tileLookup = getTileLookup(match.map.tiles)
 
-      const prevScore = match.scores[scoreIndex].score
+      // const prevScore = match.scores[scoreIndex].score
 
-      const newScore =
-        prevScore +
-        defaultGame.scoringRules.reduce((totalScore, rule) => {
-          const ruleScore = rule(
-            match!.activePlayer,
-            translatedCoordinates,
-            tileLookup
-          )
+      // const newScore =
+      //   prevScore +
+      //   defaultGame.scoringRules.reduce((totalScore, rule) => {
+      //     const ruleScore = rule(
+      //       match!.activePlayer,
+      //       translatedCoordinates,
+      //       tileLookup
+      //     )
 
-          return totalScore + ruleScore
-        }, 0)
+      //     return totalScore + ruleScore
+      //   }, 0)
 
-      match.scores[scoreIndex] = {
-        ...match.scores[scoreIndex],
-        score: newScore,
-      }
+      // match.scores[scoreIndex] = {
+      //   ...match.scores[scoreIndex],
+      //   score: newScore,
+      // }
 
-      const activePlayer = match.players.find(
-        (playerId) => playerId !== match!.activePlayer
-      )
-      if (!activePlayer) {
-        res.status(500).end("Error while changing turns")
-        break
-      }
-      match.activePlayer = activePlayer
+      // const activePlayer = match.players.find(
+      //   (playerId) => playerId !== match!.activePlayer
+      // )
+      // if (!activePlayer) {
+      //   res.status(500).end("Error while changing turns")
+      //   break
+      // }
+      // match.activePlayer = activePlayer
 
-      match.turn = increment(match.turn)
+      // match.turn = increment(match.turn)
 
-      match.winner = match.scores.find((score) => score.score >= 5)?.playerId
+      // match.winner = match.scores.find((score) => score.score >= 5)?.playerId
 
-      if (match.winner) {
-        match.status = "finished"
-        match.finishedAt = new Date()
-      }
+      // if (match.winner) {
+      //   match.status = "finished"
+      //   match.finishedAt = new Date()
+      // }
 
-      await match.save()
+      // await match.save()
       res.status(201).json(match)
       break
     default:

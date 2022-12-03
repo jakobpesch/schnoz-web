@@ -4,16 +4,20 @@ import Match, { IMatchDoc } from "../../../../models/Match.model"
 import connectDb from "../../../../services/MongoService"
 type Data = { match: IMatchDoc } | { message: "No Update" }
 
+const { PrismaClient } = require("@prisma/client")
+
+const prisma = new PrismaClient()
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
   const { query, method } = req
-  let match: IMatchDoc | null
   switch (method) {
     case "GET":
-      await connectDb()
-      match = await Match.findById(req.query.id).exec()
+      const match = await prisma.match.findUnique({
+        where: { id: req.query.id },
+      })
 
       if (match === null) {
         res.status(500).end("Could not find match")
@@ -26,6 +30,11 @@ export default async function handler(
         res.status(500).end("Invalid query parameter 'time'")
         break
       }
+      console.log(
+        time,
+        match.updatedAt,
+        new Date(time) < new Date(match.updatedAt)
+      )
 
       if (new Date(time) < new Date(match.updatedAt)) {
         res.status(200).json({ match })

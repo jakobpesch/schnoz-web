@@ -1,7 +1,9 @@
+import { UnitType } from "@prisma/client"
 import { useCallback, useMemo } from "react"
 import { IMatchDoc } from "../models/Match.model"
 import { ITile } from "../models/Tile.model"
 import { Coordinate2D } from "../models/UnitConstellation.model"
+import { MatchRich } from "../types/Match"
 import {
   buildTileId,
   getAdjacentCoordinatesOfConstellation,
@@ -36,7 +38,7 @@ export const getPlayerColor = (players: string[], player: string) => {
 }
 
 interface MapProps {
-  match: IMatchDoc
+  match: MatchRich
   userId: string
   selectedConstellation: Coordinate2D[] | null
   onTileClick: (tileId: string) => void
@@ -44,30 +46,33 @@ interface MapProps {
 }
 const MapView = (props: MapProps) => {
   const tileLookup = useMemo(() => {
-    return getTileLookup(props.match.map.tiles)
+    return getTileLookup(props.match.map?.tiles ?? [])
   }, [props.match.updatedAt])
 
   const tiles = useMemo(() => {
-    return props.match.map.tiles
+    return props.match.map?.tiles
   }, [props.match.updatedAt])
 
-  const yourTurn = props.userId === props.match.activePlayer
+  const yourTurn = props.userId === props.match.activePlayerId
 
   const hightlightColor = useMemo(() => {
     return yourTurn
-      ? getPlayerColor(props.match.players, props.userId)
+      ? getPlayerColor(
+          props.match.players.map((player) => player.id),
+          props.userId
+        )
       : "gray.500"
   }, [yourTurn])
 
   const placeableCoordinates = useMemo(() => {
-    if (!yourTurn) {
+    if (!yourTurn || !tiles) {
       return []
     }
 
     const alliedTiles = tiles.filter(
       (tile) =>
-        tile.unit?.playerId === props.userId ||
-        tile?.unit?.type === "mainBuilding"
+        tile.unit?.ownerId === props.userId ||
+        tile?.unit?.type === UnitType.MAIN_BUILDING
     )
     return getAdjacentCoordinatesOfConstellation(
       alliedTiles.map((tile) => [tile.row, tile.col])
@@ -82,6 +87,9 @@ const MapView = (props: MapProps) => {
     props.onTileClick(tileId)
   }, [])
 
+  if (!tiles) {
+    return null
+  }
   return (
     <>
       {tiles.map((tile) => {
@@ -92,12 +100,12 @@ const MapView = (props: MapProps) => {
             tileId={tile.id}
             unit={tile.unit}
             terrain={tile.terrain}
-            borderRadius={tile.unit?.type === "playerUnit" ? "md" : undefined}
+            borderRadius={tile.unit?.type === UnitType.UNIT ? "md" : undefined}
             background={getBackgroundColor(
               tile.row,
               tile.col,
-              props.match.players,
-              tile.unit?.playerId ?? "",
+              props.match.players.map((player) => player.id),
+              tile.unit?.ownerId ?? "",
               yourTurn,
               placeableCoordinates
             )}

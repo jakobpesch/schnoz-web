@@ -1,5 +1,6 @@
 import { ITile } from "../models/Tile.model"
 import { Coordinate2D } from "../models/UnitConstellation.model"
+import { TileRich } from "../types/Tile"
 import { addCoordinates } from "./constallationTransformer"
 
 export const buildTileId = (coordinate: Coordinate2D) => {
@@ -11,10 +12,10 @@ export const coordinateFromTileId = (tileId: ITile["id"]) => {
 }
 
 export interface TileLookup {
-  [tileId: string]: ITile
+  [tileId: string]: TileRich
 }
 
-export const getTileLookup = (tiles: ITile[]) => {
+export const getTileLookup = (tiles: TileRich[]) => {
   return tiles.reduce<TileLookup>((acc, cur) => {
     return {
       ...acc,

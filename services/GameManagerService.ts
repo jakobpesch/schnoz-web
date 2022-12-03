@@ -1,6 +1,8 @@
+import { Match, User } from "@prisma/client"
 import { IMatchDoc } from "../models/Match.model"
 import { ITile } from "../models/Tile.model"
 import { IUnitConstellation } from "../models/UnitConstellation.model"
+import { MatchRich, MatchWithPlayers } from "../types/Match"
 
 const BASE_URL =
   process.env.NODE_ENV === "development"
@@ -11,11 +13,12 @@ export const signInAnonymously = async () => {
   const options = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: "false",
+    body: "{}",
   }
 
   const response = await fetch(BASE_URL + "/users", options)
-  return await response.json()
+  const user: User = await response.json()
+  return user
 }
 
 export const getMatches = async () => {
@@ -90,8 +93,8 @@ export const createMatch = async (userId: string) => {
   if (response.status !== 201) {
     throw new Error("Failed to create match")
   }
-
-  return await response.json()
+  const match: MatchWithPlayers = await response.json()
+  return match
 }
 export const deleteMatch = async (matchId: string, userId: string) => {
   const options = {
@@ -127,7 +130,9 @@ export const checkForMatchUpdates = async (matchId: string, time: any) => {
     return null
   }
 
-  return (await response.json()).match as IMatchDoc
+  const updatedMatch: MatchRich = await response.json()
+
+  return updatedMatch
 }
 
 export const getMatch = async (matchId: string) => {
@@ -142,7 +147,9 @@ export const getMatch = async (matchId: string) => {
     throw new Error("Failed to create match")
   }
 
-  return await response.json()
+  const match: MatchRich = await response.json()
+
+  return match
 }
 
 export const getMap = () => {
