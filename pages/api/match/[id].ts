@@ -1,15 +1,9 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
-import Match, { IMatchDoc } from "../../../models/Match.model"
-import Score from "../../../models/Score.model"
-import Map from "../../../models/Map.model"
-import { ITile } from "../../../models/Tile.model"
-import connectDb from "../../../services/MongoService"
 
-import { MatchRich, matchRichInclude } from "../../../types/Match"
 import { MatchStatus, Terrain, Tile, UnitType } from "@prisma/client"
-import { TileRich } from "../../../types/Tile"
 import { prisma } from "../../../prisma/client"
+import { MatchRich, matchRichInclude } from "../../../types/Match"
 
 const getRandomTerrain = () => {
   const nullProbability = 30
@@ -112,7 +106,6 @@ export default async function handler(
     res.status(404).end(`Invalid match id provided: ${matchId}.`)
     return
   }
-  console.log(req.query.id)
 
   switch (method) {
     case "PUT":
@@ -195,7 +188,6 @@ export default async function handler(
             },
             include: matchRichInclude,
           })
-          console.log(startedMatch)
 
           res.status(200).json(startedMatch)
           prisma.$disconnect()
@@ -206,7 +198,6 @@ export default async function handler(
       break
     case "DELETE":
       const deletedMatch = await prisma.match.delete({ where: { id: matchId } })
-      console.log(deletedMatch)
 
       if (!deletedMatch) {
         res.status(500).end("Match could not be deleted")

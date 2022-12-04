@@ -3,7 +3,7 @@ import { Coordinate2D } from "../models/UnitConstellation.model"
 import { TileRich } from "../types/Tile"
 import { addCoordinates } from "./constallationTransformer"
 
-export const buildTileId = (coordinate: Coordinate2D) => {
+export const buildTileLookupId = (coordinate: Coordinate2D) => {
   return `${coordinate[0]}_${coordinate[1]}`
 }
 
@@ -19,7 +19,7 @@ export const getTileLookup = (tiles: TileRich[]) => {
   return tiles.reduce<TileLookup>((acc, cur) => {
     return {
       ...acc,
-      [cur.id]: cur,
+      [buildTileLookupId([cur.row, cur.col])]: cur,
     }
   }, {})
 }

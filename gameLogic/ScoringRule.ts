@@ -1,7 +1,7 @@
 import { Terrain, UnitType } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import {
-  buildTileId,
+  buildTileLookupId,
   getAdjacentCoordinatesOfConstellation,
   TileLookup,
 } from "../utils/coordinateUtils"
@@ -16,7 +16,8 @@ export const waterRule: ScoringRule = (playerId, coordinates, tileLookup) => {
   const adjacentCoordinates = getAdjacentCoordinatesOfConstellation(coordinates)
   const adjacentWaterCoordinates = adjacentCoordinates.filter((coordinate) => {
     return (
-      tileLookup[buildTileId(coordinate)]?.terrain === Terrain.WATER ?? false
+      tileLookup[buildTileLookupId(coordinate)]?.terrain === Terrain.WATER ??
+      false
     )
   })
   const scoredPoints = adjacentWaterCoordinates.length
@@ -28,7 +29,8 @@ export const stoneRule: ScoringRule = (playerId, coordinates, tileLookup) => {
 
   const adjacentStoneCoordinates = adjacentCoordinates.filter((coordinate) => {
     return (
-      tileLookup[buildTileId(coordinate)]?.terrain === Terrain.STONE ?? false
+      tileLookup[buildTileLookupId(coordinate)]?.terrain === Terrain.STONE ??
+      false
     )
   })
   const scoredPoints = -adjacentStoneCoordinates.length
@@ -41,7 +43,8 @@ export const holeRule: ScoringRule = (playerId, coordinates, tileLookup) => {
 
   const scoredPoints = adjacentCoordinatesOfConstellation.reduce(
     (score, potentialHoleCoordinate) => {
-      const potentialHoleTile = tileLookup[buildTileId(potentialHoleCoordinate)]
+      const potentialHoleTile =
+        tileLookup[buildTileLookupId(potentialHoleCoordinate)]
 
       if (!potentialHoleTile) {
         return score
@@ -58,7 +61,7 @@ export const holeRule: ScoringRule = (playerId, coordinates, tileLookup) => {
       ])
 
       const adjacentTiles = adjacentsToPotentialHole
-        .map((coordinate) => tileLookup[buildTileId(coordinate)] ?? null)
+        .map((coordinate) => tileLookup[buildTileLookupId(coordinate)] ?? null)
         .filter((tile) => !!tile)
 
       const allAlly = adjacentTiles.every((tile) => {

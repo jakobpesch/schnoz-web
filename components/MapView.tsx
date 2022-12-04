@@ -1,12 +1,10 @@
 import { Participant, UnitType } from "@prisma/client"
-import assert from "assert"
 import { useCallback, useMemo } from "react"
-import { IMatchDoc } from "../models/Match.model"
 import { ITile } from "../models/Tile.model"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { MatchRich } from "../types/Match"
 import {
-  buildTileId,
+  buildTileLookupId,
   getAdjacentCoordinatesOfConstellation,
   getTileLookup,
   includes,
@@ -68,8 +66,9 @@ const MapView = (props: MapProps) => {
     return getAdjacentCoordinatesOfConstellation(
       alliedTiles.map((tile) => [tile.row, tile.col])
     ).filter((coordinate) => {
-      const hasTerrain = tileLookup[buildTileId(coordinate)]?.terrain ?? false
-      const hasUnit = tileLookup[buildTileId(coordinate)]?.unit ?? false
+      const hasTerrain =
+        tileLookup[buildTileLookupId(coordinate)]?.terrain ?? false
+      const hasUnit = tileLookup[buildTileLookupId(coordinate)]?.unit ?? false
       return !hasTerrain && !hasUnit
     })
   }, [props.match.updatedAt])

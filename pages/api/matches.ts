@@ -1,10 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
-import connectDb from "../../services/MongoService"
-import Match from "../../models/Match.model"
-import mongoose from "mongoose"
-import { matchRichInclude } from "../../types/Match"
 import { prisma } from "../../prisma/client"
+import { matchRichInclude } from "../../types/Match"
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,7 +23,6 @@ export default async function handler(
         },
         include: matchRichInclude,
       })
-      console.log(match)
 
       // await connectDb()
       // const match = new Match({

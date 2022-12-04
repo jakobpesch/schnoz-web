@@ -7,7 +7,6 @@ import {
   Container,
   Flex,
   Heading,
-  HStack,
   Kbd,
   Text,
   VStack,
@@ -17,12 +16,11 @@ import {
   MatchStatus,
   Participant,
   Terrain,
-  Tile,
   UnitType,
 } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { MapContainer } from "../../components/MapContainer"
 import { ScoreView } from "../../components/ScoreView"
 import { IMatchDoc } from "../../models/Match.model"
@@ -46,7 +44,7 @@ import {
   transformCoordinates,
 } from "../../utils/constallationTransformer"
 import {
-  buildTileId,
+  buildTileLookupId,
   getAdjacentCoordinatesOfConstellation,
   getTileLookup,
 } from "../../utils/coordinateUtils"
@@ -485,8 +483,6 @@ const MatchView = () => {
     }
   }, [match])
 
-  console.log(match)
-
   const allPlayersJoined =
     match?.players?.filter((player) => player !== null).length === 2
 
@@ -667,8 +663,9 @@ const MatchView = () => {
     return getAdjacentCoordinatesOfConstellation(
       alliedTiles.map((tile) => [tile.row, tile.col])
     ).filter((coordinate) => {
-      const hasTerrain = tileLookup[buildTileId(coordinate)]?.terrain ?? false
-      const hasUnit = tileLookup[buildTileId(coordinate)]?.unit ?? false
+      const hasTerrain =
+        tileLookup[buildTileLookupId(coordinate)]?.terrain ?? false
+      const hasUnit = tileLookup[buildTileLookupId(coordinate)]?.unit ?? false
       return !hasTerrain && !hasUnit
     })
   }, [match?.updatedAt])

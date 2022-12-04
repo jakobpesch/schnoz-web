@@ -20,7 +20,11 @@ export default async function handler(
   const { participantId, row: targetRow, col: targetCol } = body
   const { id: matchId } = query
 
-  if (!participantId || !targetRow || !targetCol) {
+  if (
+    !participantId ||
+    typeof targetRow !== "number" ||
+    typeof targetCol !== "number"
+  ) {
     res.status(500).end("Query is not complete")
     return
   }
@@ -121,19 +125,33 @@ export default async function handler(
           })
         )
       }
+      await Promise.all(updateTilesPromises)
+      const matchWithPlacedTiles = await prisma.match.findUnique({
+        where: { id: matchId },
+        include: matchRichInclude,
+      })
+
+      if (
+        !matchWithPlacedTiles ||
+        !matchWithPlacedTiles.activePlayer ||
+        !matchWithPlacedTiles.map
+      ) {
+        res.status(500).end("Match could not be fetched")
+        break
+      }
 
       if (!match.activePlayer) {
         res.status(500).end("Error while placing")
         break
       }
 
-      const tileLookup = getTileLookup(match.map.tiles)
+      const tileLookup = getTileLookup(matchWithPlacedTiles.map.tiles)
 
-      const prevScore = match.activePlayer?.score
+      const prevScore = matchWithPlacedTiles.activePlayer.score
 
       const newScore = defaultGame.scoringRules.reduce((totalScore, rule) => {
         const ruleScore = rule(
-          match!.activePlayerId!,
+          matchWithPlacedTiles!.activePlayerId!,
           translatedCoordinates,
           tileLookup
         )
@@ -141,23 +159,22 @@ export default async function handler(
         return totalScore + ruleScore
       }, prevScore)
 
-      const winnerId = match.activePlayer.score >= 5 ? participantId : null
+      const winnerId =
+        matchWithPlacedTiles.activePlayer.score >= 5 ? participantId : null
 
       await prisma.participant.update({
         where: { id: participantId },
         data: { score: newScore },
       })
 
-      const nextActivePlayerId = match.players.find(
-        (player) => player.id !== match!.activePlayerId
+      const nextActivePlayerId = matchWithPlacedTiles.players.find(
+        (player) => player.id !== matchWithPlacedTiles!.activePlayerId
       )?.id
 
       if (!nextActivePlayerId) {
         res.status(500).end("Error while changing turns")
         break
       }
-
-      await Promise.all(updateTilesPromises)
 
       const updatedMatch = await prisma.match.update({
         where: { id: match.id },
