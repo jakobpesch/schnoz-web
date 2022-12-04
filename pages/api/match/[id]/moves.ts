@@ -1,58 +1,74 @@
+import { MatchStatus, UnitType } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { defaultGame } from "../../../../gameLogic/GameVariants"
-import Match, { IMatch, IMatchDoc } from "../../../../models/Match.model"
-import { ITile } from "../../../../models/Tile.model"
 import { Coordinate2D } from "../../../../models/UnitConstellation.model"
-import connectDb from "../../../../services/MongoService"
+import { prisma } from "../../../../prisma/client"
+import { MatchRich, matchRichInclude } from "../../../../types/Match"
+import { TileRich } from "../../../../types/Tile"
 import {
   positionCoordinatesAt as translateCoordinatesTo,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
 import { getTileLookup } from "../../../../utils/coordinateUtils"
 
-export type MatchStatus = "created" | "started" | "finished"
-
-const increment = (x: number) => x + 1
-
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<IMatch>
+  res: NextApiResponse<MatchRich>
 ) {
-  const { body, method } = req
-  let match: IMatchDoc | null
-  const { userId, tileId } = body
+  const { body, method, query } = req
+  let match: MatchRich | null
+  const { participantId, row: targetRow, col: targetCol } = body
+  const { id: matchId } = query
 
-  if (!userId || !tileId) {
+  if (
+    !participantId ||
+    typeof targetRow !== "number" ||
+    typeof targetCol !== "number"
+  ) {
     res.status(500).end("Query is not complete")
+    return
+  }
+
+  if (typeof matchId !== "string") {
+    res.status(404).end(`Invalid match id provided: ${matchId}.`)
     return
   }
 
   switch (method) {
     case "POST":
       // Create a new move
-      await connectDb()
-      match = await Match.findById(req.query.id).exec()
+      match = await prisma.match.findUnique({
+        where: { id: matchId },
+        include: matchRichInclude,
+      })
 
       if (match === null) {
         res.status(500).end("Could not find match")
         break
       }
 
-      if (match.status !== "started") {
+      if (!match.map) {
+        res.status(500).end("Map is missing")
+        break
+      }
+
+      if (match.status !== MatchStatus.STARTED) {
         res.status(500).end("Match is not started")
         break
       }
-      if (match.activePlayer !== userId) {
+
+      if (match.activePlayerId !== participantId) {
         res.status(500).end("It's not your turn")
         break
       }
 
-      let targetTile = match.map.tiles.find(
-        (tile: ITile) => body.tileId === tile.id
-      )
+      const targetTile = match.map.tiles.find((tile: TileRich) => {
+        return targetRow === tile.row && targetCol === tile.col
+      })
 
       if (!targetTile) {
-        return false
+        res.status(500).end("Could not find target tile")
+        break
       }
 
       const { coordinates, rotatedClockwise } = body.unitConstellation
@@ -72,7 +88,7 @@ export default async function handler(
       )
 
       const canBePlaced = defaultGame.placementRules.every((rule) =>
-        rule(translatedCoordinates, match!.map, userId)
+        rule(translatedCoordinates, match!.map!, participantId)
       )
 
       if (!canBePlaced) {
@@ -80,6 +96,8 @@ export default async function handler(
         break
       }
 
+      let toBePlacedTiles = []
+      let updateTilesPromises = []
       for (let i = 0; i < translatedCoordinates.length; i++) {
         const [row, col] = translatedCoordinates[i]
         const tileIndex = match.map.tiles.findIndex(
@@ -89,58 +107,87 @@ export default async function handler(
           res.status(500).end("Error while placing")
           break
         }
+        toBePlacedTiles.push()
 
-        // mongoose saves it only this way *shrug*
-        match.map.tiles[tileIndex] = {
-          ...match.map.tiles[tileIndex],
-          unit: { type: "playerUnit", playerId: userId },
-        }
+        updateTilesPromises.push(
+          prisma.tile.update({
+            where: {
+              id: match.map.tiles[tileIndex].id,
+            },
+            data: {
+              unit: {
+                create: {
+                  type: UnitType.UNIT,
+                  ownerId: participantId,
+                },
+              },
+            },
+          })
+        )
       }
-      const scoreIndex = match.scores.findIndex(
-        (score) => score.playerId === match!.activePlayer
-      )
+      await Promise.all(updateTilesPromises)
+      const matchWithPlacedTiles = await prisma.match.findUnique({
+        where: { id: matchId },
+        include: matchRichInclude,
+      })
 
-      const tileLookup = getTileLookup(match.map.tiles)
-
-      const prevScore = match.scores[scoreIndex].score
-
-      const newScore =
-        prevScore +
-        defaultGame.scoringRules.reduce((totalScore, rule) => {
-          const ruleScore = rule(
-            match!.activePlayer,
-            translatedCoordinates,
-            tileLookup
-          )
-
-          return totalScore + ruleScore
-        }, 0)
-
-      match.scores[scoreIndex] = {
-        ...match.scores[scoreIndex],
-        score: newScore,
+      if (
+        !matchWithPlacedTiles ||
+        !matchWithPlacedTiles.activePlayer ||
+        !matchWithPlacedTiles.map
+      ) {
+        res.status(500).end("Match could not be fetched")
+        break
       }
 
-      const activePlayer = match.players.find(
-        (playerId) => playerId !== match!.activePlayer
-      )
-      if (!activePlayer) {
+      if (!match.activePlayer) {
+        res.status(500).end("Error while placing")
+        break
+      }
+
+      const tileLookup = getTileLookup(matchWithPlacedTiles.map.tiles)
+
+      const prevScore = matchWithPlacedTiles.activePlayer.score
+
+      const newScore = defaultGame.scoringRules.reduce((totalScore, rule) => {
+        const ruleScore = rule(
+          matchWithPlacedTiles!.activePlayerId!,
+          translatedCoordinates,
+          tileLookup
+        )
+
+        return totalScore + ruleScore
+      }, prevScore)
+
+      const winnerId = newScore >= 5 ? participantId : null
+
+      await prisma.participant.update({
+        where: { id: participantId },
+        data: { score: newScore },
+      })
+
+      const nextActivePlayerId = matchWithPlacedTiles.players.find(
+        (player) => player.id !== matchWithPlacedTiles!.activePlayerId
+      )?.id
+
+      if (!nextActivePlayerId) {
         res.status(500).end("Error while changing turns")
         break
       }
-      match.activePlayer = activePlayer
 
-      match.turn = increment(match.turn)
+      const updatedMatch = await prisma.match.update({
+        where: { id: match.id },
+        data: {
+          activePlayerId: nextActivePlayerId,
+          turn: { increment: 1 },
+          ...(winnerId
+            ? { winnerId, status: MatchStatus.FINISHED, finishedAt: new Date() }
+            : {}),
+        },
+        include: matchRichInclude,
+      })
 
-      match.winner = match.scores.find((score) => score.score >= 5)?.playerId
-
-      if (match.winner) {
-        match.status = "finished"
-        match.finishedAt = new Date()
-      }
-
-      await match.save()
-      res.status(201).json(match)
+      res.status(201).json(updatedMatch)
       break
     default:
       res.setHeader("Allow", ["POST"])

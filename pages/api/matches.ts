@@ -1,8 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
-import connectDb from "../../services/MongoService"
-import Match from "../../models/Match.model"
-import mongoose from "mongoose"
+import { prisma } from "../../prisma/client"
+import { matchRichInclude } from "../../types/Match"
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,19 +10,33 @@ export default async function handler(
   const { body, method } = req
   switch (method) {
     case "POST":
-      const userId = body.userId ?? new mongoose.Types.ObjectId()
-      await connectDb()
-      const match = new Match({
-        createdBy: userId,
-        players: [userId],
-        status: "created",
+      const match = await prisma.match.create({
+        data: {
+          createdById: body.userId,
+          maxPlayers: 2,
+          players: {
+            create: {
+              userId: body.userId,
+              playerNumber: 0,
+            },
+          },
+        },
+        include: matchRichInclude,
       })
-      await match.save()
+
+      // await connectDb()
+      // const match = new Match({
+      //   createdBy: userId,
+      //   players: [userId],
+      //   status: "created",
+      // })
+      // await match.save()
       res.status(201).json(match)
       break
     case "GET":
-      await connectDb()
-      const matches = await Match.find({})
+      const matches = await prisma.match.findMany({
+        include: matchRichInclude,
+      })
       res.status(200).json(matches)
       break
     default:

@@ -1,6 +1,6 @@
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { RenderSettings } from "../services/SettingsService"
-import { buildTileId } from "../utils/coordinateUtils"
+import { buildTileLookupId } from "../utils/coordinateUtils"
 import TileView from "./TileView"
 
 const HighlightView = (props: {
@@ -12,7 +12,7 @@ const HighlightView = (props: {
       {props.coordinates.map(([row, col], index) => {
         return (
           <TileView
-            tileId={buildTileId([row, col])}
+            tileId={buildTileLookupId([row, col])}
             key={"highlight_" + row + "_" + col + "_" + index}
             position="absolute"
             zIndex={1}

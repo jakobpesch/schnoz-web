@@ -1,30 +1,28 @@
 import { Box, BoxProps, Heading } from "@chakra-ui/react"
-import { useCallback, useEffect } from "react"
-import { Terrain } from "../models/Terrain.model"
-import { IUnit } from "../models/Unit.model"
+import { Terrain, Unit, UnitType } from "@prisma/client"
 import { RenderSettings } from "../services/SettingsService"
 
 interface TileProps extends BoxProps {
   tileId: string
-  unit?: IUnit
-  terrain?: Terrain
+  unit?: Unit | null
+  terrain?: Terrain | null
   onTileClick?: (tileId: string) => void
 }
 
 const TileView = (props: TileProps) => {
   let unit = null
-  if (props.unit?.type === "mainBuilding") {
+  if (props.unit?.type === UnitType.MAIN_BUILDING) {
     unit = "🏠"
   }
   let terrain = null
 
-  if (props.terrain === Terrain.water) {
+  if (props.terrain === Terrain.WATER) {
     terrain = "🧿"
   }
-  if (props.terrain === Terrain.tree) {
+  if (props.terrain === Terrain.TREE) {
     terrain = "🌳"
   }
-  if (props.terrain === Terrain.stone) {
+  if (props.terrain === Terrain.STONE) {
     terrain = "⚪️"
   }
   const size = RenderSettings.tileSize + "px"

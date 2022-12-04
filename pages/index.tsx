@@ -18,9 +18,9 @@ const Home: NextPage = () => {
   const [user, setUser] = useState<string | null>(null)
   const [matches, setMatches] = useState<any[]>([])
   const fetchAnonymousUserId = async () => {
-    const anonymousUserId = await signInAnonymously()
-    setUser(anonymousUserId)
-    setCookie("userId", anonymousUserId, 30)
+    const anonymousUser = await signInAnonymously()
+    setUser(anonymousUser.id)
+    setCookie("userId", anonymousUser.id, 30)
   }
   const fetchMatches = async () => {
     const matches = await getMatches()
@@ -28,6 +28,7 @@ const Home: NextPage = () => {
   }
   useEffect(() => {
     if (!getCookie("userId")) {
+      // @todo happens two times
       fetchAnonymousUserId()
     } else {
       setUser(getCookie("userId"))
@@ -54,12 +55,14 @@ const Home: NextPage = () => {
         return
       }
       const match = await createMatch(user)
-      setStatus("Created match: " + match._id.slice(-5))
-      router.push("/match/" + match._id)
+
+      setStatus("Created match: " + match.id.slice(-5))
+      router.push("/match/" + match.id)
     } catch (e: any) {
       setStatus(e.message)
     }
   }
+
   const handleDeleteMatch = async (matchId: string) => {
     try {
       if (!user) {
@@ -72,6 +75,7 @@ const Home: NextPage = () => {
       setStatus(e.message)
     }
   }
+
   const handleGoToMatch = async (matchId: string) => {
     try {
       if (!user) {
@@ -82,6 +86,7 @@ const Home: NextPage = () => {
       setStatus(e.message)
     }
   }
+
   return (
     <Flex width="full" height="100vh" justify="center" align="center">
       <Text position="absolute" bottom="4" right="4">

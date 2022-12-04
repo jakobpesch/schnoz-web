@@ -1,19 +1,27 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
-import Match, { IMatchDoc } from "../../../../models/Match.model"
-import connectDb from "../../../../services/MongoService"
-type Data = { match: IMatchDoc } | { message: "No Update" }
+import { prisma } from "../../../../prisma/client"
+import { MatchRich, matchRichInclude } from "../../../../types/Match"
+type Data = { match: MatchRich } | { message: "No Update" }
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
   const { query, method } = req
-  let match: IMatchDoc | null
+  const matchId = req.query.id
+
+  if (typeof matchId !== "string") {
+    res.status(404).end(`Invalid match id provided: ${matchId}.`)
+    return
+  }
+
   switch (method) {
     case "GET":
-      await connectDb()
-      match = await Match.findById(req.query.id).exec()
+      const match = await prisma.match.findUnique({
+        where: { id: matchId },
+        include: matchRichInclude,
+      })
 
       if (match === null) {
         res.status(500).end("Could not find match")

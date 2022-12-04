@@ -1,14 +1,18 @@
 import { Box, BoxProps } from "@chakra-ui/react"
-import { IMatchDoc } from "../models/Match.model"
 import { RenderSettings } from "../services/SettingsService"
+import { MatchRich } from "../types/Match"
 
 interface MapContainerProps extends BoxProps {
-  match: IMatchDoc
+  match: MatchRich
 }
 export const MapContainer = (props: MapContainerProps) => {
   const { match, ...boxProps } = props
-  const mapWidth = RenderSettings.tileSize * props.match.map.rowCount
-  const mapHeight = RenderSettings.tileSize * props.match.map.columnCount
+  if (!match.map) {
+    return null
+  }
+  const { rowCount, colCount } = match.map
+  const mapWidth = RenderSettings.tileSize * rowCount
+  const mapHeight = RenderSettings.tileSize * colCount
   return (
     <Box
       borderRadius="xl"
