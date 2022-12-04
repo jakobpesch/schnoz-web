@@ -1,8 +1,5 @@
 import { Box, BoxProps, Heading } from "@chakra-ui/react"
 import { Terrain, Unit, UnitType } from "@prisma/client"
-import { useCallback, useEffect } from "react"
-
-import { IUnit } from "../models/Unit.model"
 import { RenderSettings } from "../services/SettingsService"
 
 interface TileProps extends BoxProps {

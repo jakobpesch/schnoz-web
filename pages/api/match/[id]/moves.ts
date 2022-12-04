@@ -1,19 +1,15 @@
 import { MatchStatus, UnitType } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { defaultGame } from "../../../../gameLogic/GameVariants"
-import Match from "../../../../models/Match.model"
 import { Coordinate2D } from "../../../../models/UnitConstellation.model"
 import { prisma } from "../../../../prisma/client"
-import connectDb from "../../../../services/MongoService"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
 import { TileRich } from "../../../../types/Tile"
 import {
   positionCoordinatesAt as translateCoordinatesTo,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
-import { coordinateFromTileId } from "../../../../utils/coordinateUtils"
-
-const increment = (x: number) => x + 1
+import { getTileLookup } from "../../../../utils/coordinateUtils"
 
 export default async function handler(
   req: NextApiRequest,
@@ -58,13 +54,7 @@ export default async function handler(
       }
 
       if (match.activePlayerId !== participantId) {
-        console.log("not your turn")
-
-        res
-          .status(500)
-          .end(
-            "It's not your turn " + match.activePlayerId + " " + participantId
-          )
+        res.status(500).end("It's not your turn")
         break
       }
 
@@ -132,58 +122,56 @@ export default async function handler(
         )
       }
 
-      const matchUpdateData: any = {}
-      // const scoreIndex = match.scores.findIndex(
-      //   (score) => score.playerId === match!.activePlayer
-      // )
+      if (!match.activePlayer) {
+        res.status(500).end("Error while placing")
+        break
+      }
 
-      // const tileLookup = getTileLookup(match.map.tiles)
+      const tileLookup = getTileLookup(match.map.tiles)
 
-      // const prevScore = match.scores[scoreIndex].score
+      const prevScore = match.activePlayer?.score
 
-      // const newScore =
-      //   prevScore +
-      //   defaultGame.scoringRules.reduce((totalScore, rule) => {
-      //     const ruleScore = rule(
-      //       match!.activePlayer,
-      //       translatedCoordinates,
-      //       tileLookup
-      //     )
+      const newScore = defaultGame.scoringRules.reduce((totalScore, rule) => {
+        const ruleScore = rule(
+          match!.activePlayerId!,
+          translatedCoordinates,
+          tileLookup
+        )
 
-      //     return totalScore + ruleScore
-      //   }, 0)
+        return totalScore + ruleScore
+      }, prevScore)
 
-      // match.scores[scoreIndex] = {
-      //   ...match.scores[scoreIndex],
-      //   score: newScore,
-      // }
-      // match.winnerId = match.scores.find((score) => score.score >= 5)?.playerId
+      const winnerId = match.activePlayer.score >= 5 ? participantId : null
 
-      // if (match.winnerId) {
-      //   matchUpdateData.status = "finished"
-      //   matchUpdateData.finishedAt = new Date()
-      // }
+      await prisma.participant.update({
+        where: { id: participantId },
+        data: { score: newScore },
+      })
 
-      const activePlayerId = match.players.find(
+      const nextActivePlayerId = match.players.find(
         (player) => player.id !== match!.activePlayerId
       )?.id
 
-      if (!activePlayerId) {
+      if (!nextActivePlayerId) {
         res.status(500).end("Error while changing turns")
         break
       }
-      matchUpdateData.activePlayerId = activePlayerId
 
       await Promise.all(updateTilesPromises)
 
-      await prisma.match.update({
+      const updatedMatch = await prisma.match.update({
         where: { id: match.id },
-        data: matchUpdateData,
+        data: {
+          activePlayerId: nextActivePlayerId,
+          turn: { increment: 1 },
+          ...(winnerId
+            ? { winnerId, status: MatchStatus.FINISHED, finishedAt: new Date() }
+            : {}),
+        },
+        include: matchRichInclude,
       })
 
-      match.turn = increment(match.turn)
-
-      res.status(201).json(match)
+      res.status(201).json(updatedMatch)
       break
     default:
       res.setHeader("Allow", ["POST"])

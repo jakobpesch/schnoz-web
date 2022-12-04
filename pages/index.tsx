@@ -63,6 +63,7 @@ const Home: NextPage = () => {
       setStatus(e.message)
     }
   }
+
   const handleDeleteMatch = async (matchId: string) => {
     try {
       if (!user) {
@@ -75,6 +76,7 @@ const Home: NextPage = () => {
       setStatus(e.message)
     }
   }
+
   const handleGoToMatch = async (matchId: string) => {
     try {
       if (!user) {
@@ -85,6 +87,7 @@ const Home: NextPage = () => {
       setStatus(e.message)
     }
   }
+
   return (
     <Flex width="full" height="100vh" justify="center" align="center">
       <Text position="absolute" bottom="4" right="4">

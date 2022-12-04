@@ -138,7 +138,7 @@ export default async function handler(
           const joinedMatch = await prisma.match.update({
             where: { id: matchId },
             data: {
-              players: { create: { userId: body.userId } },
+              players: { create: { userId: body.userId, playerNumber: 1 } },
               updatedAt: new Date(),
             },
             include: matchRichInclude,

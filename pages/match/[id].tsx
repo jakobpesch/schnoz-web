@@ -12,7 +12,14 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react"
-import { Match, MatchStatus, Terrain, Tile, UnitType } from "@prisma/client"
+import {
+  Match,
+  MatchStatus,
+  Participant,
+  Terrain,
+  Tile,
+  UnitType,
+} from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -210,13 +217,13 @@ const MapTerrains = (props: { terrainTiles: TileRich[] }) => {
   )
 }
 
-export const getPlayerAppearance = (playerId: string, players: string[]) => {
+export const getPlayerAppearance = (participant?: Participant) => {
   let unit = ""
   let background = ""
-  if (playerId === players[0]) {
+  if (participant?.playerNumber === 0) {
     unit = "🦁"
     background = "orange.900"
-  } else if (playerId === players[1]) {
+  } else if (participant?.playerNumber === 1) {
     unit = "🐵"
     background = "teal.900"
   } else {
@@ -231,8 +238,7 @@ const MapUnits = (props: { match: MatchRich; unitTiles: TileRich[] }) => {
     <>
       {props.unitTiles.map((tile) => {
         const { unit, background } = getPlayerAppearance(
-          tile.unit?.ownerId ?? "",
-          props.match.players.map((player) => player.id)
+          props.match.players.find((player) => player.id === tile.unit?.ownerId)
         )
         return (
           <Flex
@@ -472,7 +478,7 @@ const MatchView = () => {
     if (match) {
       interval = setInterval(() => {
         checkForUpdates(match)
-      }, 5000)
+      }, 1000)
     }
     return () => {
       clearInterval(interval)
@@ -631,8 +637,7 @@ const MatchView = () => {
         <Text fontSize="2vw">
           {
             getPlayerAppearance(
-              match?.winnerId ?? "",
-              match?.players.map((player) => player.id) ?? []
+              match?.players.find((player) => player.id === match?.winnerId)
             ).unit
           }{" "}
           wins!

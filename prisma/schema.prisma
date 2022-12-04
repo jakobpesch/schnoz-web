@@ -23,18 +23,20 @@ model Participant {
   matchId      String
   match        Match  @relation(name: "match", fields: [matchId], references: [id], onDelete: Cascade)
   userId       String
-  user         User   @relation(fields: [userId], references: [id])
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   score        Int    @default(0)
   move         Move[]
   Unit         Unit[]
   activePlayer Match? @relation("activePlayer")
   winner       Match? @relation("winner")
+  playerNumber Int
 }
 
 model Match {
   id             String        @id @default(uuid())
   updatedAt      DateTime      @default(now()) @updatedAt
   startedAt      DateTime?
+  finishedAt     DateTime?
   createdAt      DateTime      @default(now())
   createdById    String
   createdBy      User          @relation(fields: [createdById], references: [id])
@@ -56,7 +58,7 @@ model Map {
   colCount Int
   tiles    Tile[]
   matchId  String @unique
-  match    Match  @relation(fields: [matchId], references: [id])
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 }
 
 model Tile {
@@ -67,7 +69,7 @@ model Tile {
   terrain Terrain?
   unit    Unit?
   mapId   String
-  map     Map      @relation(fields: [mapId], references: [id])
+  map     Map      @relation(fields: [mapId], references: [id], onDelete: Cascade)
   move    Move[]
 }
 
@@ -88,7 +90,7 @@ model Unit {
   ownerId String?
   owner   Participant? @relation(fields: [ownerId], references: [id])
   tileId  String       @unique
-  tile    Tile         @relation(fields: [tileId], references: [id])
+  tile    Tile         @relation(fields: [tileId], references: [id], onDelete: Cascade)
 }
 
 model UnitConstellation {

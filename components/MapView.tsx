@@ -1,4 +1,5 @@
-import { UnitType } from "@prisma/client"
+import { Participant, UnitType } from "@prisma/client"
+import assert from "assert"
 import { useCallback, useMemo } from "react"
 import { IMatchDoc } from "../models/Match.model"
 import { ITile } from "../models/Tile.model"
@@ -15,13 +16,12 @@ import TileView from "./TileView"
 const getBackgroundColor = (
   row: number,
   column: number,
-  players: string[],
-  player: string,
   yourTurn: boolean,
-  placeableCoordinates: Coordinate2D[]
+  placeableCoordinates: Coordinate2D[],
+  participant?: Participant
 ) => {
-  if (player) {
-    return getPlayerColor(players, player)
+  if (participant) {
+    return getPlayerColor(participant)
   }
   if (yourTurn && includes(placeableCoordinates, [row, column])) {
     return "green.900"
@@ -29,8 +29,8 @@ const getBackgroundColor = (
   return "unset"
 }
 
-export const getPlayerColor = (players: string[], player: string) => {
-  if (player === players[0]) {
+export const getPlayerColor = (participant: Participant) => {
+  if (participant.playerNumber === 0) {
     return "red.300"
   } else {
     return "blue.300"
@@ -54,15 +54,6 @@ const MapView = (props: MapProps) => {
   }, [props.match.updatedAt])
 
   const yourTurn = props.userId === props.match.activePlayerId
-
-  const hightlightColor = useMemo(() => {
-    return yourTurn
-      ? getPlayerColor(
-          props.match.players.map((player) => player.id),
-          props.userId
-        )
-      : "gray.500"
-  }, [yourTurn])
 
   const placeableCoordinates = useMemo(() => {
     if (!yourTurn || !tiles) {
@@ -93,6 +84,10 @@ const MapView = (props: MapProps) => {
   return (
     <>
       {tiles.map((tile) => {
+        const owner = props.match.players?.find(
+          (player) => player.id === tile.unit?.ownerId
+        )
+
         return (
           <TileView
             id={tile.id}
@@ -104,10 +99,9 @@ const MapView = (props: MapProps) => {
             background={getBackgroundColor(
               tile.row,
               tile.col,
-              props.match.players.map((player) => player.id),
-              tile.unit?.ownerId ?? "",
               yourTurn,
-              placeableCoordinates
+              placeableCoordinates,
+              owner
             )}
             onTileClick={onClick}
             onMouseEnter={props.onTileHover}

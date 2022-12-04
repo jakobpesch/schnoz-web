@@ -20,6 +20,7 @@ export default async function handler(
           players: {
             create: {
               userId: body.userId,
+              playerNumber: 0,
             },
           },
         },
