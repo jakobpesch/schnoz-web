@@ -159,8 +159,7 @@ export default async function handler(
         return totalScore + ruleScore
       }, prevScore)
 
-      const winnerId =
-        matchWithPlacedTiles.activePlayer.score >= 5 ? participantId : null
+      const winnerId = newScore >= 5 ? participantId : null
 
       await prisma.participant.update({
         where: { id: participantId },
