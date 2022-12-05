@@ -568,6 +568,7 @@ const MatchView = () => {
     Mousetrap.bind("6", () =>
       setSelectedConstellation(availableConstellations[5])
     )
+    Mousetrap.bind("esc", () => setSelectedConstellation(null))
   }, [])
 
   useEffect(() => {
@@ -792,7 +793,7 @@ const MatchView = () => {
         {wasStarted && (
           <>
             <MapContainer id="map-container" match={match}>
-              {match && selectedConstellation && (
+              {match && selectedConstellation && yourTurn && (
                 <MapHoveredHighlights
                   match={match}
                   readonly={isFinished}
@@ -801,10 +802,10 @@ const MatchView = () => {
                   onTileClick={onTileClick}
                 />
               )}
-              {placeableCoordinates && (
+              {placeableCoordinates && selectedConstellation && (
                 <MapHighlights
                   coordinates={placeableCoordinates}
-                  color={"green"}
+                  color={"green.900"}
                 />
               )}
               {terrainTiles && <MapTerrains terrainTiles={terrainTiles} />}
