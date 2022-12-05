@@ -843,9 +843,11 @@ const MatchView = () => {
                   <UnitConstellationView
                     key={"unitConstellationView " + constellation}
                     hotkey={`${index + 1}`}
-                    boxShadow={selected ? "0 0 0 0.1vw white" : undefined}
+                    boxShadow={
+                      yourTurn && selected ? "0 0 0 0.1vw white" : undefined
+                    }
                     _hover={
-                      !selected
+                      yourTurn && !selected
                         ? { boxShadow: "0 0 0 0.1vw darkgray" }
                         : undefined
                     }
