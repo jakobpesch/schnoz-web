@@ -24,15 +24,29 @@ export const getTileLookup = (tiles: TileRich[]) => {
   }, {})
 }
 
-export const includes = (
+export const getCoordinateCircle = (radius: number) => {
+  const range = Array.from(
+    { length: 2 * radius + 1 },
+    (v, index) => index - radius
+  )
+  const squareMatrix: Coordinate2D[] = []
+  range.forEach((row) => range.forEach((col) => squareMatrix.push([row, col])))
+  return squareMatrix.filter(
+    ([row, col]) => Math.sqrt(row ** 2 + col ** 2) <= radius + 0.5
+  )
+}
+
+export const coordinateIncludedIn = (
   coordinates: Coordinate2D[],
   coordinate: Coordinate2D
-) => coordinates.some((c) => isEqual(c, coordinate))
+) => coordinates.some((c) => coordinatesAreEqual(c, coordinate))
 
-export const isEqual = (coordianteA: Coordinate2D, coordianteB: Coordinate2D) =>
-  coordianteA[0] === coordianteB[0] && coordianteA[1] === coordianteB[1]
+export const coordinatesAreEqual = (
+  coordianteA: Coordinate2D,
+  coordianteB: Coordinate2D
+) => coordianteA[0] === coordianteB[0] && coordianteA[1] === coordianteB[1]
 
-export const isAdjacent = (
+export const coordinatesAreAdjacent = (
   coordinateA: Coordinate2D,
   coordinateB: Coordinate2D
 ) => {
@@ -57,8 +71,8 @@ export const getAdjacentCoordinatesOfConstellation = (
   const adjacent = constellation.reduce((acc, cur) => {
     const adjacent = getAdjacentCoordinates(cur)
     const removedDuplicates = adjacent.filter((coordinate) => {
-      const inAcc = includes(acc, coordinate)
-      const inConstellation = includes(constellation, coordinate)
+      const inAcc = coordinateIncludedIn(acc, coordinate)
+      const inConstellation = coordinateIncludedIn(constellation, coordinate)
       return !inAcc && !inConstellation
     })
     return [...acc, ...removedDuplicates]

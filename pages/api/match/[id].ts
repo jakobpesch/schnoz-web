@@ -4,6 +4,13 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { MatchStatus, Terrain, Tile, UnitType } from "@prisma/client"
 import { prisma } from "../../../prisma/client"
 import { MatchRich, matchRichInclude } from "../../../types/Match"
+import { getCoordinateCircle } from "../../../utils/coordinateUtils"
+import { positionCoordinatesAt } from "../../../utils/constallationTransformer"
+import { Coordinate2D } from "../../../models/UnitConstellation.model"
+import {
+  coordinateIncludedIn,
+  coordinatesAreEqual,
+} from "../../../utils/coordinateUtils"
 
 const getRandomTerrain = () => {
   const nullProbability = 30
@@ -28,27 +35,41 @@ const getRandomTerrain = () => {
   return null
 }
 const initialiseMap = (rowCount: number, columnCount: number) => {
-  const safeArea = 3
   const rowIndices = [...Array(rowCount).keys()]
   const columnIndices = [...Array(columnCount).keys()]
   const tiles = [] as Tile[]
+  const centerCoordinate: Coordinate2D = [
+    Math.floor(rowCount / 2),
+    Math.floor(columnCount / 2),
+  ]
+
+  const initialVisionRadius = 4
+  const initialVision = positionCoordinatesAt(
+    centerCoordinate,
+    getCoordinateCircle(initialVisionRadius)
+  )
+
+  const saveAreaRadius = 3
+  const safeArea = positionCoordinatesAt(
+    centerCoordinate,
+    getCoordinateCircle(saveAreaRadius)
+  )
+
   rowIndices.forEach((row) => {
     columnIndices.forEach((col) => {
-      const id = `${row}_${col}`
-      const centerCoordinate = [
-        Math.floor(rowCount / 2),
-        Math.floor(columnCount / 2),
-      ]
-      const tilePayload: any = { row, col }
-      if (
-        Math.sqrt(
-          (row - centerCoordinate[0]) ** 2 + (col - centerCoordinate[1]) ** 2
-        ) > safeArea
-      ) {
+      const coordinate: Coordinate2D = [row, col]
+
+      const tilePayload: any = { row, col, visible: false }
+
+      if (!coordinateIncludedIn(safeArea, coordinate)) {
         tilePayload.terrain = getRandomTerrain()
       }
 
-      if (centerCoordinate[0] === row && centerCoordinate[1] === col) {
+      if (coordinateIncludedIn(initialVision, coordinate)) {
+        tilePayload.visible = true
+      }
+
+      if (coordinatesAreEqual(coordinate, centerCoordinate)) {
         tilePayload.unit = {
           create: { type: UnitType.MAIN_BUILDING },
         }

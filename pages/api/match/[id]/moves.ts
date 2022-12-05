@@ -6,10 +6,14 @@ import { prisma } from "../../../../prisma/client"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
 import { TileRich } from "../../../../types/Tile"
 import {
-  positionCoordinatesAt as translateCoordinatesTo,
+  positionCoordinatesAt,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
-import { getTileLookup } from "../../../../utils/coordinateUtils"
+import {
+  buildTileLookupId,
+  getTileLookup,
+} from "../../../../utils/coordinateUtils"
+import { getCoordinateCircle } from "../../../../utils/coordinateUtils"
 
 export default async function handler(
   req: NextApiRequest,
@@ -82,7 +86,7 @@ export default async function handler(
         targetTile.col,
       ]
 
-      const translatedCoordinates = translateCoordinatesTo(
+      const translatedCoordinates = positionCoordinatesAt(
         targetTileCoordinate,
         transformedCoordinates
       )
@@ -98,21 +102,38 @@ export default async function handler(
 
       let toBePlacedTiles = []
       let updateTilesPromises = []
+
+      const visionCircle = getCoordinateCircle(3)
+      const tileLookup = getTileLookup(match.map.tiles)
       for (let i = 0; i < translatedCoordinates.length; i++) {
-        const [row, col] = translatedCoordinates[i]
-        const tileIndex = match.map.tiles.findIndex(
-          (tile) => tile.row === row && tile.col === col
-        )
-        if (tileIndex === -1) {
+        const coordinate = translatedCoordinates[i]
+        const tile = tileLookup[buildTileLookupId(coordinate)]
+        if (!tile) {
           res.status(500).end("Error while placing")
           break
         }
-        toBePlacedTiles.push()
+        const circleAroudUnit = positionCoordinatesAt(coordinate, visionCircle)
+        for (let i = 0; i < circleAroudUnit.length; i++) {
+          const coordinate = circleAroudUnit[i]
+          const tile = tileLookup[buildTileLookupId(coordinate)]
+          if (!tile.visible) {
+            updateTilesPromises.push(
+              prisma.tile.update({
+                where: {
+                  id: tile.id,
+                },
+                data: {
+                  visible: true,
+                },
+              })
+            )
+          }
+        }
 
         updateTilesPromises.push(
           prisma.tile.update({
             where: {
-              id: match.map.tiles[tileIndex].id,
+              id: tile.id,
             },
             data: {
               unit: {
@@ -145,7 +166,9 @@ export default async function handler(
         break
       }
 
-      const tileLookup = getTileLookup(matchWithPlacedTiles.map.tiles)
+      const tileLookupWithPlacedTiles = getTileLookup(
+        matchWithPlacedTiles.map.tiles
+      )
 
       const prevScore = matchWithPlacedTiles.activePlayer.score
 
@@ -153,7 +176,7 @@ export default async function handler(
         const ruleScore = rule(
           matchWithPlacedTiles!.activePlayerId!,
           translatedCoordinates,
-          tileLookup
+          tileLookupWithPlacedTiles
         )
 
         return totalScore + ruleScore

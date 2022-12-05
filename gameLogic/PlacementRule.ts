@@ -6,7 +6,7 @@ import { MatchRich } from "../types/Match"
 import { TileRich } from "../types/Tile"
 import {
   getAdjacentCoordinatesOfConstellation,
-  isEqual,
+  coordinatesAreEqual,
 } from "../utils/coordinateUtils"
 
 export const inBounds: PlacementRule = (constellation, map) =>
@@ -43,7 +43,9 @@ export const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
 
   const adjacentTiles = adjacentCoordinates
     .map((coordinate) =>
-      map.tiles.find((tile) => isEqual([tile.row, tile.col], coordinate))
+      map.tiles.find((tile) =>
+        coordinatesAreEqual([tile.row, tile.col], coordinate)
+      )
     )
     .filter((tile): tile is TileRich => !!tile)
 

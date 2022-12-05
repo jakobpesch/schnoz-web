@@ -1,4 +1,16 @@
-import { Button, Flex, Heading, Stack, Text } from "@chakra-ui/react"
+import {
+  Button,
+  Flex,
+  Heading,
+  Stack,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  Text,
+} from "@chakra-ui/react"
+import { MatchStatus } from "@prisma/client"
 import type { NextPage } from "next"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
@@ -11,12 +23,13 @@ import {
   joinMatch,
   signInAnonymously,
 } from "../services/GameManagerService"
+import { MatchRich } from "../types/Match"
 
 const Home: NextPage = () => {
   const router = useRouter()
   const [status, setStatus] = useState("")
   const [user, setUser] = useState<string | null>(null)
-  const [matches, setMatches] = useState<any[]>([])
+  const [matches, setMatches] = useState<MatchRich[]>([])
   const fetchAnonymousUserId = async () => {
     const anonymousUser = await signInAnonymously()
     setUser(anonymousUser.id)
@@ -88,7 +101,7 @@ const Home: NextPage = () => {
   }
 
   return (
-    <Flex width="full" height="100vh" justify="center" align="center">
+    <Flex mt="16" width="full" height="100vh" justify="center">
       <Text position="absolute" bottom="4" right="4">
         {status}
       </Text>
@@ -98,21 +111,56 @@ const Home: NextPage = () => {
         </Text>
       )}
 
-      <Stack spacing="4" alignItems="center">
+      <Stack width="4xl" spacing="4" alignItems="center">
         <Heading size="4xl">Schnoz</Heading>
-        {matches && user && (
-          <MatchList
-            userId={user}
-            matches={matches}
-            onJoinClick={(matchId) => handleJoinMatch(matchId)}
-            onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
-            onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
-          />
-        )}
         <Stack direction="row">
           <Button onClick={handleCreateMatch}>Create Match</Button>
           <Button onClick={() => fetchMatches()}>Refresh</Button>
         </Stack>
+        {matches && user && (
+          <Tabs align="center" width="full">
+            <TabList>
+              <Tab>Open</Tab>
+              <Tab>Ongoing</Tab>
+              <Tab>Finished</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <MatchList
+                  userId={user}
+                  matches={matches.filter(
+                    (match) => match.status === MatchStatus.CREATED
+                  )}
+                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                />
+              </TabPanel>
+              <TabPanel>
+                <MatchList
+                  userId={user}
+                  matches={matches.filter(
+                    (match) => match.status === MatchStatus.STARTED
+                  )}
+                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                />
+              </TabPanel>
+              <TabPanel>
+                <MatchList
+                  userId={user}
+                  matches={matches.filter(
+                    (match) => match.status === MatchStatus.FINISHED
+                  )}
+                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                />
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        )}
       </Stack>
     </Flex>
   )

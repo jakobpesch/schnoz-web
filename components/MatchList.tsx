@@ -10,12 +10,12 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react"
-import { Match } from "@prisma/client"
-import { MatchWithPlayers } from "../types/Match"
+import { MatchStatus } from "@prisma/client"
+import { MatchRich } from "../types/Match"
 
 interface MatchListProps {
   userId: string
-  matches: Match[]
+  matches: MatchRich[]
   onJoinClick: (id: string) => void
   onDeleteClick: (id: string) => void
   onGoToMatchClick: (id: string) => void
@@ -24,13 +24,13 @@ interface MatchListProps {
 const MatchList = (props: MatchListProps) => {
   const { userId, matches, onJoinClick, onDeleteClick, onGoToMatchClick } =
     props
-  const canJoin = (match: MatchWithPlayers) => {
+  const canJoin = (match: MatchRich) => {
     return match.players.length === 1
   }
-  const canDelete = (match: MatchWithPlayers, userId: string) => {
+  const canDelete = (match: MatchRich, userId: string) => {
     return match.createdById === userId
   }
-  const hasJoined = (match: MatchWithPlayers, userId: string) => {
+  const hasJoined = (match: MatchRich, userId: string) => {
     return match.players.some((participant) => participant.userId === userId)
   }
   if (matches.length === 0) {
@@ -61,7 +61,17 @@ const MatchList = (props: MatchListProps) => {
               <Tr key={match.id} color="gray.200">
                 <Td>{match.id.slice(-5)}</Td>
                 <Td>
-                  <Badge>{match.status}</Badge>
+                  <Badge
+                    colorScheme={
+                      match.status === MatchStatus.CREATED
+                        ? "orange"
+                        : match.status === MatchStatus.STARTED
+                        ? "green"
+                        : "gray"
+                    }
+                  >
+                    {match.status}
+                  </Badge>
                 </Td>
                 <Td>
                   {match.createdById === userId

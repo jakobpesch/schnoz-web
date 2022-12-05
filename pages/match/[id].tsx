@@ -45,6 +45,8 @@ import {
 } from "../../utils/constallationTransformer"
 import {
   buildTileLookupId,
+  coordinateIncludedIn,
+  getAdjacentCoordinates,
   getAdjacentCoordinatesOfConstellation,
   getTileLookup,
 } from "../../utils/coordinateUtils"
@@ -231,6 +233,51 @@ export const getPlayerAppearance = (participant?: Participant) => {
   return { unit, background }
 }
 
+const MapFog = (props: {
+  match: MatchRich
+  fogTiles: TileRich[]
+  halfFogTiles: TileRich[]
+}) => {
+  return (
+    <>
+      {props.fogTiles.map((tile) => {
+        const coordinate: Coordinate2D = [tile.row, tile.col]
+        return (
+          <Flex
+            key={tile.row + "_" + tile.col}
+            position="absolute"
+            align="center"
+            justify="center"
+            top={tile.row * RenderSettings.tileSize + "px"}
+            left={tile.col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            pointerEvents="none"
+            bg="black"
+          />
+        )
+      })}
+      {props.halfFogTiles.map((tile) => {
+        const coordinate: Coordinate2D = [tile.row, tile.col]
+        return (
+          <Flex
+            key={tile.row + "_" + tile.col}
+            position="absolute"
+            align="center"
+            justify="center"
+            top={tile.row * RenderSettings.tileSize + "px"}
+            left={tile.col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            pointerEvents="none"
+            opacity={0.5}
+            bg="black"
+          />
+        )
+      })}
+    </>
+  )
+}
 const MapUnits = (props: { match: MatchRich; unitTiles: TileRich[] }) => {
   return (
     <>
@@ -284,7 +331,7 @@ const MapPlaceableTiles = (props: { coordinates: Coordinate2D[] }) => {
   )
 }
 
-const MapHighlights = (props: {
+const MapHoveredHighlights = (props: {
   match: MatchRich
   readonly?: boolean
   hoveringCoordinate: Coordinate2D | null
@@ -366,6 +413,34 @@ const MapHighlights = (props: {
   )
 }
 
+const MapHighlights = (props: {
+  coordinates: Coordinate2D[]
+  color?: string
+}) => {
+  return (
+    <>
+      {props.coordinates.map(([row, col]) => {
+        return (
+          <Flex
+            key={row + "_" + col}
+            position="absolute"
+            zIndex={1}
+            align="center"
+            justify="center"
+            top={row * RenderSettings.tileSize + "px"}
+            left={col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            bg={props.color ?? "gray"}
+            pointerEvents="none"
+            opacity={0.4}
+          />
+        )
+      })}
+    </>
+  )
+}
+
 const MapGrid = (props: {
   match: IMatchDoc
   onTileClick: (tileId: ITile["id"]) => void
@@ -413,15 +488,34 @@ const MatchView = () => {
   const hoveringCoordinate = useRef<Coordinate2D | null>(null)
 
   const terrainTiles = useMemo(() => {
-    return match?.map?.tiles.filter((tile) => tile.terrain)
+    return match?.map?.tiles.filter((tile) => tile.terrain && tile.visible)
   }, [match?.updatedAt])
 
   const unitTiles = useMemo(() => {
-    return match?.map?.tiles.filter((tile) => tile.unit)
+    return match?.map?.tiles.filter((tile) => tile.unit && tile.visible)
+  }, [match?.updatedAt])
+
+  const fogTiles = useMemo(() => {
+    return match?.map?.tiles.filter((tile) => !tile.visible)
   }, [match?.updatedAt])
 
   const tileLookup = useMemo(() => {
     return getTileLookup(match?.map?.tiles ?? [])
+  }, [match?.updatedAt])
+
+  const halfFogTiles: TileRich[] | undefined = useMemo(() => {
+    return match?.map?.tiles.filter((tile) => {
+      if (!tile.visible) {
+        return false
+      }
+      const coordinate: Coordinate2D = [tile.row, tile.col]
+      const adjacentCoordinates = getAdjacentCoordinates(coordinate)
+      const hasHiddenAdjacentTile = adjacentCoordinates.some(
+        (adjacentCoordinate) =>
+          !tileLookup[buildTileLookupId(adjacentCoordinate)].visible
+      )
+      return tile.visible && hasHiddenAdjacentTile
+    })
   }, [match?.updatedAt])
 
   let userId: string | null = null
@@ -525,7 +619,7 @@ const MatchView = () => {
     }
   }
 
-  const yourTurn = userId === match?.activePlayer
+  const yourTurn = userId === match?.activePlayer?.userId
 
   const GameSettingsView = () => {
     return (
@@ -656,7 +750,7 @@ const MatchView = () => {
     const alliedTiles =
       match.map.tiles.filter(
         (tile) =>
-          tile.unit?.ownerId === userId ||
+          tile.unit?.ownerId === match.activePlayer?.id ||
           tile?.unit?.type === UnitType.MAIN_BUILDING
       ) ?? []
 
@@ -686,12 +780,6 @@ const MatchView = () => {
     setMatch(await startMatch(match.id, userId, settings.mapSize))
   }
 
-  // const hightlightColor = useMemo(() => {
-  //   return yourTurn
-  //     ? getPlayerColor(props.match.players, props.userId)
-  //     : "gray.500"
-  // }, [yourTurn])
-
   return (
     <Container height="100vh" color="white">
       <Center height="full">
@@ -700,7 +788,7 @@ const MatchView = () => {
           <>
             <MapContainer id="map-container" match={match}>
               {match && selectedConstellation && (
-                <MapHighlights
+                <MapHoveredHighlights
                   match={match}
                   readonly={isFinished}
                   hoveringCoordinate={hoveringCoordinate.current}
@@ -709,10 +797,20 @@ const MatchView = () => {
                 />
               )}
               {placeableCoordinates && (
-                <MapPlaceableTiles coordinates={placeableCoordinates} />
+                <MapHighlights
+                  coordinates={placeableCoordinates}
+                  color={"green"}
+                />
               )}
               {terrainTiles && <MapTerrains terrainTiles={terrainTiles} />}
               {unitTiles && <MapUnits match={match} unitTiles={unitTiles} />}
+              {fogTiles && halfFogTiles && (
+                <MapFog
+                  match={match}
+                  fogTiles={fogTiles}
+                  halfFogTiles={halfFogTiles}
+                />
+              )}
             </MapContainer>
             <ScoreView players={match.players} />
           </>

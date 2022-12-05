@@ -7,7 +7,7 @@ import {
   buildTileLookupId,
   getAdjacentCoordinatesOfConstellation,
   getTileLookup,
-  includes,
+  coordinateIncludedIn,
 } from "../utils/coordinateUtils"
 import TileView from "./TileView"
 
@@ -21,7 +21,7 @@ const getBackgroundColor = (
   if (participant) {
     return getPlayerColor(participant)
   }
-  if (yourTurn && includes(placeableCoordinates, [row, column])) {
+  if (yourTurn && coordinateIncludedIn(placeableCoordinates, [row, column])) {
     return "green.900"
   }
   return "unset"
