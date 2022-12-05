@@ -43,13 +43,13 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
     Math.floor(columnCount / 2),
   ]
 
-  const initialVisionRadius = 4
+  const initialVisionRadius = 3
   const initialVision = positionCoordinatesAt(
     centerCoordinate,
     getCoordinateCircle(initialVisionRadius)
   )
 
-  const saveAreaRadius = 3
+  const saveAreaRadius = 2
   const safeArea = positionCoordinatesAt(
     centerCoordinate,
     getCoordinateCircle(saveAreaRadius)
