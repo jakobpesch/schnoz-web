@@ -87,7 +87,12 @@ interface UnitConstellationViewProps extends BoxProps {
 }
 
 export const UnitConstellationView = (props: UnitConstellationViewProps) => {
-  const { coordinates, hotkey, tileSize = RenderSettings.tileSize } = props
+  const {
+    coordinates,
+    hotkey,
+    tileSize = RenderSettings.tileSize,
+    ...boxProps
+  } = props
 
   const viewPortWidthFactor = 0.05
   const padding = 10
@@ -110,7 +115,7 @@ export const UnitConstellationView = (props: UnitConstellationViewProps) => {
       position="relative"
       width={containerSize}
       height={containerSize}
-      {...props}
+      {...boxProps}
     >
       {coordinates.map(([row, col]) => {
         const topOffset =
