@@ -516,8 +516,13 @@ const MatchView = () => {
       const coordinate: Coordinate2D = [tile.row, tile.col]
       const adjacentCoordinates = getAdjacentCoordinates(coordinate)
       const hasHiddenAdjacentTile = adjacentCoordinates.some(
-        (adjacentCoordinate) =>
-          !tileLookup[buildTileLookupId(adjacentCoordinate)].visible
+        (adjacentCoordinate) => {
+          const tile = tileLookup[buildTileLookupId(adjacentCoordinate)]
+          if (!tile) {
+            return false
+          }
+          return !tile.visible
+        }
       )
       return tile.visible && hasHiddenAdjacentTile
     })
