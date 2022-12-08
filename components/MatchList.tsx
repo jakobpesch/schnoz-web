@@ -26,7 +26,10 @@ const MatchList = (props: MatchListProps) => {
   const { userId, matches, onJoinClick, onDeleteClick, onGoToMatchClick } =
     props
   const canJoin = (match: MatchRich) => {
-    return match.players.length === 1
+    return (
+      match.players.length === 1 &&
+      !match.players.some((player) => player.userId === userId)
+    )
   }
   const canDelete = (match: MatchRich, userId: string) => {
     return match.createdById === userId
