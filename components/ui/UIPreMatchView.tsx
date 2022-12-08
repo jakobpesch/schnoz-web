@@ -1,5 +1,4 @@
 import { Button, ButtonGroup, Heading, Text, VStack } from "@chakra-ui/react"
-import { match } from "assert"
 import { MatchSettings } from "../../services/SettingsService"
 
 interface UIPreMatchViewProps {
@@ -13,7 +12,7 @@ interface UIPreMatchViewProps {
 
 export const UIPreMatchView = (props: UIPreMatchViewProps) => {
   return (
-    <VStack spacing="8">
+    <VStack spacing="8" mt="16">
       <Heading>Not Started</Heading>
       {props.userId !== props.createdById ? (
         <Text>Waiting for creator to start the game</Text>

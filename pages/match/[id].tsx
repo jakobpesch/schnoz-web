@@ -1,4 +1,4 @@
-import { Box, BoxProps, Center, Container } from "@chakra-ui/react"
+import { Box, BoxProps, Container } from "@chakra-ui/react"
 import { Match, MatchStatus, UnitType } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useEffect, useMemo, useState } from "react"

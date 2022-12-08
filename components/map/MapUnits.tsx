@@ -1,7 +1,6 @@
 import { Flex, Heading } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import { RenderSettings } from "../../services/SettingsService"
-import { MatchRich } from "../../types/Match"
 import { TileRich } from "../../types/Tile"
 
 export const MapUnits = (props: {

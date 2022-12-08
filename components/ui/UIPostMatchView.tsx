@@ -1,8 +1,7 @@
-import { VStack, Heading, Button, Text } from "@chakra-ui/react"
-import { Match, Participant } from "@prisma/client"
+import { Button, Heading, Text, VStack } from "@chakra-ui/react"
+import { Participant } from "@prisma/client"
 import { useRouter } from "next/router"
 import { RenderSettings } from "../../services/SettingsService"
-
 interface UIPostMatchViewProps {
   winner: Participant | null
 }
