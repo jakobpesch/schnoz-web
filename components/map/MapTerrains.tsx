@@ -2,6 +2,7 @@ import { Flex, Heading } from "@chakra-ui/react"
 import { Terrain } from "@prisma/client"
 import { RenderSettings } from "../../services/SettingsService"
 import { TileRich } from "../../types/Tile"
+import { MapObject } from "./MapObject"
 
 export const MapTerrains = (props: { terrainTiles: TileRich[] }) => {
   let terrain = ""
@@ -29,7 +30,7 @@ export const MapTerrains = (props: { terrainTiles: TileRich[] }) => {
             height={RenderSettings.tileSize + "px"}
             pointerEvents="none"
           >
-            <Heading>{terrain}</Heading>
+            <MapObject object={terrain} />
           </Flex>
         )
       })}

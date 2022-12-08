@@ -1,7 +1,14 @@
-import { Button, ButtonGroup, Heading, Text, VStack } from "@chakra-ui/react"
+import {
+  Button,
+  ButtonGroup,
+  Heading,
+  StackProps,
+  Text,
+  VStack,
+} from "@chakra-ui/react"
 import { MatchSettings } from "../../services/SettingsService"
 
-interface UIPreMatchViewProps {
+interface UIPreMatchViewProps extends StackProps {
   settings: MatchSettings
   userId: string
   createdById: string
@@ -11,14 +18,23 @@ interface UIPreMatchViewProps {
 }
 
 export const UIPreMatchView = (props: UIPreMatchViewProps) => {
+  const {
+    settings,
+    userId,
+    createdById,
+    isGameFull,
+    onSettingsChange,
+    onStartGameClick,
+    ...stackProps
+  } = props
   return (
-    <VStack spacing="8" mt="16">
+    <VStack spacing="8" {...stackProps}>
       <Heading>Not Started</Heading>
-      {props.userId !== props.createdById ? (
+      {userId !== createdById ? (
         <Text>Waiting for creator to start the game</Text>
       ) : (
         <>
-          {props.isGameFull ? (
+          {isGameFull ? (
             <Text>Game is full. Ready to start game.</Text>
           ) : (
             <Text color="gray.300">Waiting for other player to join</Text>
@@ -29,30 +45,24 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
               <Button
                 variant="outline"
                 size="sm"
-                colorScheme={props.settings.mapSize === 11 ? "blue" : "gray"}
-                onClick={() =>
-                  props.onSettingsChange({ ...props.settings, mapSize: 11 })
-                }
+                colorScheme={settings.mapSize === 11 ? "blue" : "gray"}
+                onClick={() => onSettingsChange({ ...settings, mapSize: 11 })}
               >
                 Small
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                colorScheme={props.settings.mapSize === 21 ? "blue" : "gray"}
-                onClick={() =>
-                  props.onSettingsChange({ ...props.settings, mapSize: 21 })
-                }
+                colorScheme={settings.mapSize === 21 ? "blue" : "gray"}
+                onClick={() => onSettingsChange({ ...settings, mapSize: 21 })}
               >
                 Medium
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                colorScheme={props.settings.mapSize === 31 ? "blue" : "gray"}
-                onClick={() =>
-                  props.onSettingsChange({ ...props.settings, mapSize: 31 })
-                }
+                colorScheme={settings.mapSize === 31 ? "blue" : "gray"}
+                onClick={() => onSettingsChange({ ...settings, mapSize: 31 })}
               >
                 Large
               </Button>
@@ -68,16 +78,16 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
           </Text>
         </VStack> */}
 
-      {props.userId === props.createdById && (
+      {userId === createdById && (
         <Button
           size="lg"
           colorScheme="blue"
-          disabled={!props.isGameFull}
+          disabled={!isGameFull}
           onClick={() => {
-            props.onStartGameClick()
+            onStartGameClick()
           }}
         >
-          {props.isGameFull ? "Start Game" : "Waiting for opponent..."}
+          {isGameFull ? "Start Game" : "Waiting for opponent..."}
         </Button>
       )}
     </VStack>

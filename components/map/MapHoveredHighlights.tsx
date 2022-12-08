@@ -1,4 +1,5 @@
 import { Flex } from "@chakra-ui/react"
+import { Participant } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useState, useEffect, useMemo } from "react"
 import {
@@ -10,6 +11,7 @@ import {
   transformCoordinates,
   positionCoordinatesAt,
 } from "../../utils/constallationTransformer"
+import { MapObject } from "./MapObject"
 
 const mousePositionToMapCoordinates = (
   mouseX: number,
@@ -22,6 +24,7 @@ const mousePositionToMapCoordinates = (
 }
 
 export interface MapHoveredHighlightsProps {
+  player: Participant
   hide?: boolean
   constellation: Coordinate2D[] | null
   onTileClick: (
@@ -95,7 +98,11 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
             bg={"gray"}
             opacity={0.4}
             onClick={() => props.onTileClick(row, col, rotatedClockwise)}
-          />
+          >
+            <MapObject
+              object={RenderSettings.getPlayerAppearance(props.player).unit}
+            />
+          </Flex>
         )
       })}
     </>

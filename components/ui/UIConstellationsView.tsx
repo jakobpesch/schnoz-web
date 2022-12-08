@@ -89,6 +89,7 @@ export const UIConstellationView = (props: UIConstellationViewProps) => (
     bg="gray.700"
     borderRadius="0.5vw"
     borderWidth="0.08vw"
+    opacity={props.readonly ? 0.5 : 1}
   >
     {props.constellations.map((constellation, index) => {
       const selected =
@@ -99,10 +100,10 @@ export const UIConstellationView = (props: UIConstellationViewProps) => (
           key={"unitConstellationView " + constellation}
           hotkey={`${index + 1}`}
           boxShadow={
-            props.readonly && selected ? "0 0 0 0.1vw white" : undefined
+            !props.readonly && selected ? "0 0 0 0.1vw white" : undefined
           }
           _hover={
-            props.readonly && !selected
+            !props.readonly && !selected
               ? { boxShadow: "0 0 0 0.1vw darkgray" }
               : undefined
           }

@@ -1,5 +1,6 @@
-import { Box, BoxProps, Container } from "@chakra-ui/react"
+import { Container } from "@chakra-ui/react"
 import { Match, MatchStatus, UnitType } from "@prisma/client"
+import assert from "assert"
 import Mousetrap from "mousetrap"
 import { useEffect, useMemo, useState } from "react"
 import { MapContainer } from "../../components/map/MapContainer"
@@ -9,6 +10,7 @@ import { MapPlaceableTiles } from "../../components/map/MapPlaceableTiles"
 import { MapTerrains } from "../../components/map/MapTerrains"
 import { MapUnits } from "../../components/map/MapUnits"
 import { UIConstellationView } from "../../components/ui/UIConstellationsView"
+import { UILoadingIndicator } from "../../components/ui/UILoadingIndicator"
 import { UILoggingView } from "../../components/ui/UILoggingView"
 import { UIPostMatchView } from "../../components/ui/UIPostMatchView"
 import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
@@ -35,27 +37,9 @@ import {
   getTileLookup,
 } from "../../utils/coordinateUtils"
 
-const FollowMouse = (props: BoxProps) => {
-  const [mousePosition, setMousePosition] = useState([0, 0])
-  const handleMouseMove = (event: MouseEvent) => {
-    setMousePosition([event.clientX, event.clientY])
-  }
-  useEffect(() => {
-    document.onmousemove = handleMouseMove
-  }, [])
-  const [mouseX, mouseY] = mousePosition
-  return (
-    <Box
-      position="absolute"
-      left={mouseX + "px"}
-      top={mouseY + "px"}
-      {...props}
-    />
-  )
-}
-
 const MatchView = () => {
   const [match, setMatch] = useState<MatchRich | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
 
   let userId: string | null = null
   try {
@@ -82,6 +66,11 @@ const MatchView = () => {
 
   const hasUpdate = match?.updatedAt
 
+  const tileLookup =
+    useMemo(() => {
+      return getTileLookup(match?.map?.tiles ?? [])
+    }, [hasUpdate]) ?? []
+
   const terrainTiles =
     useMemo(() => {
       return match?.map?.tiles.filter((tile) => tile.terrain && tile.visible)
@@ -97,12 +86,7 @@ const MatchView = () => {
       return match?.map?.tiles.filter((tile) => !tile.visible)
     }, [hasUpdate]) ?? []
 
-  const tileLookup =
-    useMemo(() => {
-      return getTileLookup(match?.map?.tiles ?? [])
-    }, [hasUpdate]) ?? []
-
-  const halfFogTiles: TileRich[] | undefined =
+  const halfFogTiles =
     useMemo(() => {
       return match?.map?.tiles.filter((tile) => {
         if (!tile.visible) {
@@ -147,59 +131,78 @@ const MatchView = () => {
     }, [hasUpdate]) ?? []
 
   const checkForUpdates = async (match: Match) => {
-    const updatedMatch = await checkForMatchUpdates(match.id, match.updatedAt)
-
-    if (updatedMatch) {
-      setMatch(updatedMatch)
+    setLoading(true)
+    try {
+      const updatedMatch = await checkForMatchUpdates(match.id, match.updatedAt)
+      if (updatedMatch) {
+        setMatch(updatedMatch)
+      }
+    } catch (e) {
+      console.error(e)
     }
+    setLoading(false)
   }
 
   useEffect(() => {
     const matchId = window.location.pathname.split("/").pop()
     if (matchId) {
       const fetchMatch = async (matchId: string) => {
+        setLoading(true)
         try {
           const match = await getMatch(matchId)
           setMatch(match)
         } catch (e: any) {
           console.log(e.message)
         }
+        setLoading(false)
       }
       fetchMatch(matchId)
     }
-    Mousetrap.bind("1", () => setSelectedConstellation(unitConstellations[0]))
-    Mousetrap.bind("2", () => setSelectedConstellation(unitConstellations[1]))
-    Mousetrap.bind("3", () => setSelectedConstellation(unitConstellations[2]))
-    Mousetrap.bind("4", () => setSelectedConstellation(unitConstellations[3]))
-    Mousetrap.bind("5", () => setSelectedConstellation(unitConstellations[4]))
-    Mousetrap.bind("6", () => setSelectedConstellation(unitConstellations[5]))
-    Mousetrap.bind("esc", () => setSelectedConstellation(null))
   }, [])
 
   useEffect(() => {
+    if (!yourTurn) {
+      console.log("unbinding")
+
+      Mousetrap.unbind("1")
+      Mousetrap.unbind("2")
+      Mousetrap.unbind("3")
+      Mousetrap.unbind("4")
+      Mousetrap.unbind("5")
+      Mousetrap.unbind("6")
+      Mousetrap.unbind("esc")
+    } else {
+      console.log("binding")
+      Mousetrap.bind("1", () => setSelectedConstellation(unitConstellations[0]))
+      Mousetrap.bind("2", () => setSelectedConstellation(unitConstellations[1]))
+      Mousetrap.bind("3", () => setSelectedConstellation(unitConstellations[2]))
+      Mousetrap.bind("4", () => setSelectedConstellation(unitConstellations[3]))
+      Mousetrap.bind("5", () => setSelectedConstellation(unitConstellations[4]))
+      Mousetrap.bind("6", () => setSelectedConstellation(unitConstellations[5]))
+      Mousetrap.bind("esc", () => setSelectedConstellation(null))
+    }
+  }, [yourTurn])
+
+  useEffect(() => {
     let interval: NodeJS.Timer
-    if (match) {
+    if (match && !loading && !yourTurn) {
       console.log("setting new timer")
 
       interval = setInterval(() => {
         checkForUpdates(match)
-      }, 1000)
+      }, 1500)
     }
     return () => {
       clearInterval(interval)
     }
-  }, [match])
+  }, [match, loading])
 
-  if (!userId) {
-    return null
-  }
-
-  if (!match) {
+  if (!userId || !match || !match.activePlayer) {
     return null
   }
 
   const isMatchFull =
-    match?.players?.filter((player) => player !== null).length === 2
+    match.players?.filter((player) => player !== null).length === 2
 
   const onTileClick = async (
     row: number,
@@ -218,46 +221,64 @@ const MatchView = () => {
       coordinates: selectedConstellation,
       rotatedClockwise,
     }
+    setLoading(true)
     try {
-      const participantId = match?.players.find(
+      const participantId = match.players.find(
         (player) => player.userId === userId
       )?.id
-      if (!participantId) {
-        throw new Error("Participant not found")
-      }
-      setMatch(
-        await makeMove(match!.id, row, col, participantId, unitConstellation)
+
+      assert(participantId)
+
+      const updatedMatch = await makeMove(
+        match.id,
+        row,
+        col,
+        participantId,
+        unitConstellation
       )
+      setMatch(updatedMatch)
       setSelectedConstellation(null)
       setStatus(`Placed unit on tile (${row}|${col})`)
     } catch (e: any) {
       setStatus(e.message)
-      console.log(e.message)
+      console.error(e.message)
     }
+    setLoading(false)
   }
 
-  const isPreMatch = match?.status === MatchStatus.CREATED
+  const isPreMatch = match.status === MatchStatus.CREATED
 
   const wasStarted =
-    match?.status === MatchStatus.STARTED ||
-    match?.status === MatchStatus.FINISHED
+    match.status === MatchStatus.STARTED ||
+    match.status === MatchStatus.FINISHED
 
-  const isOngoing = match?.status === MatchStatus.STARTED
+  const isOngoing = match.status === MatchStatus.STARTED
 
-  const isFinished = match?.status === MatchStatus.FINISHED
+  const isFinished = match.status === MatchStatus.FINISHED
 
   const onStartGameClick = async () => {
     if (!userId) {
       return
     }
-
-    setMatch(await startMatch(match.id, userId, settings.mapSize))
+    setLoading(true)
+    try {
+      const startedMatch = await startMatch(match.id, userId, settings.mapSize)
+      setMatch(startedMatch)
+    } catch (e) {
+      console.error(e)
+    }
+    setLoading(false)
   }
 
   return (
-    <Container height="100vh" color="white">
+    <Container
+      height="100vh"
+      color="white"
+      cursor={selectedConstellation ? "none" : "default"}
+    >
       {isPreMatch && (
         <UIPreMatchView
+          pt="16"
           settings={settings}
           onSettingsChange={(settings) => setSettings(settings)}
           onStartGameClick={onStartGameClick}
@@ -270,6 +291,7 @@ const MatchView = () => {
         <>
           <MapContainer id="map-container" match={match}>
             <MapHoveredHighlights
+              player={match.activePlayer}
               hide={isFinished || !yourTurn}
               constellation={selectedConstellation}
               onTileClick={onTileClick}
@@ -288,11 +310,12 @@ const MatchView = () => {
         <UIConstellationView
           selectedConstellation={selectedConstellation}
           constellations={unitConstellations}
-          readonly={yourTurn}
+          readonly={!yourTurn}
           onSelect={(constellation) => setSelectedConstellation(constellation)}
         />
       )}
       <UILoggingView statusLog={statusLog} />
+      <UILoadingIndicator loading={loading} />
     </Container>
   )
 }
