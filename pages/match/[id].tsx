@@ -197,7 +197,7 @@ const MatchView = () => {
     }
   }, [match, loading])
 
-  if (!userId || !match || !match.activePlayer) {
+  if (!userId || !match) {
     return null
   }
 

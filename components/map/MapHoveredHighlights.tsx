@@ -24,7 +24,7 @@ const mousePositionToMapCoordinates = (
 }
 
 export interface MapHoveredHighlightsProps {
-  player: Participant
+  player: Participant | null
   hide?: boolean
   constellation: Coordinate2D[] | null
   onTileClick: (
@@ -78,9 +78,10 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
     return []
   }, [hoveredCoordinate, rotatedClockwise])
 
-  if (props.hide) {
+  if (!props.player || props.hide) {
     return null
   }
+
   return (
     <>
       {hoveredCoordinates.map(([row, col]) => {
@@ -100,7 +101,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
             onClick={() => props.onTileClick(row, col, rotatedClockwise)}
           >
             <MapObject
-              object={RenderSettings.getPlayerAppearance(props.player).unit}
+              object={RenderSettings.getPlayerAppearance(props.player!).unit}
             />
           </Flex>
         )
