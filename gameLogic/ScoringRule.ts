@@ -3,8 +3,6 @@ import { Coordinate2D } from "../models/UnitConstellation.model"
 import {
   buildTileLookupId,
   getAdjacentCoordinates,
-  getAdjacentCoordinatesOfConstellation,
-  getDiagonallyAdjacentCoordinates,
   TileLookup,
 } from "../utils/coordinateUtils"
 
@@ -88,4 +86,55 @@ export const holeRule: ScoringRule = (playerId, tileLookup) => {
 
 export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
   return 0
+  // const tiles = Object.values(tileLookup)
+  // const unitTiles = tiles.filter((tile) => tile.unit?.ownerId === playerId)
+  // const mapSize = Math.sqrt(tiles.length)
+  // const score = 0
+  // const processedTileIds = new Set<string>()
+  // unitTiles.forEach((unitTile) => {
+  //   if (processedTileIds.has(unitTile.id)) {
+  //     return
+  //   }
+  //   processedTileIds.add(unitTile.id)
+
+  //   const checkTile = (
+  //     tile: TileRich,
+  //     predicate: (tile: TileRich) => boolean
+  //   ) => {
+  //     return predicate(tile)
+  //   }
+
+  //   const checkDiagonalToTopRight = tileLookup
+
+  //   while (true) {
+  //     let diagonalLength = 1
+  //     const [bottomLeft, topRight] = getTopRightDiagonallyAdjacentCoordinates([
+  //       unitTile.row,
+  //       unitTile.col,
+  //     ])
+  //     const bottomLeftTile = tileLookup[buildTileLookupId(bottomLeft)]
+  //     const topRightTile = tileLookup[buildTileLookupId(topRight)]
+  //     if (!bottomLeftTile.unit && !topRightTile.unit) {
+  //     }
+  //     if (bottomLeftTile?.unit) {
+  //       diagonalLength++
+  //       processedTileIds.add(bottomLeftTile.id)
+  //     }
+  //     if (topRightTile?.unit) {
+  //       diagonalLength++
+  //       processedTileIds.add(topRightTile.id)
+  //     }
+  //   }
+  // })
+  // // for (let row = 0; row < mapSize; row++) {
+  // //   const diagonals: Coordinate2D[] = []
+  // //   for (let col = 0; col < mapSize; col++) {
+  // //     const tile = tileLookup[buildTileLookupId([row, col])]
+
+  // //     if (!tile) {
+  // //       continue
+  // //     }
+  // //   }
+  // // }
+  // return score
 }
