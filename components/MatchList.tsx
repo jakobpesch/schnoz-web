@@ -60,15 +60,14 @@ const MatchList = (props: MatchListProps) => {
         </Thead>
         <Tbody>
           {matches?.map((match) => {
+            const [date, time] = new Date(match.createdAt)
+              .toLocaleString()
+              .split(", ")
             return (
               <Tr key={match.id} color="gray.200">
                 <Td>
-                  {new Date(match.createdAt)
-                    .toLocaleString()
-                    .split(", ")
-                    .map((t) => (
-                      <Text>{t}</Text>
-                    ))}
+                  <Text>{date}</Text>
+                  <Text>{time}</Text>
                 </Td>
                 <Td>{match.id.slice(-5)}</Td>
                 <Td>
