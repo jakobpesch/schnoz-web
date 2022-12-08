@@ -109,9 +109,12 @@ const checkConditionsForCreation = (
   return { error: null }
 }
 
-const checkConditionsForJoining = (match: MatchRich) => {
+const checkConditionsForJoining = (match: MatchRich, userId: string) => {
   if (match.players.length === 2) {
     return { error: "Match already full" }
+  }
+  if (match.players.some((player) => player.userId === userId)) {
+    return { error: "Cannot join twice" }
   }
   return { error: null }
 }
@@ -142,7 +145,10 @@ export default async function handler(
 
       switch (body.action) {
         case "join":
-          const { error: joinError } = checkConditionsForJoining(match)
+          const { error: joinError } = checkConditionsForJoining(
+            match,
+            body.userId
+          )
 
           if (joinError) {
             res.status(500).end(joinError)
