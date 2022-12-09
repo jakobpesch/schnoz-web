@@ -64,6 +64,35 @@ export const getAdjacentCoordinates = (coordinate: Coordinate2D) => {
   ]
   return adjacentCoordinates
 }
+export const getDiagonallyAdjacentCoordinates = (coordinate: Coordinate2D) => {
+  const adjacentCoordinates = [
+    addCoordinates(coordinate, [1, 1]),
+    addCoordinates(coordinate, [-1, 1]),
+    addCoordinates(coordinate, [1, -1]),
+    addCoordinates(coordinate, [-1, -1]),
+  ]
+  return adjacentCoordinates
+}
+
+export const getTopRightDiagonallyAdjacentCoordinates = (
+  coordinate: Coordinate2D
+) => {
+  const adjacentCoordinates = [
+    addCoordinates(coordinate, [1, 1]),
+    addCoordinates(coordinate, [-1, -1]),
+  ]
+  return adjacentCoordinates
+}
+
+export const getTopLeftDiagonallyAdjacentCoordinates = (
+  coordinate: Coordinate2D
+) => {
+  const adjacentCoordinates = [
+    addCoordinates(coordinate, [-1, 1]),
+    addCoordinates(coordinate, [1, -1]),
+  ]
+  return adjacentCoordinates
+}
 
 export const getAdjacentCoordinatesOfConstellation = (
   constellation: Coordinate2D[]

@@ -1,3 +1,4 @@
+import { AddIcon, RepeatIcon } from "@chakra-ui/icons"
 import {
   Button,
   Flex,
@@ -101,12 +102,12 @@ const Home: NextPage = () => {
   }
 
   return (
-    <Flex mt="16" width="full" height="100vh" justify="center">
+    <Flex pt="16" width="full" height="100vh" justify="center">
       <Text position="absolute" bottom="4" right="4">
         {status}
       </Text>
       {user && (
-        <Text position="absolute" bottom="4" left="4">
+        <Text position="fixed" bottom="4" left="4">
           {user.slice(-5)}
         </Text>
       )}
@@ -114,17 +115,35 @@ const Home: NextPage = () => {
       <Stack width="4xl" spacing="4" alignItems="center">
         <Heading size="4xl">Schnoz</Heading>
         <Stack direction="row">
-          <Button onClick={handleCreateMatch}>Create Match</Button>
-          <Button onClick={() => fetchMatches()}>Refresh</Button>
+          <Button size="sm" onClick={handleCreateMatch} leftIcon={<AddIcon />}>
+            Create Match
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => fetchMatches()}
+            leftIcon={<RepeatIcon />}
+          >
+            Refresh
+          </Button>
         </Stack>
         {matches && user && (
           <Tabs align="center" width="full">
             <TabList>
+              <Tab>All</Tab>
               <Tab>Open</Tab>
               <Tab>Ongoing</Tab>
               <Tab>Finished</Tab>
             </TabList>
             <TabPanels>
+              <TabPanel>
+                <MatchList
+                  userId={user}
+                  matches={matches}
+                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                />
+              </TabPanel>
               <TabPanel>
                 <MatchList
                   userId={user}

@@ -116,7 +116,7 @@ export default async function handler(
         for (let i = 0; i < circleAroudUnit.length; i++) {
           const coordinate = circleAroudUnit[i]
           const tile = tileLookup[buildTileLookupId(coordinate)]
-          if (!tile.visible) {
+          if (tile && !tile.visible) {
             updateTilesPromises.push(
               prisma.tile.update({
                 where: {
@@ -170,17 +170,14 @@ export default async function handler(
         matchWithPlacedTiles.map.tiles
       )
 
-      const prevScore = matchWithPlacedTiles.activePlayer.score
-
       const newScore = defaultGame.scoringRules.reduce((totalScore, rule) => {
         const ruleScore = rule(
           matchWithPlacedTiles!.activePlayerId!,
-          translatedCoordinates,
           tileLookupWithPlacedTiles
         )
 
         return totalScore + ruleScore
-      }, prevScore)
+      }, 0)
 
       const winnerId = newScore >= 5 ? participantId : null
 

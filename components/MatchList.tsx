@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  HStack,
   Table,
   TableContainer,
   Tbody,
@@ -25,7 +26,10 @@ const MatchList = (props: MatchListProps) => {
   const { userId, matches, onJoinClick, onDeleteClick, onGoToMatchClick } =
     props
   const canJoin = (match: MatchRich) => {
-    return match.players.length === 1
+    return (
+      match.players.length === 1 &&
+      !match.players.some((player) => player.userId === userId)
+    )
   }
   const canDelete = (match: MatchRich, userId: string) => {
     return match.createdById === userId
@@ -46,19 +50,25 @@ const MatchList = (props: MatchListProps) => {
       <Table variant="simple">
         <Thead>
           <Tr>
+            <Th>Created</Th>
             <Th>Match ID</Th>
             <Th>Status</Th>
             <Th>Created by</Th>
             <Th>Players</Th>
             <Th></Th>
-            <Th></Th>
-            <Th></Th>
           </Tr>
         </Thead>
         <Tbody>
-          {matches?.map((match: any) => {
+          {matches?.map((match) => {
+            const [date, time] = new Date(match.createdAt)
+              .toLocaleString()
+              .split(", ")
             return (
               <Tr key={match.id} color="gray.200">
+                <Td>
+                  <Text>{date}</Text>
+                  <Text>{time}</Text>
+                </Td>
                 <Td>{match.id.slice(-5)}</Td>
                 <Td>
                   <Badge
@@ -79,32 +89,31 @@ const MatchList = (props: MatchListProps) => {
                     : match.createdById.slice(-5)}
                 </Td>
                 <Td>{match.players.length} / 2</Td>
+
                 <Td>
-                  <Button
-                    variant="link"
-                    disabled={!canJoin(match)}
-                    onClick={() => onJoinClick(match.id)}
-                  >
-                    Join
-                  </Button>
-                </Td>
-                <Td>
-                  <Button
-                    variant="link"
-                    disabled={!canDelete(match, userId)}
-                    onClick={() => onDeleteClick(match.id)}
-                  >
-                    Delete
-                  </Button>
-                </Td>
-                <Td>
-                  <Button
-                    variant="link"
-                    disabled={!hasJoined(match, userId)}
-                    onClick={() => onGoToMatchClick(match.id)}
-                  >
-                    Go to match
-                  </Button>
+                  <HStack>
+                    <Button
+                      variant="link"
+                      disabled={!canJoin(match)}
+                      onClick={() => onJoinClick(match.id)}
+                    >
+                      Join
+                    </Button>
+                    <Button
+                      variant="link"
+                      disabled={!canDelete(match, userId)}
+                      onClick={() => onDeleteClick(match.id)}
+                    >
+                      Delete
+                    </Button>
+                    <Button
+                      variant="link"
+                      disabled={!hasJoined(match, userId)}
+                      onClick={() => onGoToMatchClick(match.id)}
+                    >
+                      Go to match
+                    </Button>
+                  </HStack>
                 </Td>
               </Tr>
             )
