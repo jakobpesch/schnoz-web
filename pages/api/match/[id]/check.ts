@@ -12,7 +12,7 @@ export default async function handler(
   const matchId = req.query.id
 
   if (typeof matchId !== "string") {
-    res.status(404).end(`Invalid match id provided: ${matchId}.`)
+    res.status(400).end(`Invalid match id provided: ${matchId}.`)
     return
   }
 
@@ -24,14 +24,14 @@ export default async function handler(
       })
 
       if (match === null) {
-        res.status(500).end("Could not find match")
+        res.status(404).end("Could not find match")
         break
       }
 
       const time = query.time
 
       if (typeof time !== "string") {
-        res.status(500).end("Invalid query parameter 'time'")
+        res.status(400).end("Invalid query parameter 'time'")
         break
       }
 

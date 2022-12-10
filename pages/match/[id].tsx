@@ -186,8 +186,6 @@ const MatchView = () => {
   useEffect(() => {
     let interval: NodeJS.Timer
     if (match && !loading && !yourTurn) {
-      console.log("setting new timer")
-
       interval = setInterval(() => {
         checkForUpdates(match)
       }, 1500)

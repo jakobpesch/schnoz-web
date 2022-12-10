@@ -23,14 +23,6 @@ export default async function handler(
         },
         include: matchRichInclude,
       })
-
-      // await connectDb()
-      // const match = new Match({
-      //   createdBy: userId,
-      //   players: [userId],
-      //   status: "created",
-      // })
-      // await match.save()
       res.status(201).json(match)
       break
     case "GET":
