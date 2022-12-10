@@ -6,7 +6,7 @@ import { prisma } from "../../../../prisma/client"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
 import { TileRich } from "../../../../types/Tile"
 import {
-  positionCoordinatesAt,
+  translateCoordinatesTo,
   transformCoordinates,
 } from "../../../../utils/constallationTransformer"
 import {
@@ -86,7 +86,7 @@ export default async function handler(
         targetTile.col,
       ]
 
-      const translatedCoordinates = positionCoordinatesAt(
+      const translatedCoordinates = translateCoordinatesTo(
         targetTileCoordinate,
         transformedCoordinates
       )
@@ -112,7 +112,7 @@ export default async function handler(
           res.status(500).end("Error while placing")
           break
         }
-        const circleAroudUnit = positionCoordinatesAt(coordinate, visionCircle)
+        const circleAroudUnit = translateCoordinatesTo(coordinate, visionCircle)
         for (let i = 0; i < circleAroudUnit.length; i++) {
           const coordinate = circleAroudUnit[i]
           const tile = tileLookup[buildTileLookupId(coordinate)]

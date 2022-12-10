@@ -1,15 +1,15 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 
-import { MatchStatus, Terrain, Tile, UnitType } from "@prisma/client"
+import { MatchStatus, Prisma, Terrain, UnitType } from "@prisma/client"
+import { Coordinate2D } from "../../../models/UnitConstellation.model"
 import { prisma } from "../../../prisma/client"
 import { MatchRich, matchRichInclude } from "../../../types/Match"
-import { getCoordinateCircle } from "../../../utils/coordinateUtils"
-import { positionCoordinatesAt } from "../../../utils/constallationTransformer"
-import { Coordinate2D } from "../../../models/UnitConstellation.model"
+import { translateCoordinatesTo } from "../../../utils/constallationTransformer"
 import {
   coordinateIncludedIn,
   coordinatesAreEqual,
+  getCoordinateCircle,
 } from "../../../utils/coordinateUtils"
 
 const getRandomTerrain = () => {
@@ -34,32 +34,35 @@ const getRandomTerrain = () => {
   }
   return null
 }
-const initialiseMap = (rowCount: number, columnCount: number) => {
-  const rowIndices = [...Array(rowCount).keys()]
-  const columnIndices = [...Array(columnCount).keys()]
-  const tiles = [] as Tile[]
+const getInitialiseMapPayload = (rowCount: number, colCount: number) => {
   const centerCoordinate: Coordinate2D = [
     Math.floor(rowCount / 2),
-    Math.floor(columnCount / 2),
+    Math.floor(colCount / 2),
   ]
 
   const initialVisionRadius = 3
-  const initialVision = positionCoordinatesAt(
+  const initialVision = translateCoordinatesTo(
     centerCoordinate,
     getCoordinateCircle(initialVisionRadius)
   )
 
   const saveAreaRadius = 2
-  const safeArea = positionCoordinatesAt(
+  const safeArea = translateCoordinatesTo(
     centerCoordinate,
     getCoordinateCircle(saveAreaRadius)
   )
 
+  const tilesCreatePayload: Prisma.TileCreateWithoutMapInput[] = []
+  const rowIndices = [...Array(rowCount).keys()]
+  const columnIndices = [...Array(colCount).keys()]
   rowIndices.forEach((row) => {
     columnIndices.forEach((col) => {
       const coordinate: Coordinate2D = [row, col]
 
-      const tilePayload: any = { row, col, visible: false }
+      const tilePayload: Prisma.TileCreateWithoutMapInput = {
+        row,
+        col,
+      }
 
       if (!coordinateIncludedIn(safeArea, coordinate)) {
         tilePayload.terrain = getRandomTerrain()
@@ -75,11 +78,17 @@ const initialiseMap = (rowCount: number, columnCount: number) => {
         }
       }
 
-      tiles.push(tilePayload)
+      tilesCreatePayload.push(tilePayload)
     })
   })
 
-  return { rowCount, columnCount, tiles }
+  const mapCreatePayload: Prisma.MapCreateWithoutMatchInput = {
+    rowCount,
+    colCount,
+    tiles: { create: tilesCreatePayload },
+  }
+
+  return mapCreatePayload
 }
 const checkConditionsForCreation = (
   match: MatchRich,
@@ -180,7 +189,7 @@ export default async function handler(
 
           const status = MatchStatus.STARTED
           const startedAt = new Date()
-          const map = initialiseMap(
+          const mapCreatePayload = getInitialiseMapPayload(
             body.settings.rowCount,
             body.settings.columnCount
           )
@@ -204,13 +213,7 @@ export default async function handler(
               turn,
               maxTurns,
               map: {
-                create: {
-                  rowCount: map.rowCount,
-                  colCount: map.columnCount,
-                  tiles: {
-                    create: map.tiles,
-                  },
-                },
+                create: mapCreatePayload,
               },
             },
             include: matchRichInclude,

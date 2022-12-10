@@ -9,7 +9,7 @@ import {
 import { RenderSettings } from "../../services/SettingsService"
 import {
   transformCoordinates,
-  positionCoordinatesAt,
+  translateCoordinatesTo,
 } from "../../utils/constallationTransformer"
 import { MapObject } from "./MapObject"
 
@@ -71,7 +71,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
       const transformed = transformCoordinates(props.constellation, {
         rotatedClockwise,
       })
-      const translated = positionCoordinatesAt(hoveredCoordinate, transformed)
+      const translated = translateCoordinatesTo(hoveredCoordinate, transformed)
 
       return translated
     }

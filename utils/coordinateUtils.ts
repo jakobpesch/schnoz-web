@@ -1,14 +1,9 @@
-import { ITile } from "../models/Tile.model"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { TileRich } from "../types/Tile"
 import { addCoordinates } from "./constallationTransformer"
 
 export const buildTileLookupId = (coordinate: Coordinate2D) => {
   return `${coordinate[0]}_${coordinate[1]}`
-}
-
-export const coordinateFromTileId = (tileId: ITile["id"]) => {
-  return tileId.split("_").map((x) => parseInt(x)) as Coordinate2D
 }
 
 export interface TileLookup {
@@ -52,7 +47,10 @@ export const coordinatesAreAdjacent = (
 ) => {
   const [rowA, colA] = coordinateA
   const [rowB, colB] = coordinateB
-  return Math.abs(rowA - rowB) === 1 || Math.abs(colA - colB) === 1
+  return (
+    (Math.abs(rowA - rowB) === 1 && Math.abs(colA - colB) === 0) ||
+    (Math.abs(rowA - rowB) === 0 && Math.abs(colA - colB) === 1)
+  )
 }
 
 export const getAdjacentCoordinates = (coordinate: Coordinate2D) => {
@@ -74,25 +72,25 @@ export const getDiagonallyAdjacentCoordinates = (coordinate: Coordinate2D) => {
   return adjacentCoordinates
 }
 
-export const getTopRightDiagonallyAdjacentCoordinates = (
-  coordinate: Coordinate2D
-) => {
-  const adjacentCoordinates = [
-    addCoordinates(coordinate, [1, 1]),
-    addCoordinates(coordinate, [-1, -1]),
-  ]
-  return adjacentCoordinates
-}
+// export const getTopRightDiagonallyAdjacentCoordinates = (
+//   coordinate: Coordinate2D
+// ) => {
+//   const adjacentCoordinates = [
+//     addCoordinates(coordinate, [1, 1]),
+//     addCoordinates(coordinate, [-1, -1]),
+//   ]
+//   return adjacentCoordinates
+// }
 
-export const getTopLeftDiagonallyAdjacentCoordinates = (
-  coordinate: Coordinate2D
-) => {
-  const adjacentCoordinates = [
-    addCoordinates(coordinate, [-1, 1]),
-    addCoordinates(coordinate, [1, -1]),
-  ]
-  return adjacentCoordinates
-}
+// export const getTopLeftDiagonallyAdjacentCoordinates = (
+//   coordinate: Coordinate2D
+// ) => {
+//   const adjacentCoordinates = [
+//     addCoordinates(coordinate, [-1, 1]),
+//     addCoordinates(coordinate, [1, -1]),
+//   ]
+//   return adjacentCoordinates
+// }
 
 export const getAdjacentCoordinatesOfConstellation = (
   constellation: Coordinate2D[]
