@@ -115,7 +115,7 @@ export const deleteMatch = async (matchId: string, userId: string) => {
   return await response.json()
 }
 
-export const checkForMatchUpdates = async (matchId: string, time: any) => {
+export const checkForMatchUpdates = async (matchId: string, time: Date) => {
   const options = {
     method: "GET",
     headers: { "Content-Type": "application/json" },

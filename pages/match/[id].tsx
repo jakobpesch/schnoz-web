@@ -2,7 +2,9 @@ import { Container } from "@chakra-ui/react"
 import { Match, MatchStatus, UnitType } from "@prisma/client"
 import assert from "assert"
 import Mousetrap from "mousetrap"
+import { useRouter } from "next/router"
 import { useEffect, useMemo, useState } from "react"
+import useSWR, { mutate } from "swr"
 import { MapContainer } from "../../components/map/MapContainer"
 import { MapFog } from "../../components/map/MapFog"
 import { MapHoveredHighlights } from "../../components/map/MapHoveredHighlights"
@@ -37,8 +39,46 @@ import {
   getTileLookup,
 } from "../../utils/coordinateUtils"
 
+// @ts-ignore
+const fetcher = (...args) => fetch(...args).then((res) => res.json())
+
+function useMatch(id: string) {
+  const { data, error, isLoading, mutate } = useSWR<MatchRich>(
+    () => `/api/match/${id}`,
+    fetcher,
+    { refreshInterval: 5000 }
+  )
+
+  return {
+    match: data,
+    isLoading,
+    isError: error,
+    mutate,
+  }
+}
+
+function useMatchUpdate(id: string, time: string) {
+  const { data, error, isLoading, mutate } = useSWR(
+    `/api/match/${id}/check=${time}`,
+    fetcher
+  )
+
+  return {
+    match: data,
+    isLoading,
+    isError: error,
+    mutate,
+  }
+}
+
 const MatchView = () => {
-  const [match, setMatch] = useState<MatchRich | null>(null)
+  const router = useRouter()
+  const matchId = typeof router.query.id === "string" ? router.query.id : ""
+
+  const { match, isLoading, isError, mutate: refetchMatch } = useMatch(matchId)
+
+  // const { data: match } = useSWR("match", getMatch(matchId))
+  // const [match, setMatch] = useState<MatchRich | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
   let userId: string | null = null
@@ -135,30 +175,13 @@ const MatchView = () => {
     try {
       const updatedMatch = await checkForMatchUpdates(match.id, match.updatedAt)
       if (updatedMatch) {
-        setMatch(updatedMatch)
+        refetchMatch()
       }
     } catch (e) {
       console.error(e)
     }
     setLoading(false)
   }
-
-  useEffect(() => {
-    const matchId = window.location.pathname.split("/").pop()
-    if (matchId) {
-      const fetchMatch = async (matchId: string) => {
-        setLoading(true)
-        try {
-          const match = await getMatch(matchId)
-          setMatch(match)
-        } catch (e: any) {
-          console.log(e.message)
-        }
-        setLoading(false)
-      }
-      fetchMatch(matchId)
-    }
-  }, [])
 
   useEffect(() => {
     if (!yourTurn) {
@@ -183,17 +206,17 @@ const MatchView = () => {
     }
   }, [yourTurn])
 
-  useEffect(() => {
-    let interval: NodeJS.Timer
-    if (match && !loading && !yourTurn) {
-      interval = setInterval(() => {
-        checkForUpdates(match)
-      }, 1500)
-    }
-    return () => {
-      clearInterval(interval)
-    }
-  }, [match, loading])
+  // useEffect(() => {
+  //   let interval: NodeJS.Timer
+  //   if (match && !loading && !yourTurn) {
+  //     interval = setInterval(() => {
+  //       checkForUpdates(match)
+  //     }, 1500)
+  //   }
+  //   return () => {
+  //     clearInterval(interval)
+  //   }
+  // }, [match, loading])
 
   if (!userId || !match) {
     return null
@@ -234,7 +257,7 @@ const MatchView = () => {
         participantId,
         unitConstellation
       )
-      setMatch(updatedMatch)
+      refetchMatch()
       setSelectedConstellation(null)
       setStatus(`Placed unit on tile (${row}|${col})`)
     } catch (e: any) {
@@ -261,7 +284,7 @@ const MatchView = () => {
     setLoading(true)
     try {
       const startedMatch = await startMatch(match.id, userId, settings.mapSize)
-      setMatch(startedMatch)
+      refetchMatch()
     } catch (e) {
       console.error(e)
     }
@@ -269,11 +292,7 @@ const MatchView = () => {
   }
 
   return (
-    <Container
-      height="100vh"
-      color="white"
-      cursor={selectedConstellation ? "none" : "default"}
-    >
+    <Container height="100vh" color="white">
       {isPreMatch && (
         <UIPreMatchView
           pt="16"
@@ -287,7 +306,11 @@ const MatchView = () => {
       )}
       {wasStarted && (
         <>
-          <MapContainer id="map-container" match={match}>
+          <MapContainer
+            id="map-container"
+            match={match}
+            cursor={selectedConstellation ? "none" : "default"}
+          >
             <MapHoveredHighlights
               player={match.activePlayer}
               hide={isFinished || !yourTurn}

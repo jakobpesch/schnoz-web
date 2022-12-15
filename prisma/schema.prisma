@@ -50,6 +50,8 @@ model Match {
   map            Map?
   turn           Int           @default(0)
   maxTurns       Int           @default(12)
+  Rule           Rule[]
+  Move           Move[]
 }
 
 model Map {
@@ -70,18 +72,20 @@ model Tile {
   unit    Unit?
   mapId   String
   map     Map      @relation(fields: [mapId], references: [id], onDelete: Cascade)
-  move    Move[]
+  Move    Move[]
 }
 
 model Move {
   id                    String            @id @default(uuid())
   rotationCount         Int
-  initiatorId           String
-  initiator             Participant       @relation(fields: [initiatorId], references: [id])
+  participantId         String
+  participant           Participant       @relation(fields: [participantId], references: [id])
   targetId              String
   target                Tile              @relation(fields: [targetId], references: [id])
   unitConstellationName String
   unitConstellation     UnitConstellation @relation(fields: [unitConstellationName], references: [name])
+  match                 Match             @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId               String
 }
 
 model Unit {
@@ -141,4 +145,10 @@ enum MatchStatus {
   CREATED
   STARTED
   FINISHED
+}
+
+enum Rule {
+  TERRAIN_WATER_POSITIVE
+  TERRAIN_STONE_NEGATIVE
+  HOLE
 }
