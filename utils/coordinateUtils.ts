@@ -1,6 +1,9 @@
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { TileRich } from "../types/Tile"
-import { addCoordinates } from "./constallationTransformer"
+import {
+  addCoordinates,
+  translateCoordinatesTo,
+} from "./constallationTransformer"
 
 export const buildTileLookupId = (coordinate: Coordinate2D) => {
   return `${coordinate[0]}_${coordinate[1]}`
@@ -17,6 +20,33 @@ export const getTileLookup = (tiles: TileRich[]) => {
       [buildTileLookupId([cur.row, cur.col])]: cur,
     }
   }, {})
+}
+
+export const getNewlyRevealedTiles = (
+  tileLookup: TileLookup,
+  translatedCoordinates: Coordinate2D[]
+) => {
+  const visionCircle = getCoordinateCircle(3)
+  const tiles: TileRich[] = []
+
+  for (let i = 0; i < translatedCoordinates.length; i++) {
+    const translatedCoordinate = translatedCoordinates[i]
+    const tile = tileLookup[buildTileLookupId(translatedCoordinate)]
+    if (!tile) {
+      return { error: { message: "Error while placing", statusCode: 400 } }
+    }
+    const circleAroudUnit = translateCoordinatesTo(
+      translatedCoordinate,
+      visionCircle
+    )
+    circleAroudUnit.forEach((coordinateInVision) => {
+      const tile = tileLookup[buildTileLookupId(coordinateInVision)]
+      if (tile && !tile.visible) {
+        tiles.push(tile)
+      }
+    })
+  }
+  return { tiles }
 }
 
 export const getCoordinateCircle = (radius: number) => {
@@ -95,15 +125,18 @@ export const getDiagonallyAdjacentCoordinates = (coordinate: Coordinate2D) => {
 export const getAdjacentCoordinatesOfConstellation = (
   constellation: Coordinate2D[]
 ) => {
-  const adjacent = constellation.reduce((acc, cur) => {
-    const adjacent = getAdjacentCoordinates(cur)
-    const removedDuplicates = adjacent.filter((coordinate) => {
-      const inAcc = coordinateIncludedIn(acc, coordinate)
-      const inConstellation = coordinateIncludedIn(constellation, coordinate)
-      return !inAcc && !inConstellation
-    })
-    return [...acc, ...removedDuplicates]
-  }, [] as Coordinate2D[])
+  const adjacentOfConstellation = new Map<string, Coordinate2D>()
 
-  return adjacent
+  constellation.forEach((coordinate) => {
+    getAdjacentCoordinates(coordinate).forEach((adjacentCoordinate) => {
+      if (!coordinateIncludedIn(constellation, adjacentCoordinate)) {
+        adjacentOfConstellation.set(
+          adjacentCoordinate.toString(),
+          adjacentCoordinate
+        )
+      }
+    })
+  })
+
+  return [...adjacentOfConstellation.values()]
 }

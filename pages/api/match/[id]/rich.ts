@@ -1,31 +1,32 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "../../../../prisma/client"
+import { matchRichInclude } from "../../../../types/Match"
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   const { method, query } = req
-  const mapId = query.id
+  const matchId = query.id
 
-  if (typeof mapId !== "string") {
-    res.status(400).end(`Invalid map id provided: ${mapId}.`)
+  if (typeof matchId !== "string") {
+    res.status(400).end(`Invalid match id provided: ${matchId}.`)
     return
   }
 
   switch (method) {
     case "GET":
-      const map = await prisma.map.findUnique({
-        where: { id: mapId },
-        include: { tiles: { include: { unit: true } } },
+      const match = await prisma.match.findUnique({
+        where: { id: matchId },
+        include: matchRichInclude,
       })
-      if (!map) {
-        res.status(404).end(`Match with id ${mapId} not found.`)
+      if (!match) {
+        res.status(404).end(`Match with id ${matchId} not found.`)
         break
       }
 
-      res.status(200).json(map)
+      res.status(200).json(match)
       break
     default:
       res.setHeader("Allow", ["GET"])
