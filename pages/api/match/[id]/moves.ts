@@ -156,7 +156,7 @@ export default async function handler(
             },
           })
         )
-      }
+      })
       revealedTiles.forEach((tile) => {
         updateTilesPromises.push(
           prisma.tile.update({
