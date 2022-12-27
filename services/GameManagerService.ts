@@ -1,8 +1,16 @@
-import { Match, Tile, User } from "@prisma/client"
-import { IMatchDoc } from "../models/Match.model"
-import { ITile } from "../models/Tile.model"
-import { IUnitConstellation } from "../models/UnitConstellation.model"
+import { Match, MatchStatus, Participant, User } from "@prisma/client"
+import { defaultGame } from "../gameLogic/GameVariants"
+import {
+  Coordinate2D,
+  IUnitConstellation,
+} from "../models/UnitConstellation.model"
+import { MapWithTiles } from "../types/Map"
 import { MatchRich, MatchWithPlayers } from "../types/Match"
+import {
+  transformCoordinates,
+  translateCoordinatesTo,
+} from "../utils/constallationTransformer"
+import { buildTileLookupId, TileLookup } from "../utils/coordinateUtils"
 
 const BASE_URL =
   process.env.NODE_ENV === "development"
@@ -182,6 +190,63 @@ export const makeMove = async (
   if (response.status !== 201) {
     throw new Error(await response.text())
   }
+  const updatedMatch: MatchRich = await response.json()
+  return updatedMatch
+}
 
-  return await response.json()
+export const checkConditionsForUnitConstellationPlacement = (
+  targetCoordinate: Coordinate2D,
+  unitConstellation: IUnitConstellation,
+  match: Match,
+  map: MapWithTiles,
+  tileLookup: TileLookup,
+  placingPlayer: Participant["id"]
+) => {
+  if (!match) {
+    return { error: { message: "Could not find match", statusCode: 400 } }
+  }
+
+  if (!map) {
+    return { error: { message: "Map is missing", statusCode: 500 } }
+  }
+
+  if (match.status !== MatchStatus.STARTED) {
+    return { error: { message: "Match is not started", statusCode: 400 } }
+  }
+
+  if (match.activePlayerId !== placingPlayer) {
+    return { error: { message: "It's not your turn", statusCode: 400 } }
+  }
+
+  const targetTile = tileLookup[buildTileLookupId(targetCoordinate)]
+
+  if (!targetTile) {
+    return { error: { message: "Could not find target tile", statusCode: 400 } }
+  }
+
+  const { coordinates, rotatedClockwise } = unitConstellation
+
+  const transformedCoordinates = transformCoordinates(coordinates, {
+    rotatedClockwise,
+  })
+
+  const translatedCoordinates = translateCoordinatesTo(
+    targetCoordinate,
+    transformedCoordinates
+  )
+
+  const canBePlaced = defaultGame.placementRules.every((rule) =>
+    rule(translatedCoordinates, map, placingPlayer)
+  )
+
+  if (!canBePlaced) {
+    return {
+      error: {
+        message: "Cannot be placed due to a placement rule",
+        statusCode: 400,
+      },
+    }
+  }
+
+  return { translatedCoordinates }
 }

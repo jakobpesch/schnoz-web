@@ -1,18 +1,22 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "../../../../prisma/client"
-import { MatchRich, matchRichInclude } from "../../../../types/Match"
-type Data = { match: MatchRich } | { message: "No Update" }
+export type MatchCheckResponseData = { hasUpdate: boolean }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse<MatchCheckResponseData>
 ) {
   const { query, method } = req
-  const matchId = req.query.id
+  const { id: matchId, time: updatedAtOnClient } = req.query
 
   if (typeof matchId !== "string") {
     res.status(400).end(`Invalid match id provided: ${matchId}.`)
+    return
+  }
+
+  if (typeof updatedAtOnClient !== "string") {
+    res.status(400).end("Invalid query parameter 'time'")
     return
   }
 
@@ -20,7 +24,6 @@ export default async function handler(
     case "GET":
       const match = await prisma.match.findUnique({
         where: { id: matchId },
-        include: matchRichInclude,
       })
 
       if (match === null) {
@@ -28,19 +31,12 @@ export default async function handler(
         break
       }
 
-      const time = query.time
-
-      if (typeof time !== "string") {
-        res.status(400).end("Invalid query parameter 'time'")
+      if (new Date(updatedAtOnClient) < new Date(match.updatedAt)) {
+        res.status(200).json({ hasUpdate: true })
         break
       }
 
-      if (new Date(time) < new Date(match.updatedAt)) {
-        res.status(200).json({ match })
-        break
-      }
-
-      res.status(304).end("No Update")
+      res.status(200).json({ hasUpdate: false })
       break
     default:
       res.setHeader("Allow", ["GET"])

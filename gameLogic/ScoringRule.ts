@@ -6,7 +6,7 @@ import {
   TileLookup,
 } from "../utils/coordinateUtils"
 
-type ScoringRule = (playerId: string, tileLookup: TileLookup) => number
+export type ScoringRule = (playerId: string, tileLookup: TileLookup) => number
 
 const buildTerrainRule: (options: {
   terrain: Terrain
@@ -80,6 +80,7 @@ export const holeRule: ScoringRule = (playerId, tileLookup) => {
     },
     0
   )
+  console.log(scoredPoints, "hole")
 
   return scoredPoints
 }

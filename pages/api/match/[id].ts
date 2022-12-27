@@ -1,10 +1,17 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 
-import { MatchStatus, Prisma, Terrain, UnitType } from "@prisma/client"
+import {
+  Match,
+  MatchStatus,
+  Participant,
+  Prisma,
+  Terrain,
+  UnitType,
+} from "@prisma/client"
 import { Coordinate2D } from "../../../models/UnitConstellation.model"
 import { prisma } from "../../../prisma/client"
-import { MatchRich, matchRichInclude } from "../../../types/Match"
+import { matchRichInclude, MatchWithPlayers } from "../../../types/Match"
 import { translateCoordinatesTo } from "../../../utils/constallationTransformer"
 import {
   coordinateIncludedIn,
@@ -91,7 +98,7 @@ const getInitialiseMapPayload = (rowCount: number, colCount: number) => {
   return mapCreatePayload
 }
 const checkConditionsForCreation = (
-  match: MatchRich,
+  match: MatchWithPlayers,
   userId: string,
   settings: any
 ) => {
@@ -118,21 +125,25 @@ const checkConditionsForCreation = (
   return { error: null }
 }
 
-const checkConditionsForJoining = (match: MatchRich, userId: string) => {
-  if (match.players.length === 2) {
+const checkConditionsForJoining = (
+  participants: Participant[],
+  userId: string
+) => {
+  if (participants.length === 2) {
     return { error: "Match already full" }
   }
-  if (match.players.some((player) => player.userId === userId)) {
+  if (participants.some((participant) => participant.userId === userId)) {
     return { error: "Cannot join twice" }
   }
   return { error: null }
 }
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   const { body, method } = req
-  let match: MatchRich | null
+  let match: Match | null
   const matchId = req.query.id
 
   if (typeof matchId !== "string") {
@@ -142,12 +153,13 @@ export default async function handler(
 
   switch (method) {
     case "PUT":
-      match = await prisma.match.findUnique({
-        where: { id: matchId },
-        include: matchRichInclude,
-      })
+      const matchWithPlayers: MatchWithPlayers | null =
+        await prisma.match.findUnique({
+          where: { id: matchId },
+          include: { players: true },
+        })
 
-      if (match === null) {
+      if (matchWithPlayers === null) {
         res.status(404).end(`Match with id ${matchId} not found.`)
         return
       }
@@ -155,7 +167,7 @@ export default async function handler(
       switch (body.action) {
         case "join":
           const { error: joinError } = checkConditionsForJoining(
-            match,
+            matchWithPlayers.players,
             body.userId
           )
 
@@ -177,7 +189,7 @@ export default async function handler(
 
         case "start":
           const { error: startError } = checkConditionsForCreation(
-            match,
+            matchWithPlayers,
             body.userId,
             body.settings
           )
@@ -193,7 +205,7 @@ export default async function handler(
             body.settings.rowCount,
             body.settings.columnCount
           )
-          const activePlayerId = match.players.find(
+          const activePlayerId = matchWithPlayers.players.find(
             (player) => player.userId === body.userId
           )?.id
 
@@ -205,7 +217,7 @@ export default async function handler(
           const maxTurns = body.settings.maxTurns
 
           const startedMatch = await prisma.match.update({
-            where: { id: match.id },
+            where: { id: matchWithPlayers.id },
             data: {
               status,
               startedAt,
@@ -220,7 +232,6 @@ export default async function handler(
           })
 
           res.status(200).json(startedMatch)
-          prisma.$disconnect()
           break
         default:
           res.status(500).end("Possible PUT actions: 'join', 'start'")
@@ -238,7 +249,6 @@ export default async function handler(
     case "GET":
       match = await prisma.match.findUnique({
         where: { id: matchId },
-        include: matchRichInclude,
       })
       if (!match) {
         res.status(404).end(`Match with id ${matchId} not found.`)

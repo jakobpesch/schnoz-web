@@ -4,7 +4,7 @@ import assert from "assert"
 import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
 import { useEffect, useMemo, useState } from "react"
-import useSWR, { mutate } from "swr"
+import useSWR from "swr"
 import { MapContainer } from "../../components/map/MapContainer"
 import { MapFog } from "../../components/map/MapFog"
 import { MapHoveredHighlights } from "../../components/map/MapHoveredHighlights"
@@ -24,29 +24,38 @@ import {
 } from "../../models/UnitConstellation.model"
 import { getCookie } from "../../services/CookieService"
 import {
-  checkForMatchUpdates,
-  getMatch,
+  checkConditionsForUnitConstellationPlacement,
   makeMove,
   startMatch,
 } from "../../services/GameManagerService"
 import { MatchSettings } from "../../services/SettingsService"
+import { MapWithTiles } from "../../types/Map"
 import { MatchRich } from "../../types/Match"
 import { TileRich } from "../../types/Tile"
 import {
   buildTileLookupId,
+  coordinateIncludedIn,
+  coordinatesAreEqual,
   getAdjacentCoordinates,
   getAdjacentCoordinatesOfConstellation,
+  getNewlyRevealedTiles,
   getTileLookup,
 } from "../../utils/coordinateUtils"
+import { MatchCheckResponseData } from "../api/match/[id]/check"
 
 // @ts-ignore
 const fetcher = (...args) => fetch(...args).then((res) => res.json())
 
 function useMatch(id: string) {
   const { data, error, isLoading, mutate } = useSWR<MatchRich>(
-    () => `/api/match/${id}`,
+    () => {
+      if (!id) {
+        throw new Error("No id")
+      }
+      return `/api/match/${id}/rich`
+    },
     fetcher,
-    { refreshInterval: 5000 }
+    { revalidateOnFocus: false }
   )
 
   return {
@@ -57,36 +66,74 @@ function useMatch(id: string) {
   }
 }
 
-function useMatchUpdate(id: string, time: string) {
-  const { data, error, isLoading, mutate } = useSWR(
-    `/api/match/${id}/check=${time}`,
-    fetcher
+function useMatchUpdate(options: {
+  match: Match | undefined
+  shouldFetch?: boolean
+  refreshInterval?: number
+}) {
+  const { match, shouldFetch = true, refreshInterval = 1000 } = options
+  const { data, error, isLoading } = useSWR<MatchCheckResponseData>(
+    () => {
+      if (!shouldFetch) {
+        throw new Error()
+      }
+      if (!match) {
+        throw new Error(
+          "Cannot load match update. `useMatchUpdate` depends on `match`"
+        )
+      }
+      return `/api/match/${match.id}/check?time=${match.updatedAt}`
+    },
+    fetcher,
+    {
+      refreshInterval: refreshInterval,
+      refreshWhenHidden: true,
+      dedupingInterval: 100,
+    }
   )
-
   return {
-    match: data,
+    hasUpdate: data?.hasUpdate ?? false,
     isLoading,
     isError: error,
-    mutate,
+  }
+}
+
+function useUserId() {
+  try {
+    const userId = getCookie("userId")
+    return userId
+  } catch (e) {
+    return null
   }
 }
 
 const MatchView = () => {
+  const userId = useUserId()
   const router = useRouter()
+
   const matchId = typeof router.query.id === "string" ? router.query.id : ""
 
-  const { match, isLoading, isError, mutate: refetchMatch } = useMatch(matchId)
-
-  // const { data: match } = useSWR("match", getMatch(matchId))
-  // const [match, setMatch] = useState<MatchRich | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
-
-  let userId: string | null = null
-  try {
-    userId = getCookie("userId")
-  } catch (e) {}
+  const {
+    match,
+    isLoading: isLoadingMatch,
+    isError: isErrorMatch,
+    mutate: updateMatch,
+  } = useMatch(matchId)
 
   const yourTurn = userId === match?.activePlayer?.userId
+
+  const {
+    hasUpdate,
+    isLoading: isLoadingUpdate,
+    isError: isErrorUpdate,
+  } = useMatchUpdate({
+    match,
+    shouldFetch: !yourTurn && match?.status === MatchStatus.STARTED,
+  })
+
+  useEffect(() => {
+    updateMatch()
+  }, [hasUpdate])
 
   const setStatus = (status: string) => {
     setStatusLog([
@@ -104,27 +151,25 @@ const MatchView = () => {
     Coordinate2D[] | null
   >(null)
 
-  const hasUpdate = match?.updatedAt
-
   const tileLookup =
     useMemo(() => {
       return getTileLookup(match?.map?.tiles ?? [])
-    }, [hasUpdate]) ?? []
+    }, [match?.updatedAt]) ?? []
 
   const terrainTiles =
     useMemo(() => {
       return match?.map?.tiles.filter((tile) => tile.terrain && tile.visible)
-    }, [hasUpdate]) ?? []
+    }, [match?.updatedAt]) ?? []
 
   const unitTiles =
     useMemo(() => {
       return match?.map?.tiles.filter((tile) => tile.unit && tile.visible)
-    }, [hasUpdate]) ?? []
+    }, [match?.updatedAt]) ?? []
 
   const fogTiles =
     useMemo(() => {
       return match?.map?.tiles.filter((tile) => !tile.visible)
-    }, [hasUpdate]) ?? []
+    }, [match?.updatedAt]) ?? []
 
   const halfFogTiles =
     useMemo(() => {
@@ -145,7 +190,7 @@ const MatchView = () => {
         )
         return tile.visible && hasHiddenAdjacentTile
       })
-    }, [hasUpdate]) ?? []
+    }, [match?.updatedAt]) ?? []
 
   const placeableCoordinates =
     useMemo(() => {
@@ -168,55 +213,23 @@ const MatchView = () => {
         const hasUnit = tileLookup[buildTileLookupId(coordinate)]?.unit ?? false
         return !hasTerrain && !hasUnit
       })
-    }, [hasUpdate]) ?? []
-
-  const checkForUpdates = async (match: Match) => {
-    setLoading(true)
-    try {
-      const updatedMatch = await checkForMatchUpdates(match.id, match.updatedAt)
-      if (updatedMatch) {
-        refetchMatch()
-      }
-    } catch (e) {
-      console.error(e)
-    }
-    setLoading(false)
-  }
+    }, [match?.updatedAt]) ?? []
 
   useEffect(() => {
-    if (!yourTurn) {
-      console.log("unbinding")
-
-      Mousetrap.unbind("1")
-      Mousetrap.unbind("2")
-      Mousetrap.unbind("3")
-      Mousetrap.unbind("4")
-      Mousetrap.unbind("5")
-      Mousetrap.unbind("6")
-      Mousetrap.unbind("esc")
-    } else {
-      console.log("binding")
-      Mousetrap.bind("1", () => setSelectedConstellation(unitConstellations[0]))
-      Mousetrap.bind("2", () => setSelectedConstellation(unitConstellations[1]))
-      Mousetrap.bind("3", () => setSelectedConstellation(unitConstellations[2]))
-      Mousetrap.bind("4", () => setSelectedConstellation(unitConstellations[3]))
-      Mousetrap.bind("5", () => setSelectedConstellation(unitConstellations[4]))
-      Mousetrap.bind("6", () => setSelectedConstellation(unitConstellations[5]))
+    unitConstellations.forEach((unitConstellation, index) => {
+      const hotkey = index + 1 + ""
+      Mousetrap.unbind(hotkey)
+      if (yourTurn) {
+        Mousetrap.bind(hotkey, () =>
+          setSelectedConstellation(unitConstellation)
+        )
+      }
+    })
+    Mousetrap.unbind("esc")
+    if (yourTurn) {
       Mousetrap.bind("esc", () => setSelectedConstellation(null))
     }
   }, [yourTurn])
-
-  // useEffect(() => {
-  //   let interval: NodeJS.Timer
-  //   if (match && !loading && !yourTurn) {
-  //     interval = setInterval(() => {
-  //       checkForUpdates(match)
-  //     }, 1500)
-  //   }
-  //   return () => {
-  //     clearInterval(interval)
-  //   }
-  // }, [match, loading])
 
   if (!userId || !match) {
     return null
@@ -242,29 +255,104 @@ const MatchView = () => {
       coordinates: selectedConstellation,
       rotatedClockwise,
     }
-    setLoading(true)
+
     try {
       const participantId = match.players.find(
         (player) => player.userId === userId
       )?.id
 
       assert(participantId)
+      assert(match.map)
 
-      const updatedMatch = await makeMove(
-        match.id,
-        row,
-        col,
-        participantId,
-        unitConstellation
+      const { translatedCoordinates, error } =
+        checkConditionsForUnitConstellationPlacement(
+          [row, col],
+          unitConstellation,
+          match,
+          match.map,
+          tileLookup,
+          participantId
+        )
+
+      if (error) {
+        setStatus(error.message)
+        return
+      }
+      const mapClone = JSON.parse(JSON.stringify(match.map)) as MapWithTiles
+
+      translatedCoordinates.forEach((coordinate, index) => {
+        const tile = mapClone.tiles.find((tile) =>
+          coordinatesAreEqual([tile.row, tile.col], coordinate)
+        )
+        if (!tile) {
+          return
+        }
+        tile.unit = {
+          id: "pending-unit-" + index,
+          tileId: tile.id,
+          ownerId: participantId,
+          type: UnitType.UNIT,
+        }
+      })
+
+      const { tiles: revealedTiles, error: revealedError } =
+        getNewlyRevealedTiles(tileLookup, translatedCoordinates)
+
+      if (revealedError) {
+        setStatus(revealedError.message)
+        return
+      }
+
+      const optimisticData: MatchRich = {
+        ...match,
+        map: {
+          ...mapClone,
+          tiles: mapClone.tiles.map((tile, index) => {
+            const updatedTile: TileRich = { ...tile }
+            if (
+              coordinateIncludedIn(
+                revealedTiles.map((tile) => [tile.row, tile.col]),
+                [updatedTile.row, updatedTile.col]
+              )
+            ) {
+              updatedTile.visible = true
+            }
+            if (
+              coordinateIncludedIn(translatedCoordinates, [
+                updatedTile.row,
+                updatedTile.col,
+              ])
+            ) {
+              updatedTile.unit = {
+                id: "pending-unit-" + index,
+                tileId: tile.id,
+                ownerId: participantId,
+                type: UnitType.UNIT,
+              }
+            }
+
+            return updatedTile
+          }),
+        },
+        updatedAt: new Date(),
+      }
+
+      updateMatch(
+        makeMove(match.id, row, col, participantId, unitConstellation),
+        {
+          optimisticData,
+          populateCache: true,
+          rollbackOnError: true,
+          revalidate: true,
+        }
       )
-      refetchMatch()
+
       setSelectedConstellation(null)
       setStatus(`Placed unit on tile (${row}|${col})`)
     } catch (e: any) {
       setStatus(e.message)
       console.error(e.message)
     }
-    setLoading(false)
   }
 
   const isPreMatch = match.status === MatchStatus.CREATED
@@ -281,14 +369,13 @@ const MatchView = () => {
     if (!userId) {
       return
     }
-    setLoading(true)
+
     try {
       const startedMatch = await startMatch(match.id, userId, settings.mapSize)
-      refetchMatch()
+      updateMatch()
     } catch (e) {
       console.error(e)
     }
-    setLoading(false)
   }
 
   return (
@@ -318,7 +405,10 @@ const MatchView = () => {
               onTileClick={onTileClick}
             />
 
-            <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
+            {!isLoadingMatch && (
+              <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
+            )}
+
             <MapFog fogTiles={fogTiles} halfFogTiles={halfFogTiles} />
             <MapTerrains terrainTiles={terrainTiles} />
             <MapUnits unitTiles={unitTiles} players={match.players} />
@@ -336,7 +426,7 @@ const MatchView = () => {
         />
       )}
       <UILoggingView statusLog={statusLog} />
-      <UILoadingIndicator loading={loading} />
+      <UILoadingIndicator loading={isLoadingMatch || isLoadingUpdate} />
     </Container>
   )
 }
