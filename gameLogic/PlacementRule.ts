@@ -17,6 +17,7 @@ export const inBounds: PlacementRule = (constellation, map) =>
 
 export type PlacementRule = (
   constellation: Coordinate2D[],
+  // @todo consider replaceing with tile lookup
   map: Exclude<MatchRich["map"], null>,
   playerId: string
 ) => boolean

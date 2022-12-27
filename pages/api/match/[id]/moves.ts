@@ -1,19 +1,77 @@
-import { MatchStatus, UnitType } from "@prisma/client"
-import type { NextApiRequest, NextApiResponse } from "next"
-import { defaultGame } from "../../../../gameLogic/GameVariants"
-import { Coordinate2D } from "../../../../models/UnitConstellation.model"
-import { prisma } from "../../../../prisma/client"
-import { MatchRich, matchRichInclude } from "../../../../types/Match"
-import { TileRich } from "../../../../types/Tile"
 import {
-  positionCoordinatesAt,
-  transformCoordinates,
-} from "../../../../utils/constallationTransformer"
+  Match,
+  MatchStatus,
+  Participant,
+  Prisma,
+  Tile,
+  UnitType,
+} from "@prisma/client"
+import assert from "assert"
+import type { NextApiRequest, NextApiResponse } from "next"
+import { defaultGame, GameType } from "../../../../gameLogic/GameVariants"
+import { prisma } from "../../../../prisma/client"
+import { checkConditionsForUnitConstellationPlacement } from "../../../../services/GameManagerService"
+import { MatchRich, matchRichInclude } from "../../../../types/Match"
 import {
   buildTileLookupId,
+  getNewlyRevealedTiles,
   getTileLookup,
 } from "../../../../utils/coordinateUtils"
-import { getCoordinateCircle } from "../../../../utils/coordinateUtils"
+
+const updatePlayerScores = (match: MatchRich, gameType: GameType) => {
+  assert(match.map)
+  console.log("number of players", match.players)
+
+  const tileLookupWithPlacedTiles = getTileLookup(match.map.tiles)
+  const updatedPlayers = match.players.map<Participant>((player) => {
+    const newScore = gameType.scoringRules.reduce((totalScore, rule) => {
+      const ruleScore = rule(player.id, tileLookupWithPlacedTiles)
+      return totalScore + ruleScore
+    }, 0)
+    console.log("updatePlayerScore", player.playerNumber, newScore)
+
+    return { ...player, score: newScore }
+  })
+  console.log(updatedPlayers)
+
+  return updatedPlayers
+}
+const getLeadingPlayer = (match: MatchRich) => {
+  const isSameScore = match.players.every((player) => {
+    player.score === match.players[0].score
+  })
+  if (isSameScore) {
+    return null
+  }
+  return (
+    [...match.players]
+      .sort((p1, p2) => {
+        if (p1.score > p2.score) {
+          return -1
+        } else {
+          return 1
+        }
+      })
+      .shift() ?? null
+  )
+}
+
+const maxScore = 5
+
+const isLastTurn = (match: Match) => match.turn >= match.maxTurns - 1
+const determineWinner = (match: MatchRich) => {
+  const leadingPlayer = getLeadingPlayer(match)
+  if (!leadingPlayer) {
+    return null
+  }
+  if (leadingPlayer.score >= maxScore) {
+    return leadingPlayer
+  }
+  if (!isLastTurn(match)) {
+    return null
+  }
+  return leadingPlayer
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -56,80 +114,33 @@ export default async function handler(
         break
       }
 
-      if (match.status !== MatchStatus.STARTED) {
-        res.status(500).end("Match is not started")
-        break
-      }
-
-      if (match.activePlayerId !== participantId) {
-        res.status(500).end("It's not your turn")
-        break
-      }
-
-      const targetTile = match.map.tiles.find((tile: TileRich) => {
-        return targetRow === tile.row && targetCol === tile.col
-      })
-
-      if (!targetTile) {
-        res.status(500).end("Could not find target tile")
-        break
-      }
-
-      const { coordinates, rotatedClockwise } = body.unitConstellation
-
-      const transformedCoordinates = transformCoordinates(coordinates, {
-        rotatedClockwise,
-      })
-
-      const targetTileCoordinate: Coordinate2D = [
-        targetTile.row,
-        targetTile.col,
-      ]
-
-      const translatedCoordinates = positionCoordinatesAt(
-        targetTileCoordinate,
-        transformedCoordinates
-      )
-
-      const canBePlaced = defaultGame.placementRules.every((rule) =>
-        rule(translatedCoordinates, match!.map!, participantId)
-      )
-
-      if (!canBePlaced) {
-        res.status(500).end("At least one tile cannot be placed.")
-        break
-      }
-
-      let toBePlacedTiles = []
-      let updateTilesPromises = []
-
-      const visionCircle = getCoordinateCircle(3)
       const tileLookup = getTileLookup(match.map.tiles)
-      for (let i = 0; i < translatedCoordinates.length; i++) {
-        const coordinate = translatedCoordinates[i]
-        const tile = tileLookup[buildTileLookupId(coordinate)]
-        if (!tile) {
-          res.status(500).end("Error while placing")
-          break
-        }
-        const circleAroudUnit = positionCoordinatesAt(coordinate, visionCircle)
-        for (let i = 0; i < circleAroudUnit.length; i++) {
-          const coordinate = circleAroudUnit[i]
-          const tile = tileLookup[buildTileLookupId(coordinate)]
-          if (tile && !tile.visible) {
-            updateTilesPromises.push(
-              prisma.tile.update({
-                where: {
-                  id: tile.id,
-                },
-                data: {
-                  visible: true,
-                },
-              })
-            )
-          }
-        }
+      const { translatedCoordinates, error } =
+        checkConditionsForUnitConstellationPlacement(
+          [targetRow, targetCol],
+          body.unitConstellation,
+          match,
+          match.map,
+          tileLookup,
+          participantId
+        )
 
+      if (error) {
+        res.status(error.statusCode).end(error.message)
+        break
+      }
+
+      const { tiles: revealedTiles, error: revealedError } =
+        getNewlyRevealedTiles(tileLookup, translatedCoordinates)
+
+      if (revealedError) {
+        res.status(revealedError.statusCode).end(revealedError.message)
+        break
+      }
+
+      const updateTilesPromises: Prisma.Prisma__TileClient<Tile, never>[] = []
+      translatedCoordinates.forEach((coordinate) => {
+        const tile = tileLookup[buildTileLookupId(coordinate)]
         updateTilesPromises.push(
           prisma.tile.update({
             where: {
@@ -145,7 +156,19 @@ export default async function handler(
             },
           })
         )
-      }
+      })
+      revealedTiles.forEach((tile) => {
+        updateTilesPromises.push(
+          prisma.tile.update({
+            where: {
+              id: tile.id,
+            },
+            data: {
+              visible: true,
+            },
+          })
+        )
+      })
       await Promise.all(updateTilesPromises)
       const matchWithPlacedTiles = await prisma.match.findUnique({
         where: { id: matchId },
@@ -166,25 +189,28 @@ export default async function handler(
         break
       }
 
-      const tileLookupWithPlacedTiles = getTileLookup(
-        matchWithPlacedTiles.map.tiles
+      const playersWithUpdatedScore = updatePlayerScores(
+        matchWithPlacedTiles,
+        defaultGame
       )
 
-      const newScore = defaultGame.scoringRules.reduce((totalScore, rule) => {
-        const ruleScore = rule(
-          matchWithPlacedTiles!.activePlayerId!,
-          tileLookupWithPlacedTiles
-        )
+      const matchWithUpdatedScore = {
+        ...match,
+        players: playersWithUpdatedScore,
+      }
 
-        return totalScore + ruleScore
-      }, 0)
+      const winnerId = determineWinner(matchWithUpdatedScore)?.id ?? null
+      console.log(playersWithUpdatedScore)
 
-      const winnerId = newScore >= 5 ? participantId : null
+      for (let i = 0; i < playersWithUpdatedScore.length; i++) {
+        const player = playersWithUpdatedScore[i]
+        console.log("updateing player", player)
 
-      await prisma.participant.update({
-        where: { id: participantId },
-        data: { score: newScore },
-      })
+        await prisma.participant.update({
+          where: { id: player.id },
+          data: { score: player.score },
+        })
+      }
 
       const nextActivePlayerId = matchWithPlacedTiles.players.find(
         (player) => player.id !== matchWithPlacedTiles!.activePlayerId
@@ -200,7 +226,7 @@ export default async function handler(
         data: {
           activePlayerId: nextActivePlayerId,
           turn: { increment: 1 },
-          ...(winnerId
+          ...(isLastTurn(match) || winnerId
             ? { winnerId, status: MatchStatus.FINISHED, finishedAt: new Date() }
             : {}),
         },
