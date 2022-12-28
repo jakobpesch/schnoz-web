@@ -13,7 +13,6 @@ export const MapHighlights = (props: {
           <Flex
             key={row + "_" + col}
             position="absolute"
-            zIndex={1}
             align="center"
             justify="center"
             top={row * RenderSettings.tileSize + "px"}

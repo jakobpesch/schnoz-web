@@ -1,6 +1,7 @@
 import { AddIcon, RepeatIcon } from "@chakra-ui/icons"
 import {
   Button,
+  Container,
   Flex,
   Heading,
   Stack,
@@ -113,7 +114,9 @@ const Home: NextPage = () => {
       )}
 
       <Stack width="4xl" spacing="4" alignItems="center">
-        <Heading size="4xl">Schnoz</Heading>
+        <Heading fontFamily="Geodesic" fontSize="90px" color="teal.700">
+          schnoz
+        </Heading>
         <Stack direction="row">
           <Button size="sm" onClick={handleCreateMatch} leftIcon={<AddIcon />}>
             Create Match
@@ -126,60 +129,68 @@ const Home: NextPage = () => {
             Refresh
           </Button>
         </Stack>
-        {matches && user && (
-          <Tabs align="center" width="full">
-            <TabList>
-              <Tab>All</Tab>
-              <Tab>Open</Tab>
-              <Tab>Ongoing</Tab>
-              <Tab>Finished</Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel>
-                <MatchList
-                  userId={user}
-                  matches={matches}
-                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
-                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
-                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
-                />
-              </TabPanel>
-              <TabPanel>
-                <MatchList
-                  userId={user}
-                  matches={matches.filter(
-                    (match) => match.status === MatchStatus.CREATED
-                  )}
-                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
-                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
-                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
-                />
-              </TabPanel>
-              <TabPanel>
-                <MatchList
-                  userId={user}
-                  matches={matches.filter(
-                    (match) => match.status === MatchStatus.STARTED
-                  )}
-                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
-                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
-                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
-                />
-              </TabPanel>
-              <TabPanel>
-                <MatchList
-                  userId={user}
-                  matches={matches.filter(
-                    (match) => match.status === MatchStatus.FINISHED
-                  )}
-                  onJoinClick={(matchId) => handleJoinMatch(matchId)}
-                  onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
-                  onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
-                />
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        )}
+        <Container
+          maxWidth="full"
+          borderColor="gray.700"
+          borderRadius="lg"
+          bg="gray.900"
+          borderWidth="4px"
+        >
+          {matches && user && (
+            <Tabs align="center" width="full" py="4">
+              <TabList>
+                <Tab>All</Tab>
+                <Tab>Open</Tab>
+                <Tab>Ongoing</Tab>
+                <Tab>Finished</Tab>
+              </TabList>
+              <TabPanels>
+                <TabPanel>
+                  <MatchList
+                    userId={user}
+                    matches={matches}
+                    onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                    onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                    onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                  />
+                </TabPanel>
+                <TabPanel>
+                  <MatchList
+                    userId={user}
+                    matches={matches.filter(
+                      (match) => match.status === MatchStatus.CREATED
+                    )}
+                    onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                    onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                    onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                  />
+                </TabPanel>
+                <TabPanel>
+                  <MatchList
+                    userId={user}
+                    matches={matches.filter(
+                      (match) => match.status === MatchStatus.STARTED
+                    )}
+                    onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                    onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                    onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                  />
+                </TabPanel>
+                <TabPanel>
+                  <MatchList
+                    userId={user}
+                    matches={matches.filter(
+                      (match) => match.status === MatchStatus.FINISHED
+                    )}
+                    onJoinClick={(matchId) => handleJoinMatch(matchId)}
+                    onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
+                    onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
+                  />
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          )}
+        </Container>
       </Stack>
     </Flex>
   )

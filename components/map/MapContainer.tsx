@@ -20,12 +20,11 @@ export const MapContainer = (props: MapContainerProps) => {
         overflow="hidden"
         display="flex"
         flexWrap="wrap"
-        boxShadow="0 0 0px 10px #63B3ED"
+        boxShadow="0 0 0px 10px #333"
         width={mapWidth + "px"}
         height={mapHeight + "px"}
         flexShrink={0}
         position="relative"
-        // onMouseLeave={() => setHoveringCoordinate(null)}
         {...boxProps}
       />
     </Center>

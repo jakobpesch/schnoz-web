@@ -20,21 +20,15 @@ import {
 
 const updatePlayerScores = (match: MatchRich, gameType: GameType) => {
   assert(match.map)
-  console.log("number of players", match.players)
-
   const tileLookupWithPlacedTiles = getTileLookup(match.map.tiles)
-  const updatedPlayers = match.players.map<Participant>((player) => {
+  const playersWithUpdatedScores = match.players.map<Participant>((player) => {
     const newScore = gameType.scoringRules.reduce((totalScore, rule) => {
-      const ruleScore = rule(player.id, tileLookupWithPlacedTiles)
-      return totalScore + ruleScore
+      const ruleEvaluation = rule(player.id, tileLookupWithPlacedTiles)
+      return totalScore + ruleEvaluation.points
     }, 0)
-    console.log("updatePlayerScore", player.playerNumber, newScore)
-
     return { ...player, score: newScore }
   })
-  console.log(updatedPlayers)
-
-  return updatedPlayers
+  return playersWithUpdatedScores
 }
 const getLeadingPlayer = (match: MatchRich) => {
   const isSameScore = match.players.every((player) => {
@@ -200,11 +194,9 @@ export default async function handler(
       }
 
       const winnerId = determineWinner(matchWithUpdatedScore)?.id ?? null
-      console.log(playersWithUpdatedScore)
 
       for (let i = 0; i < playersWithUpdatedScore.length; i++) {
         const player = playersWithUpdatedScore[i]
-        console.log("updateing player", player)
 
         await prisma.participant.update({
           where: { id: player.id },

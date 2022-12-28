@@ -9,6 +9,7 @@ import { MapContainer } from "../../components/map/MapContainer"
 import { MapFog } from "../../components/map/MapFog"
 import { MapHoveredHighlights } from "../../components/map/MapHoveredHighlights"
 import { MapPlaceableTiles } from "../../components/map/MapPlaceableTiles"
+import { MapRuleEvaluations } from "../../components/map/MapRuleEvaluations"
 import { MapTerrains } from "../../components/map/MapTerrains"
 import { MapUnits } from "../../components/map/MapUnits"
 import { UIConstellationView } from "../../components/ui/UIConstellationsView"
@@ -98,7 +99,7 @@ function useMatchUpdate(options: {
   }
 }
 
-function useUserId() {
+export function useUserId() {
   try {
     const userId = getCookie("userId")
     return userId
@@ -128,7 +129,9 @@ const MatchView = () => {
     isError: isErrorUpdate,
   } = useMatchUpdate({
     match,
-    shouldFetch: !yourTurn && match?.status === MatchStatus.STARTED,
+    shouldFetch:
+      (!yourTurn && match?.status === MatchStatus.STARTED) ||
+      match?.status === MatchStatus.CREATED,
   })
 
   useEffect(() => {
@@ -142,6 +145,8 @@ const MatchView = () => {
     ])
   }
   const [statusLog, setStatusLog] = useState<string[]>([])
+  const [showRuleEvaluationHighlights, setShowRuleEvaluationHighlights] =
+    useState<Coordinate2D[]>([])
 
   const [settings, setSettings] = useState<MatchSettings>({
     mapSize: 11,
@@ -410,10 +415,19 @@ const MatchView = () => {
             )}
 
             <MapFog fogTiles={fogTiles} halfFogTiles={halfFogTiles} />
+            {showRuleEvaluationHighlights && (
+              <MapRuleEvaluations coordinates={showRuleEvaluationHighlights} />
+            )}
             <MapTerrains terrainTiles={terrainTiles} />
             <MapUnits unitTiles={unitTiles} players={match.players} />
           </MapContainer>
-          <UIScoreView players={match.players} />
+          <UIScoreView
+            players={match.players}
+            map={match.map}
+            onRuleHover={(coordinates) => {
+              setShowRuleEvaluationHighlights(coordinates)
+            }}
+          />
         </>
       )}
       {isFinished && <UIPostMatchView winner={match.winner} />}

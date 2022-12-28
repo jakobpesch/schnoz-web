@@ -6,87 +6,116 @@ import {
   TileLookup,
 } from "../utils/coordinateUtils"
 
-export type ScoringRule = (playerId: string, tileLookup: TileLookup) => number
+export interface RuleEvaluation {
+  type: RuleType
+  points: number
+  /** fulfillments[0] = One fulfillment of the rule gives one point. fulfillment[0][0] is the coordinate, that (in part or completely) fulfills the rule */
+  fulfillments: Coordinate2D[][]
+}
+
+export type ScoringRule = (
+  playerId: string,
+  tileLookup: TileLookup
+) => RuleEvaluation
+
+export type RuleType = "hole" | "water" | "stone" | "diagonal"
 
 const buildTerrainRule: (options: {
   terrain: Terrain
   penalty?: boolean
+  ruleType: RuleType
 }) => ScoringRule =
-  (options: { terrain: Terrain; penalty?: boolean }) =>
+  (options: { terrain: Terrain; penalty?: boolean; ruleType: RuleType }) =>
   (playerId, tileLookup) => {
-    const { terrain, penalty } = options
+    const { terrain, penalty, ruleType } = options
+
+    const ruleEvaluation: RuleEvaluation = {
+      type: ruleType,
+      points: 0,
+      fulfillments: [],
+    }
+
     const point = penalty ? -1 : 1
+
     const terrainTiles = Object.values(tileLookup).filter(
       (tile) => tile.terrain === terrain && tile.visible
     )
-    const scoredPoints = terrainTiles.reduce((score, waterTile) => {
-      const terrainCoordinate: Coordinate2D = [waterTile.row, waterTile.col]
+
+    terrainTiles.forEach((terrainTile) => {
+      const terrainCoordinate: Coordinate2D = [terrainTile.row, terrainTile.col]
       const adjacentCoordinates = getAdjacentCoordinates(terrainCoordinate)
-      const hasUnitNearTerrainTile = adjacentCoordinates.some(
+      const hasUnitAdjacentToTerrainTile = adjacentCoordinates.some(
         (coordinate) =>
           tileLookup[buildTileLookupId(coordinate)]?.unit?.ownerId === playerId
       )
-      if (hasUnitNearTerrainTile) {
-        return score + point
+      if (hasUnitAdjacentToTerrainTile) {
+        ruleEvaluation.fulfillments.push([terrainCoordinate])
+        ruleEvaluation.points += point
       }
-      return score
     }, 0)
 
-    return scoredPoints
+    return ruleEvaluation
   }
 
 export const waterRule: ScoringRule = buildTerrainRule({
   terrain: Terrain.WATER,
+  ruleType: "water",
 })
 
 export const stoneRule: ScoringRule = buildTerrainRule({
   terrain: Terrain.STONE,
   penalty: true,
+  ruleType: "stone",
 })
 
 export const holeRule: ScoringRule = (playerId, tileLookup) => {
+  const ruleEvaluation: RuleEvaluation = {
+    type: "hole",
+    points: 0,
+    fulfillments: [],
+  }
   const potentialHolesTiles = Object.values(tileLookup).filter(
     (tile) => tile.visible && !tile.unit && !tile.terrain
   )
 
-  const scoredPoints = potentialHolesTiles.reduce(
-    (score, potentialHoleTile) => {
-      const potentialHoleCoordinate: Coordinate2D = [
-        potentialHoleTile.row,
-        potentialHoleTile.col,
-      ]
+  potentialHolesTiles.forEach((potentialHoleTile) => {
+    const potentialHoleCoordinate: Coordinate2D = [
+      potentialHoleTile.row,
+      potentialHoleTile.col,
+    ]
 
-      const adjacentTilesToPotentialHole = getAdjacentCoordinates(
-        potentialHoleCoordinate
-      )
+    const adjacentCoordinatesToPotentialHole = getAdjacentCoordinates(
+      potentialHoleCoordinate
+    )
 
-      const adjacentTiles = adjacentTilesToPotentialHole
-        .map((coordinate) => tileLookup[buildTileLookupId(coordinate)] ?? null)
-        .filter((tile) => !!tile)
+    const adjacentTiles = adjacentCoordinatesToPotentialHole
+      .map((coordinate) => tileLookup[buildTileLookupId(coordinate)] ?? null)
+      .filter((tile) => !!tile)
 
-      const allAlly = adjacentTiles.every((tile) => {
-        const isAlly =
-          tile.unit?.ownerId === playerId ||
-          tile.unit?.type === UnitType.MAIN_BUILDING
-        const hasTerrain = !!tile.terrain
-        return isAlly || hasTerrain
-      })
+    const allAlly = adjacentTiles.every((tile) => {
+      const isAlly =
+        tile.unit?.ownerId === playerId ||
+        tile.unit?.type === UnitType.MAIN_BUILDING
+      const hasTerrain = !!tile.terrain
+      return isAlly || hasTerrain
+    })
 
-      if (!allAlly) {
-        return score
-      }
+    if (allAlly) {
+      ruleEvaluation.fulfillments.push([potentialHoleCoordinate])
+      ruleEvaluation.points += 1
+    }
+  }, 0)
 
-      return score + 1
-    },
-    0
-  )
-  console.log(scoredPoints, "hole")
-
-  return scoredPoints
+  return ruleEvaluation
 }
 
 export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
-  return 0
+  const ruleEvaluation: RuleEvaluation = {
+    type: "diagonal",
+    points: 0,
+    fulfillments: [],
+  }
+  return ruleEvaluation
   // const tiles = Object.values(tileLookup)
   // const unitTiles = tiles.filter((tile) => tile.unit?.ownerId === playerId)
   // const mapSize = Math.sqrt(tiles.length)

@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  Heading,
   HStack,
   Table,
   TableContainer,
@@ -13,7 +14,7 @@ import {
 } from "@chakra-ui/react"
 import { MatchStatus } from "@prisma/client"
 import { MatchRich } from "../types/Match"
-
+import { MinusIcon } from "@chakra-ui/icons"
 interface MatchListProps {
   userId: string
   matches: MatchRich[]
@@ -39,9 +40,9 @@ const MatchList = (props: MatchListProps) => {
   }
   if (matches.length === 0) {
     return (
-      <Text p={10} textAlign="center" color="gray.200">
-        No matches
-      </Text>
+      <Heading p={10} textAlign="center" color="gray.500">
+        <MinusIcon />
+      </Heading>
     )
   }
 
@@ -64,7 +65,7 @@ const MatchList = (props: MatchListProps) => {
               .toLocaleString()
               .split(", ")
             return (
-              <Tr key={match.id} color="gray.200">
+              <Tr key={match.id}>
                 <Td>
                   <Text>{date}</Text>
                   <Text>{time}</Text>
@@ -92,27 +93,33 @@ const MatchList = (props: MatchListProps) => {
 
                 <Td>
                   <HStack>
-                    <Button
-                      variant="link"
-                      disabled={!canJoin(match)}
-                      onClick={() => onJoinClick(match.id)}
-                    >
-                      Join
-                    </Button>
-                    <Button
-                      variant="link"
-                      disabled={!canDelete(match, userId)}
-                      onClick={() => onDeleteClick(match.id)}
-                    >
-                      Delete
-                    </Button>
-                    <Button
-                      variant="link"
-                      disabled={!hasJoined(match, userId)}
-                      onClick={() => onGoToMatchClick(match.id)}
-                    >
-                      Go to match
-                    </Button>
+                    {canJoin(match) && (
+                      <Button
+                        variant="link"
+                        // disabled={!canJoin(match)}
+                        onClick={() => onJoinClick(match.id)}
+                      >
+                        Join
+                      </Button>
+                    )}
+                    {canDelete(match, userId) && (
+                      <Button
+                        variant="link"
+                        // disabled={!canDelete(match, userId)}
+                        onClick={() => onDeleteClick(match.id)}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                    {hasJoined(match, userId) && (
+                      <Button
+                        variant="link"
+                        // disabled={!hasJoined(match, userId)}
+                        onClick={() => onGoToMatchClick(match.id)}
+                      >
+                        Go to match
+                      </Button>
+                    )}
                   </HStack>
                 </Td>
               </Tr>
