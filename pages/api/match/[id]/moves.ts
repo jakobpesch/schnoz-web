@@ -18,18 +18,6 @@ import {
   getTileLookup,
 } from "../../../../utils/coordinateUtils"
 
-const updatePlayerScores = (match: MatchRich, gameType: GameType) => {
-  assert(match.map)
-  const tileLookupWithPlacedTiles = getTileLookup(match.map.tiles)
-  const playersWithUpdatedScores = match.players.map<Participant>((player) => {
-    const newScore = gameType.scoringRules.reduce((totalScore, rule) => {
-      const ruleEvaluation = rule(player.id, tileLookupWithPlacedTiles)
-      return totalScore + ruleEvaluation.points
-    }, 0)
-    return { ...player, score: newScore }
-  })
-  return playersWithUpdatedScores
-}
 const getLeadingPlayer = (match: MatchRich) => {
   const isSameScore = match.players.every((player) => {
     player.score === match.players[0].score
@@ -52,7 +40,7 @@ const getLeadingPlayer = (match: MatchRich) => {
 
 const maxScore = 5
 
-const isLastTurn = (match: Match) => match.turn >= match.maxTurns - 1
+const isLastTurn = (match: Match) => match.turn >= match.maxTurns
 const determineWinner = (match: MatchRich) => {
   const leadingPlayer = getLeadingPlayer(match)
   if (!leadingPlayer) {
@@ -183,17 +171,7 @@ export default async function handler(
         break
       }
 
-      const playersWithUpdatedScore = updatePlayerScores(
-        matchWithPlacedTiles,
-        defaultGame
-      )
-
-      const matchWithUpdatedScore = {
-        ...match,
-        players: playersWithUpdatedScore,
-      }
-
-      const winnerId = determineWinner(matchWithUpdatedScore)?.id ?? null
+      const playersWithUpdatedScore = defaultGame.evaluate(matchWithPlacedTiles)
 
       for (let i = 0; i < playersWithUpdatedScore.length; i++) {
         const player = playersWithUpdatedScore[i]
@@ -204,9 +182,22 @@ export default async function handler(
         })
       }
 
-      const nextActivePlayerId = matchWithPlacedTiles.players.find(
-        (player) => player.id !== matchWithPlacedTiles!.activePlayerId
-      )?.id
+      const matchWithUpdatedScore = {
+        ...match,
+        players: playersWithUpdatedScore,
+      }
+
+      const winnerId = determineWinner(matchWithUpdatedScore)?.id ?? null
+
+      const shouldChangeActivePlayer = defaultGame.shouldChangeActivePlayer(
+        match.turn
+      )
+
+      const nextActivePlayerId = shouldChangeActivePlayer
+        ? matchWithPlacedTiles.players.find(
+            (player) => player.id !== matchWithPlacedTiles.activePlayerId
+          )?.id
+        : matchWithPlacedTiles.activePlayerId
 
       if (!nextActivePlayerId) {
         res.status(500).end("Error while changing turns")

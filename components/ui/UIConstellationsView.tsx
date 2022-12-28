@@ -26,7 +26,7 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
       ) +
       2 * padding) *
       viewPortWidthFactor +
-    "vw"
+    "vmin"
 
   return (
     <Box
@@ -41,9 +41,9 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
     >
       {coordinates.map(([row, col]) => {
         const topOffset =
-          (tileSize * row + padding) * viewPortWidthFactor + "vw"
+          (tileSize * row + padding) * viewPortWidthFactor + "vmin"
         const leftOffset =
-          (tileSize * col + padding) * viewPortWidthFactor + "vw"
+          (tileSize * col + padding) * viewPortWidthFactor + "vmin"
 
         return (
           <Box
@@ -51,17 +51,17 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
             position="absolute"
             top={topOffset}
             left={leftOffset}
-            width={tileSize * viewPortWidthFactor + "vw"}
-            height={tileSize * viewPortWidthFactor + "vw"}
+            width={tileSize * viewPortWidthFactor + "vmin"}
+            height={tileSize * viewPortWidthFactor + "vmin"}
             background="gray.300"
           />
         )
       })}
       <Kbd
         position="absolute"
-        bottom={-viewPortWidthFactor * 5 + "vw"}
-        right={-viewPortWidthFactor * 5 + "vw"}
-        fontSize={viewPortWidthFactor * 15 + "vw"}
+        bottom={-viewPortWidthFactor * 5 + "vmin"}
+        right={-viewPortWidthFactor * 5 + "vmin"}
+        fontSize={viewPortWidthFactor * 15 + "vmin"}
         bg="gray.600"
       >
         {hotkey}

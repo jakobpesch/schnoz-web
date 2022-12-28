@@ -213,7 +213,7 @@ export default async function handler(
             res.status(500).end("Could not find active player")
             break
           }
-          const turn = 0
+          const turn = 1
           const maxTurns = body.settings.maxTurns
 
           const startedMatch = await prisma.match.update({

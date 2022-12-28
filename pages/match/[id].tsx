@@ -19,6 +19,7 @@ import { UILoggingView } from "../../components/ui/UILoggingView"
 import { UIPostMatchView } from "../../components/ui/UIPostMatchView"
 import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
 import { UIScoreView } from "../../components/ui/UIScoreView"
+import { UITurnsView } from "../../components/ui/UITurnsView"
 import { unitConstellations } from "../../gameLogic/unitConstellations"
 import {
   Coordinate2D,
@@ -433,12 +434,17 @@ const MatchView = () => {
       )}
       {isFinished && <UIPostMatchView winner={match.winner} />}
       {isOngoing && (
-        <UIConstellationView
-          selectedConstellation={selectedConstellation}
-          constellations={unitConstellations}
-          readonly={!yourTurn}
-          onSelect={(constellation) => setSelectedConstellation(constellation)}
-        />
+        <>
+          <UITurnsView match={match} />
+          <UIConstellationView
+            selectedConstellation={selectedConstellation}
+            constellations={unitConstellations}
+            readonly={!yourTurn}
+            onSelect={(constellation) =>
+              setSelectedConstellation(constellation)
+            }
+          />
+        </>
       )}
       <UILoggingView statusLog={statusLog} />
       <UILoadingIndicator loading={isLoadingMatch || isLoadingUpdate} />

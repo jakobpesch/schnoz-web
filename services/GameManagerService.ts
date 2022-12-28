@@ -55,7 +55,7 @@ export const startMatch = async (
     body: JSON.stringify({
       action: "start",
       userId,
-      settings: { rowCount: mapSize, columnCount: mapSize, maxTurns: 11 },
+      settings: { rowCount: mapSize, columnCount: mapSize, maxTurns: 12 },
     }),
   }
 

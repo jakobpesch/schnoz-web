@@ -56,28 +56,28 @@ export const UIScoreView = (props: {
     <Flex position="fixed" top="0" right="0">
       <VStack
         bg="gray.700"
-        borderWidth={viewPortWidthFactor * 1 + "vw"}
-        borderRadius={viewPortWidthFactor * 10 + "vw"}
-        spacing={viewPortWidthFactor * 16 + "vw"}
-        p={viewPortWidthFactor * 10 + "vw"}
-        m={viewPortWidthFactor * 10 + "vw"}
+        borderWidth={viewPortWidthFactor * 1 + "vmin"}
+        borderRadius={viewPortWidthFactor * 10 + "vmin"}
+        spacing={viewPortWidthFactor * 16 + "vmin"}
+        p={viewPortWidthFactor * 10 + "vmin"}
+        m={viewPortWidthFactor * 10 + "vmin"}
       >
-        <HStack spacing={viewPortWidthFactor * 16 + "vw"}>
-          <HStack key={player1.id} spacing={viewPortWidthFactor * 16 + "vw"}>
-            <Heading fontSize={viewPortWidthFactor * 25 + "vw"} size="md">
+        <HStack spacing={viewPortWidthFactor * 16 + "vmin"}>
+          <HStack key={player1.id} spacing={viewPortWidthFactor * 16 + "vmin"}>
+            <Heading fontSize={viewPortWidthFactor * 25 + "vmin"} size="md">
               {RenderSettings.getPlayerAppearance(player1).unit} {player1.score}
             </Heading>
           </HStack>
           <Divider orientation="vertical"></Divider>
-          <HStack key={player2.id} spacing={viewPortWidthFactor * 16 + "vw"}>
-            <Heading fontSize={viewPortWidthFactor * 25 + "vw"} size="md">
+          <HStack key={player2.id} spacing={viewPortWidthFactor * 16 + "vmin"}>
+            <Heading fontSize={viewPortWidthFactor * 25 + "vmin"} size="md">
               {player2.score} {RenderSettings.getPlayerAppearance(player2).unit}
             </Heading>
           </HStack>
         </HStack>
         <Divider />
         {evaluationsMap && (
-          <Stack direction="row" spacing={viewPortWidthFactor * 16 + "vw"}>
+          <Stack direction="row" spacing={viewPortWidthFactor * 16 + "vmin"}>
             {Array.from(evaluationsMap.values()).map(
               (ruleEvaluations, ruleEvalsIndex) => {
                 return (
@@ -85,14 +85,14 @@ export const UIScoreView = (props: {
                     {ruleEvaluations.map((ruleEvaluation, ruleEvalIndex) => {
                       return (
                         <HStack
-                          spacing={viewPortWidthFactor * 16 + "vw"}
+                          spacing={viewPortWidthFactor * 16 + "vmin"}
                           color="white"
                           key={"ruleEval_" + ruleEvalIndex}
                         >
                           {ruleEvalsIndex !== 0 && (
                             <Heading
                               cursor="default"
-                              fontSize={viewPortWidthFactor * 25 + "vw"}
+                              fontSize={viewPortWidthFactor * 25 + "vmin"}
                               size="md"
                             >
                               {getRuleAppearance(ruleEvaluation.type)}
@@ -100,7 +100,7 @@ export const UIScoreView = (props: {
                           )}
                           <Heading
                             cursor="default"
-                            fontSize={viewPortWidthFactor * 25 + "vw"}
+                            fontSize={viewPortWidthFactor * 25 + "vmin"}
                             size="md"
                             onMouseEnter={() =>
                               props.onRuleHover(

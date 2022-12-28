@@ -1,4 +1,4 @@
-import { Terrain, UnitType } from "@prisma/client"
+import { Participant, Terrain, UnitType } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { addCoordinates } from "../utils/constallationTransformer"
 import {
@@ -8,6 +8,7 @@ import {
 } from "../utils/coordinateUtils"
 
 export interface RuleEvaluation {
+  playerId: Participant["id"]
   type: RuleType
   points: number
   /** fulfillments[0] = One fulfillment of the rule gives one point. fulfillment[0][0] is the coordinate, that (in part or completely) fulfills the rule */
@@ -31,6 +32,7 @@ const buildTerrainRule: (options: {
     const { terrain, penalty, ruleType } = options
 
     const ruleEvaluation: RuleEvaluation = {
+      playerId,
       type: ruleType,
       points: 0,
       fulfillments: [],
@@ -71,6 +73,7 @@ export const stoneRule: ScoringRule = buildTerrainRule({
 
 export const holeRule: ScoringRule = (playerId, tileLookup) => {
   const ruleEvaluation: RuleEvaluation = {
+    playerId,
     type: "hole",
     points: 0,
     fulfillments: [],
@@ -112,6 +115,7 @@ export const holeRule: ScoringRule = (playerId, tileLookup) => {
 
 export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
   const ruleEvaluation: RuleEvaluation = {
+    playerId,
     type: "diagonal",
     points: 0,
     fulfillments: [],
