@@ -5,7 +5,13 @@ import {
   noTerrain,
   PlacementRule,
 } from "./PlacementRule"
-import { holeRule, ScoringRule, stoneRule, waterRule } from "./ScoringRule"
+import {
+  diagnoalRule,
+  holeRule,
+  ScoringRule,
+  stoneRule,
+  waterRule,
+} from "./ScoringRule"
 
 export interface GameType {
   scoringRules: ScoringRule[]
@@ -13,6 +19,6 @@ export interface GameType {
 }
 
 export const defaultGame: GameType = {
-  scoringRules: [waterRule, stoneRule, holeRule],
+  scoringRules: [waterRule, stoneRule, holeRule, diagnoalRule],
   placementRules: [inBounds, noUnit, noTerrain, adjacentToAlly],
 }

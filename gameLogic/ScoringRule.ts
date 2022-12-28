@@ -1,5 +1,6 @@
 import { Terrain, UnitType } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
+import { addCoordinates } from "../utils/constallationTransformer"
 import {
   buildTileLookupId,
   getAdjacentCoordinates,
@@ -115,6 +116,94 @@ export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
     points: 0,
     fulfillments: [],
   }
+  const tiles = Object.values(tileLookup)
+  const unitTiles = tiles.filter((tile) => tile.unit?.ownerId === playerId)
+
+  const processedTileIds = new Set<string>()
+  unitTiles.forEach((unitTile) => {
+    if (processedTileIds.has(unitTile.id)) {
+      return
+    }
+    processedTileIds.add(unitTile.id)
+
+    let startCoordinate: Coordinate2D = [unitTile.row, unitTile.col]
+    let fulfillment: RuleEvaluation["fulfillments"][0] = [[...startCoordinate]]
+
+    let currentCoordinate: Coordinate2D = [...startCoordinate]
+    let safetyIndex = 0
+    while (true) {
+      safetyIndex++
+
+      // go to top right
+      const topRightCoordinate = addCoordinates(currentCoordinate, [-1, 1])
+      const topRightTile = tileLookup[buildTileLookupId(topRightCoordinate)]
+
+      if (!topRightTile) {
+        break
+      }
+
+      const topRightUnitTile = unitTiles.find(
+        (unitTile) => unitTile.id === topRightTile.id
+      )
+      const topRightIsPlayersUnit =
+        !topRightUnitTile ||
+        !topRightUnitTile.unit ||
+        topRightUnitTile.unit.ownerId !== playerId
+
+      if (topRightIsPlayersUnit) {
+        break
+      }
+
+      processedTileIds.add(topRightUnitTile.id)
+      fulfillment.push(topRightCoordinate)
+      currentCoordinate = [...topRightCoordinate]
+
+      if (safetyIndex > 20) {
+        break
+      }
+    }
+
+    currentCoordinate = [...startCoordinate]
+    safetyIndex = 0
+    while (true) {
+      safetyIndex++
+
+      // go to top right
+      const bottomLeftCoordinate = addCoordinates(currentCoordinate, [1, -1])
+      const bottomLeftTile = tileLookup[buildTileLookupId(bottomLeftCoordinate)]
+
+      if (!bottomLeftTile) {
+        break
+      }
+
+      const bottomLeftUnitTile = unitTiles.find(
+        (unitTile) => unitTile.id === bottomLeftTile.id
+      )
+      const bottomLeftIsPlayersUnit =
+        !bottomLeftUnitTile ||
+        !bottomLeftUnitTile.unit ||
+        bottomLeftUnitTile.unit.ownerId !== playerId
+
+      if (bottomLeftIsPlayersUnit) {
+        break
+      }
+
+      processedTileIds.add(bottomLeftUnitTile.id)
+      fulfillment.push(bottomLeftCoordinate)
+      currentCoordinate = [...bottomLeftCoordinate]
+
+      if (safetyIndex > 20) {
+        break
+      }
+    }
+    if (fulfillment.length >= 3) {
+      ruleEvaluation.fulfillments.push(fulfillment)
+      ruleEvaluation.points += 1
+    }
+    // go to bottom left
+  })
+  console.log(ruleEvaluation)
+
   return ruleEvaluation
   // const tiles = Object.values(tileLookup)
   // const unitTiles = tiles.filter((tile) => tile.unit?.ownerId === playerId)

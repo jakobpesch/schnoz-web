@@ -415,11 +415,11 @@ const MatchView = () => {
             )}
 
             <MapFog fogTiles={fogTiles} halfFogTiles={halfFogTiles} />
+            <MapUnits unitTiles={unitTiles} players={match.players} />
             {showRuleEvaluationHighlights && (
               <MapRuleEvaluations coordinates={showRuleEvaluationHighlights} />
             )}
             <MapTerrains terrainTiles={terrainTiles} />
-            <MapUnits unitTiles={unitTiles} players={match.players} />
           </MapContainer>
           <UIScoreView
             players={match.players}

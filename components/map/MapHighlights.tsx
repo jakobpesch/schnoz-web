@@ -5,13 +5,16 @@ import { RenderSettings } from "../../services/SettingsService"
 export const MapHighlights = (props: {
   coordinates: Coordinate2D[]
   color?: string
+  keySuffix?: string
 }) => {
+  console.log(props.coordinates)
+
   return (
     <>
       {props.coordinates.map(([row, col]) => {
         return (
           <Flex
-            key={row + "_" + col}
+            key={row + "_" + col + props.keySuffix}
             position="absolute"
             align="center"
             justify="center"

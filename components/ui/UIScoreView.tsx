@@ -30,6 +30,9 @@ const getRuleAppearance = (ruleType: RuleType) => {
   if (ruleType === "stone") {
     return "⚪️"
   }
+  if (ruleType === "diagonal") {
+    return "↗"
+  }
 }
 
 export const UIScoreView = (props: {
@@ -87,6 +90,7 @@ export const UIScoreView = (props: {
                         >
                           {index !== 0 && (
                             <Heading
+                              cursor="default"
                               fontSize={viewPortWidthFactor * 25 + "vw"}
                               size="md"
                             >
@@ -94,6 +98,7 @@ export const UIScoreView = (props: {
                             </Heading>
                           )}
                           <Heading
+                            cursor="default"
                             fontSize={viewPortWidthFactor * 25 + "vw"}
                             size="md"
                             onMouseEnter={() =>
