@@ -79,16 +79,17 @@ export const UIScoreView = (props: {
         {evaluationsMap && (
           <Stack direction="row" spacing={viewPortWidthFactor * 16 + "vw"}>
             {Array.from(evaluationsMap.values()).map(
-              (ruleEvaluations, index) => {
+              (ruleEvaluations, ruleEvalsIndex) => {
                 return (
-                  <Stack>
-                    {ruleEvaluations.map((ruleEvaluation) => {
+                  <Stack key={"ruleEvals_" + ruleEvalsIndex}>
+                    {ruleEvaluations.map((ruleEvaluation, ruleEvalIndex) => {
                       return (
                         <HStack
                           spacing={viewPortWidthFactor * 16 + "vw"}
                           color="white"
+                          key={"ruleEval_" + ruleEvalIndex}
                         >
-                          {index !== 0 && (
+                          {ruleEvalsIndex !== 0 && (
                             <Heading
                               cursor="default"
                               fontSize={viewPortWidthFactor * 25 + "vw"}

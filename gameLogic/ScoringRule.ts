@@ -117,6 +117,7 @@ export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
     fulfillments: [],
   }
   const tiles = Object.values(tileLookup)
+  const maxSize = Math.sqrt(tiles.length)
   const unitTiles = tiles.filter((tile) => tile.unit?.ownerId === playerId)
 
   const processedTileIds = new Set<string>()
@@ -126,134 +127,49 @@ export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
     }
     processedTileIds.add(unitTile.id)
 
-    let startCoordinate: Coordinate2D = [unitTile.row, unitTile.col]
-    let fulfillment: RuleEvaluation["fulfillments"][0] = [[...startCoordinate]]
+    const startCoordinate: Coordinate2D = [unitTile.row, unitTile.col]
+    const fulfillment: RuleEvaluation["fulfillments"][0] = [
+      [...startCoordinate],
+    ]
 
-    let currentCoordinate: Coordinate2D = [...startCoordinate]
-    let safetyIndex = 0
-    while (true) {
-      safetyIndex++
+    const topRightStep: Coordinate2D = [1, -1]
+    const bottomLeftStep: Coordinate2D = [-1, 1]
+    const directions = [topRightStep, bottomLeftStep]
 
-      // go to top right
-      const topRightCoordinate = addCoordinates(currentCoordinate, [-1, 1])
-      const topRightTile = tileLookup[buildTileLookupId(topRightCoordinate)]
-
-      if (!topRightTile) {
-        break
-      }
-
-      const topRightUnitTile = unitTiles.find(
-        (unitTile) => unitTile.id === topRightTile.id
+    directions.forEach((direction) => {
+      let currentCoordinate: Coordinate2D = [...startCoordinate]
+      const inBounds = currentCoordinate.every(
+        (value) => value >= 0 && value < maxSize
       )
-      const topRightIsPlayersUnit =
-        !topRightUnitTile ||
-        !topRightUnitTile.unit ||
-        topRightUnitTile.unit.ownerId !== playerId
+      while (inBounds) {
+        const topRightCoordinate = addCoordinates(currentCoordinate, direction)
+        const topRightTile = tileLookup[buildTileLookupId(topRightCoordinate)]
 
-      if (topRightIsPlayersUnit) {
-        break
+        if (!topRightTile) {
+          break
+        }
+
+        const topRightUnitTile = unitTiles.find(
+          (unitTile) => unitTile.id === topRightTile.id
+        )
+        const topRightIsPlayersUnit =
+          !topRightUnitTile ||
+          !topRightUnitTile.unit ||
+          topRightUnitTile.unit.ownerId !== playerId
+
+        if (topRightIsPlayersUnit) {
+          break
+        }
+
+        processedTileIds.add(topRightUnitTile.id)
+        fulfillment.push(topRightCoordinate)
+        currentCoordinate = [...topRightCoordinate]
       }
-
-      processedTileIds.add(topRightUnitTile.id)
-      fulfillment.push(topRightCoordinate)
-      currentCoordinate = [...topRightCoordinate]
-
-      if (safetyIndex > 20) {
-        break
-      }
-    }
-
-    currentCoordinate = [...startCoordinate]
-    safetyIndex = 0
-    while (true) {
-      safetyIndex++
-
-      // go to top right
-      const bottomLeftCoordinate = addCoordinates(currentCoordinate, [1, -1])
-      const bottomLeftTile = tileLookup[buildTileLookupId(bottomLeftCoordinate)]
-
-      if (!bottomLeftTile) {
-        break
-      }
-
-      const bottomLeftUnitTile = unitTiles.find(
-        (unitTile) => unitTile.id === bottomLeftTile.id
-      )
-      const bottomLeftIsPlayersUnit =
-        !bottomLeftUnitTile ||
-        !bottomLeftUnitTile.unit ||
-        bottomLeftUnitTile.unit.ownerId !== playerId
-
-      if (bottomLeftIsPlayersUnit) {
-        break
-      }
-
-      processedTileIds.add(bottomLeftUnitTile.id)
-      fulfillment.push(bottomLeftCoordinate)
-      currentCoordinate = [...bottomLeftCoordinate]
-
-      if (safetyIndex > 20) {
-        break
-      }
-    }
+    })
     if (fulfillment.length >= 3) {
       ruleEvaluation.fulfillments.push(fulfillment)
-      ruleEvaluation.points += 1
     }
-    // go to bottom left
   })
-  console.log(ruleEvaluation)
-
+  ruleEvaluation.points = ruleEvaluation.fulfillments.length
   return ruleEvaluation
-  // const tiles = Object.values(tileLookup)
-  // const unitTiles = tiles.filter((tile) => tile.unit?.ownerId === playerId)
-  // const mapSize = Math.sqrt(tiles.length)
-  // const score = 0
-  // const processedTileIds = new Set<string>()
-  // unitTiles.forEach((unitTile) => {
-  //   if (processedTileIds.has(unitTile.id)) {
-  //     return
-  //   }
-  //   processedTileIds.add(unitTile.id)
-
-  //   const checkTile = (
-  //     tile: TileRich,
-  //     predicate: (tile: TileRich) => boolean
-  //   ) => {
-  //     return predicate(tile)
-  //   }
-
-  //   const checkDiagonalToTopRight = tileLookup
-
-  //   while (true) {
-  //     let diagonalLength = 1
-  //     const [bottomLeft, topRight] = getTopRightDiagonallyAdjacentCoordinates([
-  //       unitTile.row,
-  //       unitTile.col,
-  //     ])
-  //     const bottomLeftTile = tileLookup[buildTileLookupId(bottomLeft)]
-  //     const topRightTile = tileLookup[buildTileLookupId(topRight)]
-  //     if (!bottomLeftTile.unit && !topRightTile.unit) {
-  //     }
-  //     if (bottomLeftTile?.unit) {
-  //       diagonalLength++
-  //       processedTileIds.add(bottomLeftTile.id)
-  //     }
-  //     if (topRightTile?.unit) {
-  //       diagonalLength++
-  //       processedTileIds.add(topRightTile.id)
-  //     }
-  //   }
-  // })
-  // // for (let row = 0; row < mapSize; row++) {
-  // //   const diagonals: Coordinate2D[] = []
-  // //   for (let col = 0; col < mapSize; col++) {
-  // //     const tile = tileLookup[buildTileLookupId([row, col])]
-
-  // //     if (!tile) {
-  // //       continue
-  // //     }
-  // //   }
-  // // }
-  // return score
 }

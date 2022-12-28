@@ -5,9 +5,5 @@ interface MapRuleEvaluationsProps {
   coordinates: Coordinate2D[]
 }
 export const MapRuleEvaluations = (props: MapRuleEvaluationsProps) => (
-  <MapHighlights
-    coordinates={props.coordinates}
-    color={"pink.700"}
-    keySuffix="_ruleEvals"
-  />
+  <MapHighlights coordinates={props.coordinates} color={"pink.700"} />
 )

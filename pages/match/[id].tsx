@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Container } from "@chakra-ui/react"
 import { Match, MatchStatus, UnitType } from "@prisma/client"
 import assert from "assert"

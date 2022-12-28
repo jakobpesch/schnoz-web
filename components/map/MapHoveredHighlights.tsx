@@ -76,7 +76,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
       return translated
     }
     return []
-  }, [hoveredCoordinate, rotatedClockwise])
+  }, [props.constellation, hoveredCoordinate, rotatedClockwise])
 
   if (!props.player || props.hide) {
     return null
