@@ -25,7 +25,8 @@ export const UIPostMatchView = (props: UIPostMatchViewProps) => {
         <Heading>Finished</Heading>
         <Text fontSize="2vw">
           {props.winner
-            ? RenderSettings.getPlayerAppearance(props.winner).unit + " wins!"
+            ? RenderSettings.getPlayerAppearance(props.winner.playerNumber)
+                .unit + " wins!"
             : "Draw!"}
         </Text>
         <Button

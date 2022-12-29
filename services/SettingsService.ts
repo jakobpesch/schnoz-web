@@ -2,20 +2,20 @@ import { Participant } from "@prisma/client"
 
 export const RenderSettings = {
   tileSize: 50,
-  getPlayerAppearance: (participant?: Participant) => {
+  getPlayerAppearance: (playerNumber?: Participant["playerNumber"]) => {
     let unit = ""
-    let background = ""
-    if (participant?.playerNumber === 0) {
+    let color = ""
+    if (playerNumber === 0) {
       unit = "🦁"
-      background = "orange.900"
-    } else if (participant?.playerNumber === 1) {
+      color = "orange.900"
+    } else if (playerNumber === 1) {
       unit = "🐵"
-      background = "teal.900"
+      color = "teal.800"
     } else {
       unit = "🛖"
-      background = "gray.700"
+      color = "gray.700"
     }
-    return { unit, background }
+    return { unit, color }
   },
 }
 

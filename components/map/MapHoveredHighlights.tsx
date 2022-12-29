@@ -89,7 +89,6 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
           <Flex
             key={row + "_" + col}
             position="absolute"
-            zIndex={1}
             align="center"
             justify="center"
             top={row * RenderSettings.tileSize + "px"}
@@ -101,7 +100,10 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
             onClick={() => props.onTileClick(row, col, rotatedClockwise)}
           >
             <MapObject
-              object={RenderSettings.getPlayerAppearance(props.player!).unit}
+              object={
+                RenderSettings.getPlayerAppearance(props.player?.playerNumber)
+                  .unit
+              }
             />
           </Flex>
         )

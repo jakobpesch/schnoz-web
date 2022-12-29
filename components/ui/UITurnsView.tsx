@@ -31,7 +31,7 @@ const getTurns = (match: MatchRich) => {
     turnsUI.push({
       turn,
       playerId: activePlayer.id,
-      icon: RenderSettings.getPlayerAppearance(activePlayer).unit,
+      icon: RenderSettings.getPlayerAppearance(activePlayer.playerNumber).unit,
     })
 
     if (defaultGame.shouldChangeActivePlayer(turn)) {
@@ -50,8 +50,6 @@ export const UITurnsView = (props: { match: MatchRich }) => {
   const viewPortWidthFactor = 0.1
 
   const turnsUI = useMemo(() => {
-    console.log("renders")
-
     const turns = getTurns(props.match)
     for (let index = 1; index < props.match.turn; index++) {
       turns.shift()

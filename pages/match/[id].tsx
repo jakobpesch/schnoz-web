@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Container } from "@chakra-ui/react"
+import { Box, Button, Container, Fade, useDisclosure } from "@chakra-ui/react"
 import { Match, MatchStatus, UnitType } from "@prisma/client"
 import assert from "assert"
 import Mousetrap from "mousetrap"
@@ -19,6 +19,7 @@ import { UILoggingView } from "../../components/ui/UILoggingView"
 import { UIPostMatchView } from "../../components/ui/UIPostMatchView"
 import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
 import { UIScoreView } from "../../components/ui/UIScoreView"
+import { UITurnChangeIndicator } from "../../components/ui/UITurnChangeIndicator"
 import { UITurnsView } from "../../components/ui/UITurnsView"
 import { unitConstellations } from "../../gameLogic/unitConstellations"
 import {
@@ -113,6 +114,8 @@ export function useUserId() {
 const MatchView = () => {
   const userId = useUserId()
   const router = useRouter()
+  const [isUpdatingMatch, setIsUpdatingMatch] = useState(false)
+  const [isChangingTurns, setIsChangingTurns] = useState(false)
 
   const matchId = typeof router.query.id === "string" ? router.query.id : ""
 
@@ -250,6 +253,10 @@ const MatchView = () => {
     col: number,
     rotatedClockwise: IUnitConstellation["rotatedClockwise"]
   ) => {
+    if (isUpdatingMatch) {
+      return
+    }
+
     if (!userId) {
       return
     }
@@ -312,6 +319,7 @@ const MatchView = () => {
 
       const optimisticData: MatchRich = {
         ...match,
+        turn: match.turn + 1,
         map: {
           ...mapClone,
           tiles: mapClone.tiles.map((tile, index) => {
@@ -343,7 +351,7 @@ const MatchView = () => {
         },
         updatedAt: new Date(),
       }
-
+      setIsUpdatingMatch(true)
       updateMatch(
         makeMove(match.id, row, col, participantId, unitConstellation),
         {
@@ -352,7 +360,7 @@ const MatchView = () => {
           rollbackOnError: true,
           revalidate: true,
         }
-      )
+      ).then(() => setIsUpdatingMatch(false))
 
       setSelectedConstellation(null)
       setStatus(`Placed unit on tile (${row}|${col})`)
@@ -405,14 +413,16 @@ const MatchView = () => {
             match={match}
             cursor={selectedConstellation ? "none" : "default"}
           >
-            <MapHoveredHighlights
-              player={match.activePlayer}
-              hide={isFinished || !yourTurn}
-              constellation={selectedConstellation}
-              onTileClick={onTileClick}
-            />
+            {!isLoadingMatch && !isUpdatingMatch && !isChangingTurns && (
+              <MapHoveredHighlights
+                player={match.activePlayer}
+                hide={isFinished || !yourTurn}
+                constellation={selectedConstellation}
+                onTileClick={onTileClick}
+              />
+            )}
 
-            {!isLoadingMatch && (
+            {!isLoadingMatch && !isUpdatingMatch && (
               <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
             )}
 
@@ -447,7 +457,20 @@ const MatchView = () => {
         </>
       )}
       <UILoggingView statusLog={statusLog} />
-      <UILoadingIndicator loading={isLoadingMatch || isLoadingUpdate} />
+      <UILoadingIndicator
+        loading={isLoadingMatch || isLoadingUpdate || isUpdatingMatch}
+      />
+      {match.activePlayer && (
+        <UITurnChangeIndicator
+          activePlayer={match.activePlayer}
+          onChangingTurnsStart={() => {
+            setIsChangingTurns(true)
+          }}
+          onChangingTurnsEnd={() => {
+            setIsChangingTurns(false)
+          }}
+        />
+      )}
     </Container>
   )
 }

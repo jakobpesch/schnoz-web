@@ -9,9 +9,9 @@ export const UILoadingIndicator = (props: UILoadingIndicatorProps) => {
       <Spinner
         size="sm"
         color="gray.700"
-        position="absolute"
-        top="1"
-        left="1"
+        position="fixed"
+        bottom="2"
+        left="50vw"
       />
     </Fade>
   )

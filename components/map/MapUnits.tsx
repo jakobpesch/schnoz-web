@@ -11,8 +11,9 @@ export const MapUnits = (props: {
   return (
     <>
       {props.unitTiles.map((tile) => {
-        const { unit, background } = RenderSettings.getPlayerAppearance(
+        const { unit, color } = RenderSettings.getPlayerAppearance(
           props.players.find((player) => player.id === tile.unit?.ownerId)
+            ?.playerNumber
         )
         return (
           <Flex
@@ -25,7 +26,7 @@ export const MapUnits = (props: {
             width={RenderSettings.tileSize + "px"}
             height={RenderSettings.tileSize + "px"}
             pointerEvents="none"
-            bg={background}
+            bg={color}
           >
             <MapObject object={unit} />
           </Flex>
