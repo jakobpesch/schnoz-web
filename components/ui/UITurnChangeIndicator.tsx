@@ -1,14 +1,4 @@
-import {
-  ScaleFade,
-  Flex,
-  Heading,
-  VStack,
-  useDisclosure,
-  Button,
-  Box,
-  Fade,
-  Portal,
-} from "@chakra-ui/react"
+import { Fade, Flex, Heading, ScaleFade, VStack } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import { useEffect, useState } from "react"
 import { useUserId } from "../../pages/match/[id]"
