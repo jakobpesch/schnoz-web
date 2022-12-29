@@ -6,5 +6,12 @@ interface MapObjectProps extends HeadingProps {
 }
 export const MapObject = (props: MapObjectProps) => {
   const { object, ...headingProps } = props
-  return <Heading {...headingProps}>{object}</Heading>
+  return (
+    <Heading
+      textShadow="1px 1px 0px white,-1px -1px 0px white,1px -1px 0px white,-1px 1px 0px white;"
+      {...headingProps}
+    >
+      {object}
+    </Heading>
+  )
 }

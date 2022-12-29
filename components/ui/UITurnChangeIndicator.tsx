@@ -20,7 +20,7 @@ export const UITurnChangeIndicator = (props: {
       setTimeout(() => {
         setIsOpen(false)
         props.onChangingTurnsEnd()
-      }, 3000)
+      }, 2000)
     }
   }, [props.activePlayer.playerNumber])
 

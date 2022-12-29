@@ -26,7 +26,8 @@ export const MapUnits = (props: {
             width={RenderSettings.tileSize + "px"}
             height={RenderSettings.tileSize + "px"}
             pointerEvents="none"
-            bg={color}
+            // bg={color}
+            bg={"rgba(0,0,0,0.4)"}
           >
             <MapObject object={unit} />
           </Flex>

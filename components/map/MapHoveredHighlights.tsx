@@ -95,8 +95,8 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
             left={col * RenderSettings.tileSize + "px"}
             width={RenderSettings.tileSize + "px"}
             height={RenderSettings.tileSize + "px"}
-            bg={"gray"}
-            opacity={0.4}
+            bg={"whiteAlpha.500"}
+            opacity={0.6}
             onClick={() => props.onTileClick(row, col, rotatedClockwise)}
           >
             <MapObject

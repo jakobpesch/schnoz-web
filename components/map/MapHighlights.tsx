@@ -1,14 +1,18 @@
-import { Flex } from "@chakra-ui/react"
+import { Flex, FlexProps } from "@chakra-ui/react"
+
 import { Coordinate2D } from "../../models/UnitConstellation.model"
 import { RenderSettings } from "../../services/SettingsService"
 
-export const MapHighlights = (props: {
-  coordinates: Coordinate2D[]
-  color?: string
-}) => {
+export const MapHighlights = (
+  props: {
+    coordinates: Coordinate2D[]
+    color?: string
+  } & FlexProps
+) => {
+  const { coordinates, color, ...rest } = props
   return (
     <>
-      {props.coordinates.map(([row, col]) => {
+      {coordinates.map(([row, col]) => {
         return (
           <Flex
             key={row + "_" + col}
@@ -19,9 +23,10 @@ export const MapHighlights = (props: {
             left={col * RenderSettings.tileSize + "px"}
             width={RenderSettings.tileSize + "px"}
             height={RenderSettings.tileSize + "px"}
-            bg={props.color ?? "gray"}
+            bg={color ?? "gray"}
             pointerEvents="none"
             opacity={0.4}
+            {...rest}
           />
         )
       })}

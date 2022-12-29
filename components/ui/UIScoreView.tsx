@@ -41,7 +41,7 @@ const getRuleAppearance = (ruleType: RuleType) => {
     return "🕳"
   }
   if (ruleType === "stone") {
-    return "⚪️"
+    return "🗿"
   }
   if (ruleType === "diagonal") {
     return "↗"
@@ -71,7 +71,7 @@ export const UIScoreView = (props: {
         bg="gray.700"
         borderWidth={viewFactorWidth(1)}
         borderRadius={viewPortWidthFactor * 10 + "vmin"}
-        spacing={viewPortWidthFactor * 16 + "vmin"}
+        spacing={viewPortWidthFactor * 10 + "vmin"}
         p={viewPortWidthFactor * 10 + "vmin"}
         m={viewPortWidthFactor * 10 + "vmin"}
       >
@@ -92,13 +92,13 @@ export const UIScoreView = (props: {
         </HStack>
         <Divider />
         {rulesMap && (
-          <Stack spacing={viewPortWidthFactor * 16 + "vmin"}>
+          <Stack spacing={viewFactorWidth(5)}>
             {Array.from(rulesMap.values()).map(
               (ruleEvaluations, ruleEvalsIndex) => {
                 return (
                   <VStack
                     key={"ruleEvals_" + ruleEvalsIndex}
-                    p="2"
+                    p={viewFactorWidth(5)}
                     borderRadius="lg"
                     bg={
                       ruleEvaluations[0].points === ruleEvaluations[1].points

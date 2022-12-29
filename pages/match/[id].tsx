@@ -413,6 +413,16 @@ const MatchView = () => {
             match={match}
             cursor={selectedConstellation ? "none" : "default"}
           >
+            {!isLoadingMatch && !isUpdatingMatch && (
+              <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
+            )}
+
+            <MapUnits unitTiles={unitTiles} players={match.players} />
+            {showRuleEvaluationHighlights && (
+              <MapRuleEvaluations coordinates={showRuleEvaluationHighlights} />
+            )}
+            <MapTerrains terrainTiles={terrainTiles} />
+            <MapFog fogTiles={fogTiles} halfFogTiles={halfFogTiles} />
             {!isLoadingMatch && !isUpdatingMatch && !isChangingTurns && (
               <MapHoveredHighlights
                 player={match.activePlayer}
@@ -421,17 +431,6 @@ const MatchView = () => {
                 onTileClick={onTileClick}
               />
             )}
-
-            {!isLoadingMatch && !isUpdatingMatch && (
-              <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
-            )}
-
-            <MapFog fogTiles={fogTiles} halfFogTiles={halfFogTiles} />
-            <MapUnits unitTiles={unitTiles} players={match.players} />
-            {showRuleEvaluationHighlights && (
-              <MapRuleEvaluations coordinates={showRuleEvaluationHighlights} />
-            )}
-            <MapTerrains terrainTiles={terrainTiles} />
           </MapContainer>
           <UIScoreView
             players={match.players}

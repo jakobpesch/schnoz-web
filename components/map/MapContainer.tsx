@@ -1,6 +1,7 @@
 import { Box, BoxProps, Center } from "@chakra-ui/react"
 import { RenderSettings } from "../../services/SettingsService"
 import { MatchRich } from "../../types/Match"
+import grassBackground from "../../assets/images/grass.jpeg"
 
 interface MapContainerProps extends BoxProps {
   match: MatchRich
@@ -13,6 +14,8 @@ export const MapContainer = (props: MapContainerProps) => {
   const { rowCount, colCount } = match.map
   const mapWidth = RenderSettings.tileSize * rowCount
   const mapHeight = RenderSettings.tileSize * colCount
+  console.log(grassBackground)
+
   return (
     <Center height="full">
       <Box
@@ -25,6 +28,8 @@ export const MapContainer = (props: MapContainerProps) => {
         height={mapHeight + "px"}
         flexShrink={0}
         position="relative"
+        bg={`linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${grassBackground.src})`}
+        bgPos="right"
         {...boxProps}
       />
     </Center>

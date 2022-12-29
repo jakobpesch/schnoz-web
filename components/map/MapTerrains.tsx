@@ -16,7 +16,7 @@ export const MapTerrains = (props: { terrainTiles: TileRich[] }) => {
           terrain = "🌳"
         }
         if (tile.terrain === Terrain.STONE) {
-          terrain = "⚪️"
+          terrain = "🗿"
         }
         return (
           <Flex
