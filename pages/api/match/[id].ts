@@ -7,6 +7,7 @@ import {
   Participant,
   Prisma,
   Terrain,
+  UnitConstellation,
   UnitType,
 } from "@prisma/client"
 import { Coordinate2D } from "../../../models/UnitConstellation.model"
@@ -18,6 +19,7 @@ import {
   coordinatesAreEqual,
   getCoordinateCircle,
 } from "../../../utils/coordinateUtils"
+import { shuffleArray } from "../../../utils/arrayUtils"
 
 const getRandomTerrain = () => {
   const nullProbability = 30
@@ -216,9 +218,14 @@ export default async function handler(
           const turn = 1
           const maxTurns = body.settings.maxTurns
 
+          const openCards = shuffleArray<UnitConstellation>(
+            Object.values({ ...UnitConstellation })
+          ).slice(0, 3)
+
           const startedMatch = await prisma.match.update({
             where: { id: matchWithPlayers.id },
             data: {
+              openCards,
               status,
               startedAt,
               activePlayerId,

@@ -1,6 +1,6 @@
+import { UnitConstellation } from "@prisma/client"
 import assert from "assert"
 import { Coordinate2D } from "../models/UnitConstellation.model"
-import { coordinateIncludedIn } from "./coordinateUtils"
 
 type TransformationFunction = (coordinates: Coordinate2D[]) => Coordinate2D[]
 
@@ -70,4 +70,27 @@ export const separateCoordinates = (coordinates: Coordinate2D[]) => {
     },
     [[], []] as SeparatedCoordinates
   )
+}
+
+export const encodeUnitConstellation = (coordinates: Coordinate2D[]) => {
+  const encoded: UnitConstellation | undefined = { ...UnitConstellation }[
+    coordinates.map(([row, col]) => `r${row}c${col}`).join("_")
+  ]
+  assert(encoded)
+  return encoded
+}
+
+export const decodeUnitConstellation = (
+  unitConstellationString: UnitConstellation
+) => {
+  const regexp = /r(?<row>[0-9]+)c(?<col>[0-9]+)_?/g
+  const regExpMatch = [...unitConstellationString.matchAll(regexp)]
+  return regExpMatch.map((match) => {
+    assert(match.groups)
+    const coordinate: Coordinate2D = [
+      parseInt(match.groups.row),
+      parseInt(match.groups.col),
+    ]
+    return coordinate
+  })
 }

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Box, Button, Container, Fade, useDisclosure } from "@chakra-ui/react"
+import { Container } from "@chakra-ui/react"
 import { Match, MatchStatus, UnitType } from "@prisma/client"
 import assert from "assert"
 import Mousetrap from "mousetrap"
@@ -21,7 +21,6 @@ import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
 import { UIScoreView } from "../../components/ui/UIScoreView"
 import { UITurnChangeIndicator } from "../../components/ui/UITurnChangeIndicator"
 import { UITurnsView } from "../../components/ui/UITurnsView"
-import { unitConstellations } from "../../gameLogic/unitConstellations"
 import {
   Coordinate2D,
   IUnitConstellation,
@@ -35,7 +34,8 @@ import {
 import { MatchSettings } from "../../services/SettingsService"
 import { MapWithTiles } from "../../types/Map"
 import { MatchRich } from "../../types/Match"
-import { TileRich } from "../../types/Tile"
+import { TileWithUnits } from "../../types/Tile"
+import { decodeUnitConstellation } from "../../utils/constallationTransformer"
 import {
   buildTileLookupId,
   coordinateIncludedIn,
@@ -161,6 +161,11 @@ const MatchView = () => {
     Coordinate2D[] | null
   >(null)
 
+  const unitConstellations =
+    useMemo(() => {
+      return match?.openCards?.map(decodeUnitConstellation)
+    }, [match?.updatedAt]) ?? []
+
   const tileLookup =
     useMemo(() => {
       return getTileLookup(match?.map?.tiles ?? [])
@@ -226,12 +231,12 @@ const MatchView = () => {
     }, [match?.updatedAt]) ?? []
 
   useEffect(() => {
-    unitConstellations.forEach((unitConstellation, index) => {
+    match?.openCards.forEach((unitConstellation, index) => {
       const hotkey = index + 1 + ""
       Mousetrap.unbind(hotkey)
       if (yourTurn) {
         Mousetrap.bind(hotkey, () =>
-          setSelectedConstellation(unitConstellation)
+          setSelectedConstellation(decodeUnitConstellation(unitConstellation))
         )
       }
     })
@@ -239,7 +244,7 @@ const MatchView = () => {
     if (yourTurn) {
       Mousetrap.bind("esc", () => setSelectedConstellation(null))
     }
-  }, [yourTurn])
+  }, [match?.updatedAt])
 
   if (!userId || !match) {
     return null
@@ -323,7 +328,7 @@ const MatchView = () => {
         map: {
           ...mapClone,
           tiles: mapClone.tiles.map((tile, index) => {
-            const updatedTile: TileRich = { ...tile }
+            const updatedTile: TileWithUnits = { ...tile }
             if (
               coordinateIncludedIn(
                 revealedTiles.map((tile) => [tile.row, tile.col]),
@@ -413,7 +418,7 @@ const MatchView = () => {
             match={match}
             cursor={selectedConstellation ? "none" : "default"}
           >
-            {!isLoadingMatch && !isUpdatingMatch && (
+            {isOngoing && !isLoadingMatch && !isUpdatingMatch && (
               <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
             )}
 
@@ -453,23 +458,23 @@ const MatchView = () => {
               setSelectedConstellation(constellation)
             }
           />
+          {match.activePlayer && (
+            <UITurnChangeIndicator
+              activePlayer={match.activePlayer}
+              onChangingTurnsStart={() => {
+                setIsChangingTurns(true)
+              }}
+              onChangingTurnsEnd={() => {
+                setIsChangingTurns(false)
+              }}
+            />
+          )}
         </>
       )}
       <UILoggingView statusLog={statusLog} />
       <UILoadingIndicator
         loading={isLoadingMatch || isLoadingUpdate || isUpdatingMatch}
       />
-      {match.activePlayer && (
-        <UITurnChangeIndicator
-          activePlayer={match.activePlayer}
-          onChangingTurnsStart={() => {
-            setIsChangingTurns(true)
-          }}
-          onChangingTurnsEnd={() => {
-            setIsChangingTurns(false)
-          }}
-        />
-      )}
     </Container>
   )
 }

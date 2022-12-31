@@ -1,5 +1,4 @@
 export type Coordinate2D = [row: number, col: number]
-
 export interface IUnitConstellation {
   coordinates: Coordinate2D[]
   // mirroredY: boolean

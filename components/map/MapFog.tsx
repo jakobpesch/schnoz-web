@@ -1,10 +1,10 @@
 import { Flex } from "@chakra-ui/react"
 import { RenderSettings } from "../../services/SettingsService"
-import { TileRich } from "../../types/Tile"
+import { TileWithUnits } from "../../types/Tile"
 
 export const MapFog = (props: {
-  fogTiles: TileRich[]
-  halfFogTiles: TileRich[]
+  fogTiles: TileWithUnits[]
+  halfFogTiles: TileWithUnits[]
 }) => {
   return (
     <>

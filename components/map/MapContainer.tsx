@@ -14,8 +14,6 @@ export const MapContainer = (props: MapContainerProps) => {
   const { rowCount, colCount } = match.map
   const mapWidth = RenderSettings.tileSize * rowCount
   const mapHeight = RenderSettings.tileSize * colCount
-  console.log(grassBackground)
-
   return (
     <Center height="full">
       <Box

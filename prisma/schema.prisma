@@ -33,23 +33,24 @@ model Participant {
 }
 
 model Match {
-  id             String        @id @default(uuid())
-  updatedAt      DateTime      @default(now()) @updatedAt
+  id             String              @id @default(uuid())
+  updatedAt      DateTime            @default(now()) @updatedAt
   startedAt      DateTime?
   finishedAt     DateTime?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime            @default(now())
   createdById    String
-  createdBy      User          @relation(fields: [createdById], references: [id])
+  createdBy      User                @relation(fields: [createdById], references: [id])
   maxPlayers     Int
-  status         MatchStatus   @default(CREATED)
-  players        Participant[] @relation("match")
-  activePlayer   Participant?  @relation(name: "activePlayer", fields: [activePlayerId], references: [id])
-  activePlayerId String?       @unique
-  winner         Participant?  @relation(name: "winner", fields: [winnerId], references: [id])
-  winnerId       String?       @unique
+  status         MatchStatus         @default(CREATED)
+  players        Participant[]       @relation("match")
+  activePlayer   Participant?        @relation(name: "activePlayer", fields: [activePlayerId], references: [id])
+  activePlayerId String?             @unique
+  winner         Participant?        @relation(name: "winner", fields: [winnerId], references: [id])
+  winnerId       String?             @unique
   map            Map?
-  turn           Int           @default(0)
-  maxTurns       Int           @default(12)
+  turn           Int                 @default(0)
+  maxTurns       Int                 @default(12)
+  openCards      UnitConstellation[] @default([])
   Rule           Rule[]
   Move           Move[]
 }
@@ -76,16 +77,14 @@ model Tile {
 }
 
 model Move {
-  id                    String            @id @default(uuid())
-  rotationCount         Int
-  participantId         String
-  participant           Participant       @relation(fields: [participantId], references: [id])
-  targetId              String
-  target                Tile              @relation(fields: [targetId], references: [id])
-  unitConstellationName String
-  unitConstellation     UnitConstellation @relation(fields: [unitConstellationName], references: [name])
-  match                 Match             @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  matchId               String
+  id            String      @id @default(uuid())
+  rotationCount Int
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id])
+  targetId      String
+  target        Tile        @relation(fields: [targetId], references: [id])
+  match         Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId       String
 }
 
 model Unit {
@@ -97,37 +96,14 @@ model Unit {
   tile    Tile         @relation(fields: [tileId], references: [id], onDelete: Cascade)
 }
 
-model UnitConstellation {
-  name String @id
-
-  move Move[]
-
-  row1 Int
-  col1 Int
-
-  row2 Int?
-  col2 Int?
-
-  row3 Int?
-  col3 Int?
-
-  row4 Int?
-  col4 Int?
-
-  row5 Int?
-  col5 Int?
-
-  row6 Int?
-  col6 Int?
-
-  row7 Int?
-  col7 Int?
-
-  row8 Int?
-  col8 Int?
-
-  row9 Int?
-  col9 Int?
+enum UnitConstellation {
+  r0c0_r0c1
+  r0c0_r1c1
+  r0c0_r0c1_r1c1
+  r0c0_r0c1_r1c2
+  r0c0_r0c1_r0c2_r1c2
+  r0c0_r0c1_r1c1_r1c2
+  r0c0_r0c1_r2c0_r2c1
 }
 
 enum UnitType {

@@ -1,12 +1,12 @@
 import { Flex, Heading } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import { RenderSettings } from "../../services/SettingsService"
-import { TileRich } from "../../types/Tile"
+import { TileWithUnits } from "../../types/Tile"
 import { MapObject } from "./MapObject"
 
 export const MapUnits = (props: {
   players: Participant[]
-  unitTiles: TileRich[]
+  unitTiles: TileWithUnits[]
 }) => {
   return (
     <>

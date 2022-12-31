@@ -3,7 +3,7 @@ import { IMap } from "../models/Map.model"
 import { ITile } from "../models/Tile.model"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { MatchRich } from "../types/Match"
-import { TileRich } from "../types/Tile"
+import { TileWithUnits } from "../types/Tile"
 import {
   getAdjacentCoordinatesOfConstellation,
   coordinatesAreEqual,
@@ -48,7 +48,7 @@ export const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
         coordinatesAreEqual([tile.row, tile.col], coordinate)
       )
     )
-    .filter((tile): tile is TileRich => !!tile)
+    .filter((tile): tile is TileWithUnits => !!tile)
 
   const isAdjacentToAlly = adjacentTiles.some(
     (tile) =>

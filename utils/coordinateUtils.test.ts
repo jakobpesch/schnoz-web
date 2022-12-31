@@ -1,6 +1,6 @@
 import { Terrain } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
-import { TileRich } from "../types/Tile"
+import { TileWithUnits } from "../types/Tile"
 import {
   buildTileLookupId,
   coordinateIncludedIn,
@@ -10,11 +10,12 @@ import {
   getAdjacentCoordinatesOfConstellation,
   getCoordinateCircle,
   getDiagonallyAdjacentCoordinates,
+  getNewlyRevealedTiles,
   getTileLookup,
   TileLookup,
 } from "./coordinateUtils"
 
-const tiles: TileRich[] = [
+const tiles: TileWithUnits[] = [
   {
     id: "0",
     row: 0,
@@ -261,4 +262,13 @@ test("get adjacent coordinates of constellation", () => {
     [2, 1],
     [1, 2],
   ])
+})
+
+test("get newly revealed tiles", () => {
+  expect(JSON.stringify(getNewlyRevealedTiles(tileLookup, [[0, 0]]))).toBe(
+    '{"tiles":[{"id":"0","row":0,"col":0,"mapId":"0","visible":true,"terrain":"STONE","unit":null},{"id":"1","row":0,"col":1,"mapId":"0","visible":true,"terrain":"STONE","unit":null}]}'
+  )
+  expect(JSON.stringify(getNewlyRevealedTiles(tileLookup, [[0, 2]]))).toBe(
+    '{"error":{"message":"Error while placing","statusCode":400}}'
+  )
 })

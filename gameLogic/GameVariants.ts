@@ -1,6 +1,7 @@
-import { Match, Participant } from "@prisma/client"
+import { Match, Participant, UnitConstellation } from "@prisma/client"
 import assert from "assert"
 import { MatchRich, MatchWithPlayers } from "../types/Match"
+import { shuffleArray } from "../utils/arrayUtils"
 import { getTileLookup } from "../utils/coordinateUtils"
 import {
   inBounds,
@@ -22,6 +23,8 @@ type Evaluation = (match: MatchRich) => Participant[]
 
 export interface GameType {
   shouldChangeActivePlayer: (turn: Match["turn"]) => boolean
+  shouldChangeCards: (turn: Match["turn"]) => boolean
+  changedCards: () => UnitConstellation[]
   shouldEvaluate: EvaluationCondition
   evaluate: Evaluation
   scoringRules: ScoringRule[]
@@ -31,6 +34,14 @@ export interface GameType {
 export const defaultGame: GameType = {
   shouldChangeActivePlayer: (turn: Match["turn"]) => {
     return turn % 2 !== 0
+  },
+  shouldChangeCards: (turn: Match["turn"]) => {
+    return turn % 2 === 0
+  },
+  changedCards: () => {
+    return shuffleArray<UnitConstellation>(
+      Object.values({ ...UnitConstellation })
+    ).slice(0, 3)
   },
   evaluate: function (match) {
     if (!this.shouldEvaluate(match.turn)) {

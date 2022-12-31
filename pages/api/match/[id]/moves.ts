@@ -1,17 +1,17 @@
 import {
   Match,
   MatchStatus,
-  Participant,
   Prisma,
   Tile,
+  UnitConstellation,
   UnitType,
 } from "@prisma/client"
-import assert from "assert"
 import type { NextApiRequest, NextApiResponse } from "next"
-import { defaultGame, GameType } from "../../../../gameLogic/GameVariants"
+import { defaultGame } from "../../../../gameLogic/GameVariants"
 import { prisma } from "../../../../prisma/client"
 import { checkConditionsForUnitConstellationPlacement } from "../../../../services/GameManagerService"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
+import { shuffleArray } from "../../../../utils/arrayUtils"
 import {
   buildTileLookupId,
   getNewlyRevealedTiles,
@@ -193,6 +193,12 @@ export default async function handler(
         match.turn
       )
 
+      const shouldChangeCards = defaultGame.shouldChangeCards(match.turn)
+
+      const openCards = shouldChangeCards
+        ? defaultGame.changedCards()
+        : matchWithPlacedTiles.openCards
+
       const nextActivePlayerId = shouldChangeActivePlayer
         ? matchWithPlacedTiles.players.find(
             (player) => player.id !== matchWithPlacedTiles.activePlayerId
@@ -207,6 +213,7 @@ export default async function handler(
       const updatedMatch = await prisma.match.update({
         where: { id: match.id },
         data: {
+          openCards,
           activePlayerId: nextActivePlayerId,
           turn: { increment: 1 },
           ...(isLastTurn(match) || winnerId

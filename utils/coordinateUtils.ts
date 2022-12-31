@@ -1,5 +1,5 @@
 import { Coordinate2D } from "../models/UnitConstellation.model"
-import { TileRich } from "../types/Tile"
+import { TileWithUnits } from "../types/Tile"
 import {
   addCoordinates,
   translateCoordinatesTo,
@@ -10,10 +10,10 @@ export const buildTileLookupId = (coordinate: Coordinate2D) => {
 }
 
 export interface TileLookup {
-  [tileId: string]: TileRich
+  [tileId: string]: TileWithUnits
 }
 
-export const getTileLookup = (tiles: TileRich[]) => {
+export const getTileLookup = (tiles: TileWithUnits[]) => {
   return tiles.reduce<TileLookup>((acc, cur) => {
     return {
       ...acc,
@@ -27,7 +27,7 @@ export const getNewlyRevealedTiles = (
   translatedCoordinates: Coordinate2D[]
 ) => {
   const visionCircle = getCoordinateCircle(3)
-  const tiles: TileRich[] = []
+  const tiles: TileWithUnits[] = []
 
   for (let i = 0; i < translatedCoordinates.length; i++) {
     const translatedCoordinate = translatedCoordinates[i]
@@ -42,6 +42,7 @@ export const getNewlyRevealedTiles = (
     circleAroudUnit.forEach((coordinateInVision) => {
       const tile = tileLookup[buildTileLookupId(coordinateInVision)]
       if (tile && !tile.visible) {
+        tile.visible = true
         tiles.push(tile)
       }
     })

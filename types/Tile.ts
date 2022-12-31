@@ -6,4 +6,4 @@ const tileRich = Prisma.validator<Prisma.TileArgs>()({
   },
 })
 
-export type TileRich = Prisma.TileGetPayload<typeof tileRich>
+export type TileWithUnits = Prisma.TileGetPayload<typeof tileRich>

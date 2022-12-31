@@ -1,5 +1,8 @@
+import { UnitConstellation } from "@prisma/client"
 import {
   addCoordinates,
+  decodeUnitConstellation,
+  encodeUnitConstellation,
   mirrorAlongXAxis,
   mirrorAlongYAxis,
   normaliseCoordinates,
@@ -168,5 +171,31 @@ test("separate coordinates", () => {
   ).toEqual([
     [6, 5, 6, 5],
     [4, 4, -4, 3],
+  ])
+})
+
+const unitConstellations = { ...UnitConstellation }
+
+test("encode unit constellation", () => {
+  expect(
+    encodeUnitConstellation([
+      [0, 0],
+      [0, 1],
+    ])
+  ).toEqual(unitConstellations.r0c0_r0c1)
+
+  expect(
+    encodeUnitConstellation([
+      [0, 0],
+      [0, 1],
+      [1, 2],
+    ])
+  ).toEqual(unitConstellations.r0c0_r0c1_r1c2)
+})
+
+test("decode unit constellation", () => {
+  expect(decodeUnitConstellation("r0c0_r0c1")).toEqual([
+    [0, 0],
+    [0, 1],
   ])
 })
