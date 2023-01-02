@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Container } from "@chakra-ui/react"
+import { Container, HStack, Kbd, Text } from "@chakra-ui/react"
 import { Match, MatchStatus, UnitType } from "@prisma/client"
 import assert from "assert"
 import Mousetrap from "mousetrap"
@@ -18,7 +18,7 @@ import { UILoadingIndicator } from "../../components/ui/UILoadingIndicator"
 import { UILoggingView } from "../../components/ui/UILoggingView"
 import { UIPostMatchView } from "../../components/ui/UIPostMatchView"
 import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
-import { UIScoreView } from "../../components/ui/UIScoreView"
+import { UIScoreView, viewFactorWidth } from "../../components/ui/UIScoreView"
 import { UITurnChangeIndicator } from "../../components/ui/UITurnChangeIndicator"
 import { UITurnsView } from "../../components/ui/UITurnsView"
 import {
@@ -437,6 +437,19 @@ const MatchView = () => {
               />
             )}
           </MapContainer>
+          {selectedConstellation && (
+            <HStack
+              position="fixed"
+              top={viewFactorWidth(100)}
+              left={viewFactorWidth(15)}
+              color="gray.500"
+            >
+              <Text fontSize={viewFactorWidth(30)}>Rotate with</Text>
+              <Kbd borderColor="gray.500" fontSize={viewFactorWidth(30)}>
+                R
+              </Kbd>
+            </HStack>
+          )}
           <UIScoreView
             players={match.players}
             map={match.map}
@@ -458,6 +471,7 @@ const MatchView = () => {
               setSelectedConstellation(constellation)
             }
           />
+
           {match.activePlayer && (
             <UITurnChangeIndicator
               activePlayer={match.activePlayer}

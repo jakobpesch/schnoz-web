@@ -42,6 +42,7 @@ export const UITurnChangeIndicator = (props: {
           align="center"
           justify="center"
           bg="blackAlpha.700"
+          pointerEvents="none"
         >
           <ScaleFade initialScale={0.5} in={isOpen} delay={0.5}>
             <VStack
@@ -52,7 +53,6 @@ export const UITurnChangeIndicator = (props: {
               p={viewFactorWidth(10)}
               m={viewFactorWidth(10)}
               boxShadow="dark-lg"
-              pointerEvents="all"
             >
               <Heading>
                 {

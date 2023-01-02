@@ -1,4 +1,4 @@
-import { Box, BoxProps, Center, HStack, Kbd, VStack } from "@chakra-ui/react"
+import { Box, BoxProps, Center, HStack, Kbd } from "@chakra-ui/react"
 import { Coordinate2D } from "../../models/UnitConstellation.model"
 import { RenderSettings } from "../../services/SettingsService"
 import { viewFactorWidth } from "./UIScoreView"
@@ -63,7 +63,8 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
         bottom={viewFactorWidth(-5)}
         right={viewFactorWidth(-5)}
         fontSize={viewFactorWidth(15)}
-        bg="gray.600"
+        bg="gray.700"
+        borderColor="white"
       >
         {hotkey}
       </Kbd>
@@ -79,7 +80,13 @@ interface UIConstellationViewProps {
 }
 
 export const UIConstellationView = (props: UIConstellationViewProps) => (
-  <Center position="fixed" zIndex={3} bottom="0" left="0" width="100vmin">
+  <Center
+    position="fixed"
+    zIndex={3}
+    bottom="0"
+    left="calc(50vw - 50%)"
+    width="100vw"
+  >
     <HStack
       spacing="1vmin"
       p="1vmin"
