@@ -1,4 +1,4 @@
-import { Center, Flex, HStack, Kbd, Text } from "@chakra-ui/react"
+import { Box, Center, Flex, HStack, Kbd, Text } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useEffect, useMemo, useState } from "react"
@@ -85,18 +85,16 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
   return (
     <>
       {props.constellation && (
-        <Center
+        <Box
           position="fixed"
-          left="0"
-          top={viewFactorWidth(10)}
-          width="100vw"
+          left={viewFactorWidth(10)}
+          top={viewFactorWidth(100)}
           cursor="default"
         >
           <HStack
             p={viewFactorWidth(10)}
             borderRadius={viewFactorWidth(10)}
             borderWidth={viewFactorWidth(2)}
-            // borderColor="gray.100"
             color="gray.100"
             bg="gray.700"
             cursor="pointer"
@@ -115,7 +113,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
               Rotate
             </Text>
           </HStack>
-        </Center>
+        </Box>
       )}
       {hoveredCoordinates.map(([row, col]) => {
         return (
