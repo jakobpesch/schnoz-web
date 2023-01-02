@@ -1,4 +1,10 @@
-import { Match, MatchStatus, Participant, User } from "@prisma/client"
+import {
+  GameSettings,
+  Match,
+  MatchStatus,
+  Participant,
+  User,
+} from "@prisma/client"
 import { defaultGame } from "../gameLogic/GameVariants"
 import {
   Coordinate2D,
@@ -104,6 +110,33 @@ export const createMatch = async (userId: string) => {
   const match: MatchWithPlayers = await response.json()
   return match
 }
+
+export const updateSettings = async (
+  matchId: Match["id"],
+  userId: Participant["userId"],
+  mapSize: GameSettings["mapSize"]
+) => {
+  const options = {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      mapSize,
+    }),
+  }
+
+  const response = await fetch(
+    BASE_URL + "/match/" + matchId + "/settings",
+    options
+  )
+
+  if (response.status !== 201) {
+    throw new Error("Failed to update settings")
+  }
+
+  return await response.json()
+}
+
 export const deleteMatch = async (matchId: string, userId: string) => {
   const options = {
     method: "DELETE",

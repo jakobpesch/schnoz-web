@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Container, HStack, Kbd, Text } from "@chakra-ui/react"
-import { Match, MatchStatus, UnitType } from "@prisma/client"
+import { Container } from "@chakra-ui/react"
+import { GameSettings, Match, MatchStatus, UnitType } from "@prisma/client"
 import assert from "assert"
 import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
@@ -18,7 +18,7 @@ import { UILoadingIndicator } from "../../components/ui/UILoadingIndicator"
 import { UILoggingView } from "../../components/ui/UILoggingView"
 import { UIPostMatchView } from "../../components/ui/UIPostMatchView"
 import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
-import { UIScoreView, viewFactorWidth } from "../../components/ui/UIScoreView"
+import { UIScoreView } from "../../components/ui/UIScoreView"
 import { UITurnChangeIndicator } from "../../components/ui/UITurnChangeIndicator"
 import { UITurnsView } from "../../components/ui/UITurnsView"
 import {
@@ -30,6 +30,7 @@ import {
   checkConditionsForUnitConstellationPlacement,
   makeMove,
   startMatch,
+  updateSettings,
 } from "../../services/GameManagerService"
 import { MatchSettings } from "../../services/SettingsService"
 import { MapWithTiles } from "../../types/Map"
@@ -136,7 +137,7 @@ const MatchView = () => {
     match,
     shouldFetch:
       (!yourTurn && match?.status === MatchStatus.STARTED) ||
-      match?.status === MatchStatus.CREATED,
+      (match?.status === MatchStatus.CREATED && match.createdById !== userId),
   })
 
   useEffect(() => {
@@ -398,13 +399,39 @@ const MatchView = () => {
     }
   }
 
+  const handleSettingsChange = async (mapSize: GameSettings["mapSize"]) => {
+    if (!userId || !match.gameSettings) {
+      return
+    }
+    try {
+      const optimisticData: MatchRich = {
+        ...match,
+        gameSettings: {
+          ...match.gameSettings,
+          mapSize,
+        },
+        updatedAt: new Date(),
+      }
+      updateMatch(updateSettings(matchId, userId, mapSize), {
+        optimisticData,
+        populateCache: true,
+        rollbackOnError: true,
+        revalidate: true,
+      }).then(() => setIsUpdatingMatch(false))
+
+      setStatus("Updated Settings")
+    } catch (e: any) {
+      setStatus(e.message)
+    }
+  }
+
   return (
     <Container height="100vh" color="white">
       {isPreMatch && (
         <UIPreMatchView
           pt="16"
-          settings={settings}
-          onSettingsChange={(settings) => setSettings(settings)}
+          settings={match.gameSettings}
+          onSettingsChange={handleSettingsChange}
           onStartGameClick={onStartGameClick}
           userId={userId}
           createdById={match.createdById}

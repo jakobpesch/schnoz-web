@@ -1,17 +1,9 @@
-import {
-  Match,
-  MatchStatus,
-  Prisma,
-  Tile,
-  UnitConstellation,
-  UnitType,
-} from "@prisma/client"
+import { Match, MatchStatus, Prisma, Tile, UnitType } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { defaultGame } from "../../../../gameLogic/GameVariants"
 import { prisma } from "../../../../prisma/client"
 import { checkConditionsForUnitConstellationPlacement } from "../../../../services/GameManagerService"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
-import { shuffleArray } from "../../../../utils/arrayUtils"
 import {
   buildTileLookupId,
   getNewlyRevealedTiles,
@@ -69,7 +61,7 @@ export default async function handler(
     typeof targetRow !== "number" ||
     typeof targetCol !== "number"
   ) {
-    res.status(500).end("Query is not complete")
+    res.status(400).end("Query is not complete")
     return
   }
 

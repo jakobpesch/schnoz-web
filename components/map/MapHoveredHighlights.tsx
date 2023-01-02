@@ -1,7 +1,7 @@
-import { Flex, HStack, Kbd, Text } from "@chakra-ui/react"
+import { Center, Flex, HStack, Kbd, Text } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import Mousetrap from "mousetrap"
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Coordinate2D,
   IUnitConstellation,
@@ -43,15 +43,14 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
 
   const mapContainerElement = document.getElementById("map-container")
   const bounds = mapContainerElement?.getBoundingClientRect()
+  const rotate = () => {
+    const correctedRotationCount = (
+      rotatedClockwise === 3 ? 0 : rotatedClockwise + 1
+    ) as IUnitConstellation["rotatedClockwise"]
 
+    setRotationCount(correctedRotationCount)
+  }
   useEffect(() => {
-    const rotate = () => {
-      const correctedRotationCount = (
-        rotatedClockwise === 3 ? 0 : rotatedClockwise + 1
-      ) as IUnitConstellation["rotatedClockwise"]
-
-      setRotationCount(correctedRotationCount)
-    }
     Mousetrap.bind("r", rotate)
   })
 
@@ -86,19 +85,37 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
   return (
     <>
       {props.constellation && (
-        <HStack
+        <Center
           position="fixed"
-          top={viewFactorWidth(100)}
-          left={viewFactorWidth(15)}
-          color="gray.500"
+          left="0"
+          top={viewFactorWidth(10)}
+          width="100vw"
+          cursor="default"
         >
-          <Kbd borderColor="gray.500" fontSize={viewFactorWidth(30)}>
-            <Text transform={"rotate(" + 90 * rotatedClockwise + "deg)"}>
-              R
+          <HStack
+            p={viewFactorWidth(10)}
+            borderRadius={viewFactorWidth(10)}
+            borderWidth={viewFactorWidth(2)}
+            // borderColor="gray.100"
+            color="gray.100"
+            bg="gray.700"
+            cursor="pointer"
+            onClick={() => rotate()}
+          >
+            <Kbd
+              borderColor="gray.100"
+              fontSize={viewFactorWidth(30)}
+              userSelect="none"
+            >
+              <Text transform={"rotate(" + 90 * rotatedClockwise + "deg)"}>
+                R
+              </Text>
+            </Kbd>
+            <Text fontSize={viewFactorWidth(30)} userSelect="none">
+              Rotate
             </Text>
-          </Kbd>
-          <Text fontSize={viewFactorWidth(30)}>Rotate</Text>
-        </HStack>
+          </HStack>
+        </Center>
       )}
       {hoveredCoordinates.map(([row, col]) => {
         return (

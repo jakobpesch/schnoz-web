@@ -4,6 +4,7 @@ import { RenderSettings } from "../../services/SettingsService"
 import { viewFactorWidth } from "./UIScoreView"
 
 interface UnitConstellationViewProps extends BoxProps {
+  selected: boolean
   coordinates: Coordinate2D[]
   hotkey: string
   tileSize?: number
@@ -11,6 +12,7 @@ interface UnitConstellationViewProps extends BoxProps {
 
 const UnitConstellationView = (props: UnitConstellationViewProps) => {
   const {
+    selected,
     coordinates,
     hotkey,
     tileSize = RenderSettings.tileSize,
@@ -31,30 +33,27 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
 
   return (
     <Box
-      background="gray.700"
-      borderRadius="0.5vmin"
-      borderWidth="0.05vmin"
-      borderColor="gray.500"
+      background={selected ? "blue.300" : "gray.700"}
+      borderRadius={viewFactorWidth(5)}
+      borderWidth={viewFactorWidth(2)}
+      borderColor={selected ? "transparent" : "gray.500"}
+      _hover={{ borderColor: selected ? "transparent" : "blue.300" }}
       position="relative"
       width={containerSize}
       height={containerSize}
+      cursor="pointer"
       {...boxProps}
     >
       {coordinates.map(([row, col]) => {
-        const topOffset =
-          (tileSize * row + padding) * viewPortWidthFactor + "vmin"
-        const leftOffset =
-          (tileSize * col + padding) * viewPortWidthFactor + "vmin"
-
         return (
           <Box
             key={"unitConstellation_" + row + "_" + col}
             position="absolute"
-            top={topOffset}
-            left={leftOffset}
+            top={viewFactorWidth(tileSize * row + padding)}
+            left={viewFactorWidth(tileSize * col + padding)}
             width={viewFactorWidth(tileSize)}
             height={viewFactorWidth(tileSize)}
-            background="gray.300"
+            background={selected ? "blue.50" : "gray.300"}
           />
         )
       })}
@@ -64,7 +63,8 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
         right={viewFactorWidth(-5)}
         fontSize={viewFactorWidth(15)}
         bg="gray.700"
-        borderColor="white"
+        color="gray.300"
+        borderColor="gray.300"
       >
         {hotkey}
       </Kbd>
@@ -88,12 +88,12 @@ export const UIConstellationView = (props: UIConstellationViewProps) => (
     width="100vw"
   >
     <HStack
-      spacing="1vmin"
-      p="1vmin"
-      m="1vmin"
+      spacing={viewFactorWidth(10)}
+      p={viewFactorWidth(10)}
+      m={viewFactorWidth(10)}
       bg="gray.700"
-      borderRadius="0.5vmin"
-      borderWidth="0.08vmin"
+      borderRadius={viewFactorWidth(5)}
+      borderWidth={viewFactorWidth(2)}
       opacity={props.readonly ? 0.5 : 1}
     >
       {props.constellations.map((constellation, index) => {
@@ -102,16 +102,9 @@ export const UIConstellationView = (props: UIConstellationViewProps) => (
           JSON.stringify(props.selectedConstellation)
         return (
           <UnitConstellationView
+            selected={selected}
             key={"unitConstellationView " + constellation}
             hotkey={`${index + 1}`}
-            boxShadow={
-              !props.readonly && selected ? "0 0 0 0.1vmin white" : undefined
-            }
-            _hover={
-              !props.readonly && !selected
-                ? { boxShadow: "0 0 0 0.1vmin darkgray" }
-                : undefined
-            }
             coordinates={constellation}
             tileSize={20}
             onClick={() => props.onSelect(constellation)}

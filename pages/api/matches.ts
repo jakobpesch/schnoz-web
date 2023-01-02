@@ -14,6 +14,7 @@ export default async function handler(
         data: {
           createdById: body.userId,
           maxPlayers: 2,
+          gameSettings: { create: { mapSize: 11 } },
           players: {
             create: {
               userId: body.userId,

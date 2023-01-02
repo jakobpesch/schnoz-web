@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   ButtonGroup,
   Heading,
@@ -6,14 +7,14 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react"
-import { MatchSettings } from "../../services/SettingsService"
+import { GameSettings } from "@prisma/client"
 
 interface UIPreMatchViewProps extends StackProps {
-  settings: MatchSettings
+  settings: GameSettings | null
   userId: string
   createdById: string
   isGameFull: boolean
-  onSettingsChange: (settings: MatchSettings) => void
+  onSettingsChange: (mapSize: GameSettings["mapSize"]) => void
   onStartGameClick: () => void
 }
 
@@ -27,49 +28,55 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
     onStartGameClick,
     ...stackProps
   } = props
+  if (!settings) {
+    return <Box>No Settings</Box>
+  }
+  const isHost = userId === createdById
   return (
     <VStack spacing="8" {...stackProps}>
       <Heading>Not Started</Heading>
-      {userId !== createdById ? (
+      {!isHost ? (
         <Text>Waiting for creator to start the game</Text>
+      ) : isGameFull ? (
+        <Text>Game is full. Ready to start game.</Text>
       ) : (
-        <>
-          {isGameFull ? (
-            <Text>Game is full. Ready to start game.</Text>
-          ) : (
-            <Text color="gray.300">Waiting for other player to join</Text>
-          )}
-          <VStack>
-            <Text fontWeight="bold">Map size</Text>
-            <ButtonGroup isAttached>
-              <Button
-                variant="outline"
-                size="sm"
-                colorScheme={settings.mapSize === 11 ? "blue" : "gray"}
-                onClick={() => onSettingsChange({ ...settings, mapSize: 11 })}
-              >
-                Small
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                colorScheme={settings.mapSize === 21 ? "blue" : "gray"}
-                onClick={() => onSettingsChange({ ...settings, mapSize: 21 })}
-              >
-                Medium
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                colorScheme={settings.mapSize === 31 ? "blue" : "gray"}
-                onClick={() => onSettingsChange({ ...settings, mapSize: 31 })}
-              >
-                Large
-              </Button>
-            </ButtonGroup>
-          </VStack>
-        </>
+        <Text color="gray.300">Waiting for other player to join</Text>
       )}
+      <VStack>
+        <Text fontWeight="bold">Map size</Text>
+        <ButtonGroup isAttached>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!isHost}
+            _disabled={{ opacity: 1, cursor: "default" }}
+            colorScheme={settings.mapSize === 11 ? "blue" : "gray"}
+            onClick={() => onSettingsChange(11)}
+          >
+            Small
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!isHost}
+            _disabled={{ opacity: 1, cursor: "default" }}
+            colorScheme={settings.mapSize === 21 ? "blue" : "gray"}
+            onClick={() => onSettingsChange(21)}
+          >
+            Medium
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!isHost}
+            _disabled={{ opacity: 1, cursor: "default" }}
+            colorScheme={settings.mapSize === 31 ? "blue" : "gray"}
+            onClick={() => onSettingsChange(31)}
+          >
+            Large
+          </Button>
+        </ButtonGroup>
+      </VStack>
 
       {/* <VStack>
           <Text>{match?.players[0].slice(-5)}</Text>
