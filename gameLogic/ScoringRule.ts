@@ -96,13 +96,14 @@ export const holeRule: ScoringRule = (playerId, tileLookup) => {
       .map((coordinate) => tileLookup[buildTileLookupId(coordinate)] ?? null)
       .filter((tile) => !!tile)
 
-    const allAlly = adjacentTiles.every((tile) => {
-      const isAlly =
-        tile.unit?.ownerId === playerId ||
-        tile.unit?.type === UnitType.MAIN_BUILDING
-      const hasTerrain = !!tile.terrain
-      return isAlly || hasTerrain
-    })
+    const allAlly =
+      adjacentTiles.every((tile) => {
+        const isAlly =
+          tile.unit?.ownerId === playerId ||
+          tile.unit?.type === UnitType.MAIN_BUILDING
+        const hasTerrain = !!tile.terrain
+        return isAlly || hasTerrain
+      }) && adjacentTiles.some((tile) => tile.unit?.ownerId === playerId)
 
     if (allAlly) {
       ruleEvaluation.fulfillments.push([potentialHoleCoordinate])
