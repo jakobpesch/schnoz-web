@@ -1,4 +1,4 @@
-import { Flex } from "@chakra-ui/react"
+import { Flex, HStack, Kbd, Text } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useState, useEffect, useMemo } from "react"
@@ -11,6 +11,7 @@ import {
   transformCoordinates,
   translateCoordinatesTo,
 } from "../../utils/constallationTransformer"
+import { viewFactorWidth } from "../ui/UIScoreView"
 import { MapObject } from "./MapObject"
 
 const mousePositionToMapCoordinates = (
@@ -84,6 +85,21 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
 
   return (
     <>
+      {props.constellation && (
+        <HStack
+          position="fixed"
+          top={viewFactorWidth(100)}
+          left={viewFactorWidth(15)}
+          color="gray.500"
+        >
+          <Kbd borderColor="gray.500" fontSize={viewFactorWidth(30)}>
+            <Text transform={"rotate(" + 90 * rotatedClockwise + "deg)"}>
+              R
+            </Text>
+          </Kbd>
+          <Text fontSize={viewFactorWidth(30)}>Rotate</Text>
+        </HStack>
+      )}
       {hoveredCoordinates.map(([row, col]) => {
         return (
           <Flex

@@ -437,19 +437,7 @@ const MatchView = () => {
               />
             )}
           </MapContainer>
-          {selectedConstellation && (
-            <HStack
-              position="fixed"
-              top={viewFactorWidth(100)}
-              left={viewFactorWidth(15)}
-              color="gray.500"
-            >
-              <Text fontSize={viewFactorWidth(30)}>Rotate with</Text>
-              <Kbd borderColor="gray.500" fontSize={viewFactorWidth(30)}>
-                R
-              </Kbd>
-            </HStack>
-          )}
+
           <UIScoreView
             players={match.players}
             map={match.map}
