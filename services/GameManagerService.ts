@@ -50,18 +50,13 @@ export const getMatches = async () => {
   return await response.json()
 }
 
-export const startMatch = async (
-  matchId: string,
-  userId: string,
-  mapSize: number
-) => {
+export const startMatch = async (matchId: string, userId: string) => {
   const options = {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       action: "start",
       userId,
-      settings: { rowCount: mapSize, columnCount: mapSize, maxTurns: 12 },
     }),
   }
 
@@ -111,22 +106,32 @@ export const createMatch = async (userId: string) => {
   return match
 }
 
-export const updateSettings = async (
-  matchId: Match["id"],
-  userId: Participant["userId"],
+export const updateSettings: (args: {
+  matchId: Match["id"]
+  userId: Participant["userId"]
   mapSize: GameSettings["mapSize"]
-) => {
+  rules: GameSettings["rules"]
+  maxTurns: GameSettings["maxTurns"]
+  waterRatio: GameSettings["waterRatio"]
+  stoneRatio: GameSettings["stoneRatio"]
+  treeRatio: GameSettings["treeRatio"]
+}) => Promise<MatchRich> = async (props) => {
   const options = {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      userId,
-      mapSize,
+      userId: props.userId,
+      mapSize: props.mapSize,
+      rules: props.rules,
+      maxTurns: props.maxTurns,
+      waterRatio: props.waterRatio,
+      stoneRatio: props.stoneRatio,
+      treeRatio: props.treeRatio,
     }),
   }
 
   const response = await fetch(
-    BASE_URL + "/match/" + matchId + "/settings",
+    BASE_URL + "/match/" + props.matchId + "/settings",
     options
   )
 

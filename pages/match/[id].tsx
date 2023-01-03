@@ -137,6 +137,8 @@ const MatchView = () => {
     match,
     shouldFetch:
       (!yourTurn && match?.status === MatchStatus.STARTED) ||
+      (match?.status === MatchStatus.CREATED &&
+        match.players.length !== match.maxPlayers) ||
       (match?.status === MatchStatus.CREATED && match.createdById !== userId),
   })
 
@@ -392,32 +394,67 @@ const MatchView = () => {
     }
 
     try {
-      const startedMatch = await startMatch(match.id, userId, settings.mapSize)
+      const startedMatch = await startMatch(match.id, userId)
       updateMatch()
     } catch (e) {
       console.error(e)
     }
   }
 
-  const handleSettingsChange = async (mapSize: GameSettings["mapSize"]) => {
+  const handleSettingsChange = async (settings: {
+    mapSize?: GameSettings["mapSize"]
+    rules?: GameSettings["rules"]
+    maxTurns?: GameSettings["maxTurns"]
+    waterRatio?: GameSettings["waterRatio"]
+    treeRatio?: GameSettings["treeRatio"]
+    stoneRatio?: GameSettings["stoneRatio"]
+  }) => {
     if (!userId || !match.gameSettings) {
       return
     }
     try {
+      const gameSettings = { ...match.gameSettings }
+      if (settings.mapSize) {
+        gameSettings.mapSize = settings.mapSize
+      }
+      if (settings.rules) {
+        gameSettings.rules = settings.rules
+      }
+      if (settings.maxTurns != null) {
+        gameSettings.maxTurns = settings.maxTurns
+      }
+      if (settings.waterRatio != null) {
+        gameSettings.waterRatio = settings.waterRatio
+      }
+      if (settings.treeRatio != null) {
+        gameSettings.treeRatio = settings.treeRatio
+      }
+      if (settings.stoneRatio != null) {
+        gameSettings.stoneRatio = settings.stoneRatio
+      }
       const optimisticData: MatchRich = {
         ...match,
-        gameSettings: {
-          ...match.gameSettings,
-          mapSize,
-        },
+        gameSettings,
         updatedAt: new Date(),
       }
-      updateMatch(updateSettings(matchId, userId, mapSize), {
-        optimisticData,
-        populateCache: true,
-        rollbackOnError: true,
-        revalidate: true,
-      }).then(() => setIsUpdatingMatch(false))
+      updateMatch(
+        updateSettings({
+          matchId,
+          userId,
+          mapSize: gameSettings.mapSize,
+          rules: gameSettings.rules,
+          maxTurns: gameSettings.maxTurns,
+          waterRatio: gameSettings.waterRatio,
+          stoneRatio: gameSettings.stoneRatio,
+          treeRatio: gameSettings.treeRatio,
+        }),
+        {
+          optimisticData,
+          populateCache: true,
+          rollbackOnError: true,
+          revalidate: true,
+        }
+      ).then(() => setIsUpdatingMatch(false))
 
       setStatus("Updated Settings")
     } catch (e: any) {
@@ -468,6 +505,7 @@ const MatchView = () => {
           <UIScoreView
             players={match.players}
             map={match.map}
+            rules={match.gameSettings?.rules ?? []}
             onRuleHover={(coordinates) => {
               setShowRuleEvaluationHighlights(coordinates)
             }}

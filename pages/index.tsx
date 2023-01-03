@@ -102,6 +102,10 @@ const Home: NextPage = () => {
     }
   }
 
+  const sortedMatches = [...matches].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+
   return (
     <Flex pt="16" width="full" height="100vh" justify="center">
       <Text position="absolute" bottom="4" right="4">
@@ -148,7 +152,7 @@ const Home: NextPage = () => {
                 <TabPanel>
                   <MatchList
                     userId={user}
-                    matches={matches}
+                    matches={sortedMatches}
                     onJoinClick={(matchId) => handleJoinMatch(matchId)}
                     onDeleteClick={(matchId) => handleDeleteMatch(matchId)}
                     onGoToMatchClick={(matchId) => handleGoToMatch(matchId)}
@@ -157,7 +161,7 @@ const Home: NextPage = () => {
                 <TabPanel>
                   <MatchList
                     userId={user}
-                    matches={matches.filter(
+                    matches={sortedMatches.filter(
                       (match) => match.status === MatchStatus.CREATED
                     )}
                     onJoinClick={(matchId) => handleJoinMatch(matchId)}
@@ -168,7 +172,7 @@ const Home: NextPage = () => {
                 <TabPanel>
                   <MatchList
                     userId={user}
-                    matches={matches.filter(
+                    matches={sortedMatches.filter(
                       (match) => match.status === MatchStatus.STARTED
                     )}
                     onJoinClick={(matchId) => handleJoinMatch(matchId)}
@@ -179,7 +183,7 @@ const Home: NextPage = () => {
                 <TabPanel>
                   <MatchList
                     userId={user}
-                    matches={matches.filter(
+                    matches={sortedMatches.filter(
                       (match) => match.status === MatchStatus.FINISHED
                     )}
                     onJoinClick={(matchId) => handleJoinMatch(matchId)}

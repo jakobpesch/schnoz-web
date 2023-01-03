@@ -49,7 +49,6 @@ model Match {
   winnerId       String?             @unique
   map            Map?
   turn           Int                 @default(0)
-  maxTurns       Int                 @default(12)
   openCards      UnitConstellation[] @default([])
   Rule           Rule[]
   Move           Move[]
@@ -57,10 +56,15 @@ model Match {
 }
 
 model GameSettings {
-  id      String @id @default(uuid())
-  mapSize Int    @default(11)
-  match   Match  @relation(fields: [matchId], references: [id])
-  matchId String @unique
+  id         String @id @default(uuid())
+  mapSize    Int    @default(11)
+  rules      Rule[]
+  waterRatio Int    @default(3)
+  stoneRatio Int    @default(1)
+  treeRatio  Int    @default(3)
+  maxTurns   Int    @default(12)
+  match      Match  @relation(fields: [matchId], references: [id])
+  matchId    String @unique
 }
 
 model Map {
@@ -135,4 +139,5 @@ enum Rule {
   TERRAIN_WATER_POSITIVE
   TERRAIN_STONE_NEGATIVE
   HOLE
+  DIAGONAL_NORTHEAST
 }

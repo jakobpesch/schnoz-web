@@ -1,4 +1,4 @@
-import { Participant, Terrain, UnitType } from "@prisma/client"
+import { Participant, Rule, Terrain, UnitType } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { addCoordinates } from "../utils/constallationTransformer"
 import {
@@ -9,7 +9,7 @@ import {
 
 export interface RuleEvaluation {
   playerId: Participant["id"]
-  type: RuleType
+  type: Rule
   points: number
   /** fulfillments[0] = One fulfillment of the rule gives one point. fulfillment[0][0] is the coordinate, that (in part or completely) fulfills the rule */
   fulfillments: Coordinate2D[][]
@@ -25,9 +25,9 @@ export type RuleType = "hole" | "water" | "stone" | "diagonal"
 const buildTerrainRule: (options: {
   terrain: Terrain
   penalty?: boolean
-  ruleType: RuleType
+  ruleType: Rule
 }) => ScoringRule =
-  (options: { terrain: Terrain; penalty?: boolean; ruleType: RuleType }) =>
+  (options: { terrain: Terrain; penalty?: boolean; ruleType: Rule }) =>
   (playerId, tileLookup) => {
     const { terrain, penalty, ruleType } = options
 
@@ -62,19 +62,19 @@ const buildTerrainRule: (options: {
 
 export const waterRule: ScoringRule = buildTerrainRule({
   terrain: Terrain.WATER,
-  ruleType: "water",
+  ruleType: "TERRAIN_WATER_POSITIVE",
 })
 
 export const stoneRule: ScoringRule = buildTerrainRule({
   terrain: Terrain.STONE,
   penalty: true,
-  ruleType: "stone",
+  ruleType: "TERRAIN_STONE_NEGATIVE",
 })
 
 export const holeRule: ScoringRule = (playerId, tileLookup) => {
   const ruleEvaluation: RuleEvaluation = {
     playerId,
-    type: "hole",
+    type: "HOLE",
     points: 0,
     fulfillments: [],
   }
@@ -117,7 +117,7 @@ export const holeRule: ScoringRule = (playerId, tileLookup) => {
 export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
   const ruleEvaluation: RuleEvaluation = {
     playerId,
-    type: "diagonal",
+    type: "DIAGONAL_NORTHEAST",
     points: 0,
     fulfillments: [],
   }
@@ -178,3 +178,10 @@ export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
   ruleEvaluation.points = ruleEvaluation.fulfillments.length
   return ruleEvaluation
 }
+
+export const ScoringRulesMap = new Map<Rule, ScoringRule>([
+  ["TERRAIN_WATER_POSITIVE", waterRule],
+  ["TERRAIN_STONE_NEGATIVE", stoneRule],
+  ["HOLE", holeRule],
+  ["DIAGONAL_NORTHEAST", diagnoalRule],
+])

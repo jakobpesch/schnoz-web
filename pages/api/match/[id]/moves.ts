@@ -1,6 +1,6 @@
 import { Match, MatchStatus, Prisma, Tile, UnitType } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
-import { defaultGame } from "../../../../gameLogic/GameVariants"
+import { createCustomGame } from "../../../../gameLogic/GameVariants"
 import { prisma } from "../../../../prisma/client"
 import { checkConditionsForUnitConstellationPlacement } from "../../../../services/GameManagerService"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
@@ -32,7 +32,9 @@ const getLeadingPlayer = (match: MatchRich) => {
 
 const maxScore = 5
 
-const isLastTurn = (match: Match) => match.turn >= match.maxTurns
+const isLastTurn = (match: MatchRich) =>
+  match.turn >= (match.gameSettings?.maxTurns ?? 0)
+
 const determineWinner = (match: MatchRich) => {
   const leadingPlayer = getLeadingPlayer(match)
   if (!leadingPlayer) {
@@ -162,8 +164,8 @@ export default async function handler(
         res.status(500).end("Error while placing")
         break
       }
-
-      const playersWithUpdatedScore = defaultGame.evaluate(matchWithPlacedTiles)
+      const gameType = createCustomGame(match.gameSettings?.rules ?? null)
+      const playersWithUpdatedScore = gameType.evaluate(matchWithPlacedTiles)
 
       for (let i = 0; i < playersWithUpdatedScore.length; i++) {
         const player = playersWithUpdatedScore[i]
@@ -181,14 +183,14 @@ export default async function handler(
 
       const winnerId = determineWinner(matchWithUpdatedScore)?.id ?? null
 
-      const shouldChangeActivePlayer = defaultGame.shouldChangeActivePlayer(
+      const shouldChangeActivePlayer = gameType.shouldChangeActivePlayer(
         match.turn
       )
 
-      const shouldChangeCards = defaultGame.shouldChangeCards(match.turn)
+      const shouldChangeCards = gameType.shouldChangeCards(match.turn)
 
       const openCards = shouldChangeCards
-        ? defaultGame.changedCards()
+        ? gameType.changedCards()
         : matchWithPlacedTiles.openCards
 
       const nextActivePlayerId = shouldChangeActivePlayer

@@ -1,10 +1,11 @@
-import { Flex, Heading, HStack, VStack } from "@chakra-ui/react"
+import { Flex, Heading, HStack, Stack } from "@chakra-ui/react"
 import { Match, Participant } from "@prisma/client"
 import assert from "assert"
 import { useMemo } from "react"
 import { defaultGame } from "../../gameLogic/GameVariants"
 import { RenderSettings } from "../../services/SettingsService"
 import { MatchRich } from "../../types/Match"
+import { viewFactorWidth } from "./UIScoreView"
 
 const getTurns = (match: MatchRich) => {
   const turnsUI: (
@@ -25,9 +26,10 @@ const getTurns = (match: MatchRich) => {
     (player) => player.userId === match.createdById
   )
   assert(startingPlayer)
+  assert(match.gameSettings)
 
   let activePlayer = startingPlayer
-  for (let turn = 1; turn <= match.maxTurns; turn++) {
+  for (let turn = 1; turn <= match.gameSettings.maxTurns; turn++) {
     turnsUI.push({
       turn,
       playerId: activePlayer.id,
@@ -47,8 +49,6 @@ const getTurns = (match: MatchRich) => {
 }
 
 export const UITurnsView = (props: { match: MatchRich }) => {
-  const viewPortWidthFactor = 0.1
-
   const turnsUI = useMemo(() => {
     const turns = getTurns(props.match)
     for (let index = 1; index < props.match.turn; index++) {
@@ -62,15 +62,17 @@ export const UITurnsView = (props: { match: MatchRich }) => {
 
   return (
     <Flex position="fixed" top="0" left="0">
-      <VStack
+      <Stack
         bg="gray.700"
-        borderWidth={viewPortWidthFactor * 1 + "vmin"}
-        borderRadius={viewPortWidthFactor * 10 + "vmin"}
-        spacing={viewPortWidthFactor * 16 + "vmin"}
-        p={viewPortWidthFactor * 10 + "vmin"}
-        m={viewPortWidthFactor * 10 + "vmin"}
+        borderWidth={viewFactorWidth(1)}
+        borderRadius={viewFactorWidth(10)}
+        spacing={viewFactorWidth(16)}
+        p={viewFactorWidth(10)}
+        m={viewFactorWidth(10)}
+        maxWidth="50vw"
+        overflowX="hidden"
       >
-        <HStack position="relative" spacing={viewPortWidthFactor * 16 + "vmin"}>
+        <HStack position="relative" spacing={viewFactorWidth(16)}>
           {turnsUI.map((turnUI, index) => {
             const borderStyle =
               index === 0
@@ -87,9 +89,7 @@ export const UITurnsView = (props: { match: MatchRich }) => {
                   key={index + "eval"}
                   textAlign="center"
                   fontSize={
-                    index === 0
-                      ? viewPortWidthFactor * 35 + "vmin"
-                      : viewPortWidthFactor * 20 + "vmin"
+                    index === 0 ? viewFactorWidth(35) : viewFactorWidth(20)
                   }
                   {...borderStyle}
                 >
@@ -102,9 +102,7 @@ export const UITurnsView = (props: { match: MatchRich }) => {
                   key={index + "player"}
                   textAlign="center"
                   fontSize={
-                    index === 0
-                      ? viewPortWidthFactor * 35 + "vmin"
-                      : viewPortWidthFactor * 20 + "vmin"
+                    index === 0 ? viewFactorWidth(35) : viewFactorWidth(20)
                   }
                   {...borderStyle}
                 >
@@ -114,7 +112,7 @@ export const UITurnsView = (props: { match: MatchRich }) => {
             }
           })}
         </HStack>
-      </VStack>
+      </Stack>
     </Flex>
   )
 }

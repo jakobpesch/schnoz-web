@@ -1,4 +1,5 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
+import { Rule } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "../../prisma/client"
 import { matchRichInclude } from "../../types/Match"
@@ -8,13 +9,14 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { body, method } = req
+
   switch (method) {
     case "POST":
       const match = await prisma.match.create({
         data: {
           createdById: body.userId,
           maxPlayers: 2,
-          gameSettings: { create: { mapSize: 11 } },
+          gameSettings: { create: { mapSize: 11, rules: Object.values(Rule) } },
           players: {
             create: {
               userId: body.userId,

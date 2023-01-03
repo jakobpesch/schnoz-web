@@ -2,6 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 
 import {
+  GameSettings,
   Match,
   MatchStatus,
   Participant,
@@ -12,7 +13,7 @@ import {
 } from "@prisma/client"
 import { Coordinate2D } from "../../../models/UnitConstellation.model"
 import { prisma } from "../../../prisma/client"
-import { matchRichInclude, MatchWithPlayers } from "../../../types/Match"
+import { matchRichInclude, MatchRich } from "../../../types/Match"
 import { translateCoordinatesTo } from "../../../utils/constallationTransformer"
 import {
   coordinateIncludedIn,
@@ -21,11 +22,11 @@ import {
 } from "../../../utils/coordinateUtils"
 import { shuffleArray } from "../../../utils/arrayUtils"
 
-const getRandomTerrain = () => {
+const getRandomTerrain = (gameSettings: GameSettings) => {
   const nullProbability = 30
-  const waterProbability = 3
-  const treeProbability = 3
-  const stoneProbability = 1
+  const waterProbability = gameSettings.waterRatio
+  const treeProbability = gameSettings.treeRatio
+  const stoneProbability = gameSettings.stoneRatio
 
   const probabilityArray = [
     ...Array(nullProbability).fill(null),
@@ -43,11 +44,9 @@ const getRandomTerrain = () => {
   }
   return null
 }
-const getInitialiseMapPayload = (rowCount: number, colCount: number) => {
-  const centerCoordinate: Coordinate2D = [
-    Math.floor(rowCount / 2),
-    Math.floor(colCount / 2),
-  ]
+const getInitialiseMapPayload = (gameSettings: GameSettings) => {
+  const halfMapSize = Math.floor(gameSettings.mapSize / 2)
+  const centerCoordinate: Coordinate2D = [halfMapSize, halfMapSize]
 
   const initialVisionRadius = 3
   const initialVision = translateCoordinatesTo(
@@ -62,10 +61,10 @@ const getInitialiseMapPayload = (rowCount: number, colCount: number) => {
   )
 
   const tilesCreatePayload: Prisma.TileCreateWithoutMapInput[] = []
-  const rowIndices = [...Array(rowCount).keys()]
-  const columnIndices = [...Array(colCount).keys()]
-  rowIndices.forEach((row) => {
-    columnIndices.forEach((col) => {
+  const indices = [...Array(gameSettings.mapSize).keys()]
+
+  indices.forEach((row) => {
+    indices.forEach((col) => {
       const coordinate: Coordinate2D = [row, col]
 
       const tilePayload: Prisma.TileCreateWithoutMapInput = {
@@ -74,7 +73,7 @@ const getInitialiseMapPayload = (rowCount: number, colCount: number) => {
       }
 
       if (!coordinateIncludedIn(safeArea, coordinate)) {
-        tilePayload.terrain = getRandomTerrain()
+        tilePayload.terrain = getRandomTerrain(gameSettings)
       }
 
       if (coordinateIncludedIn(initialVision, coordinate)) {
@@ -92,18 +91,14 @@ const getInitialiseMapPayload = (rowCount: number, colCount: number) => {
   })
 
   const mapCreatePayload: Prisma.MapCreateWithoutMatchInput = {
-    rowCount,
-    colCount,
+    rowCount: gameSettings.mapSize,
+    colCount: gameSettings.mapSize,
     tiles: { create: tilesCreatePayload },
   }
 
   return mapCreatePayload
 }
-const checkConditionsForCreation = (
-  match: MatchWithPlayers,
-  userId: string,
-  settings: any
-) => {
+const checkConditionsForCreation = (match: MatchRich, userId: string) => {
   if (match.status === MatchStatus.STARTED) {
     return { error: "Match has already started" }
   }
@@ -115,15 +110,15 @@ const checkConditionsForCreation = (
   if (match.players.length < 2) {
     return { error: "Match is not full yet" }
   }
+  if (!match.gameSettings) {
+    return { error: "No game settings" }
+  }
 
   const isEven = (x: number) => x % 2 === 0
-  if (isEven(settings.rowCount)) {
-    return { error: "Row count needs to be an odd integer" }
+  if (isEven(match.gameSettings.mapSize)) {
+    return { error: "mapSize needs to be an odd integer" }
   }
 
-  if (isEven(settings.columnCount)) {
-    return { error: "Column count needs to be an odd integer" }
-  }
   return { error: null }
 }
 
@@ -155,21 +150,24 @@ export default async function handler(
 
   switch (method) {
     case "PUT":
-      const matchWithPlayers: MatchWithPlayers | null =
-        await prisma.match.findUnique({
-          where: { id: matchId },
-          include: { players: true },
-        })
+      const matchRich = await prisma.match.findUnique({
+        where: { id: matchId },
+        include: matchRichInclude,
+      })
 
-      if (matchWithPlayers === null) {
+      if (matchRich === null) {
         res.status(404).end(`Match with id ${matchId} not found.`)
+        return
+      }
+      if (matchRich.gameSettings === null) {
+        res.status(500).end("Settings missing")
         return
       }
 
       switch (body.action) {
         case "join":
           const { error: joinError } = checkConditionsForJoining(
-            matchWithPlayers.players,
+            matchRich.players,
             body.userId
           )
 
@@ -191,9 +189,8 @@ export default async function handler(
 
         case "start":
           const { error: startError } = checkConditionsForCreation(
-            matchWithPlayers,
-            body.userId,
-            body.settings
+            matchRich,
+            body.userId
           )
 
           if (startError) {
@@ -204,10 +201,9 @@ export default async function handler(
           const status = MatchStatus.STARTED
           const startedAt = new Date()
           const mapCreatePayload = getInitialiseMapPayload(
-            body.settings.rowCount,
-            body.settings.columnCount
+            matchRich.gameSettings
           )
-          const activePlayerId = matchWithPlayers.players.find(
+          const activePlayerId = matchRich.players.find(
             (player) => player.userId === body.userId
           )?.id
 
@@ -216,21 +212,19 @@ export default async function handler(
             break
           }
           const turn = 1
-          const maxTurns = body.settings.maxTurns
 
           const openCards = shuffleArray<UnitConstellation>(
             Object.values({ ...UnitConstellation })
           ).slice(0, 3)
 
           const startedMatch = await prisma.match.update({
-            where: { id: matchWithPlayers.id },
+            where: { id: matchRich.id },
             data: {
               openCards,
               status,
               startedAt,
               activePlayerId,
               turn,
-              maxTurns,
               map: {
                 create: mapCreatePayload,
               },

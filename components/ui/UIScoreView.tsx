@@ -1,8 +1,8 @@
 import { Divider, Flex, Heading, HStack, Stack, VStack } from "@chakra-ui/react"
-import { Participant } from "@prisma/client"
+import { GameSettings, Participant, Rule } from "@prisma/client"
 import assert from "assert"
-import { defaultGame } from "../../gameLogic/GameVariants"
-import { RuleEvaluation, RuleType } from "../../gameLogic/ScoringRule"
+import { createCustomGame } from "../../gameLogic/GameVariants"
+import { RuleEvaluation } from "../../gameLogic/ScoringRule"
 import { Coordinate2D } from "../../models/UnitConstellation.model"
 import { RenderSettings } from "../../services/SettingsService"
 import { MapWithTiles } from "../../types/Map"
@@ -13,10 +13,15 @@ export const viewFactorWidth = (
   viewPortWidthFactor: number = 0.1
 ) => viewPortWidthFactor * value + "vmin"
 
-const getEvaluationsMap = (map: MapWithTiles, players: Participant[]) => {
+const getEvaluationsMap = (
+  map: MapWithTiles,
+  players: Participant[],
+  rules: GameSettings["rules"]
+) => {
   const tileLookup = getTileLookup(map.tiles)
-  const rulesMap = new Map<RuleType, RuleEvaluation[]>()
-  defaultGame.scoringRules.forEach((rule) => {
+  const rulesMap = new Map<Rule, RuleEvaluation[]>()
+  const gameType = createCustomGame(rules)
+  gameType.scoringRules.forEach((rule) => {
     const evals = players
       .sort((a, b) => a.playerNumber - b.playerNumber)
       .map((player) => rule(player.id, tileLookup))
@@ -26,35 +31,19 @@ const getEvaluationsMap = (map: MapWithTiles, players: Participant[]) => {
   players.forEach((player) =>
     evaluationsMap.set(
       player.id,
-      defaultGame.scoringRules.map((rule) => rule(player.id, tileLookup))
+      gameType.scoringRules.map((rule) => rule(player.id, tileLookup))
     )
   )
 
   return rulesMap
 }
 
-const getRuleAppearance = (ruleType: RuleType) => {
-  if (ruleType === "water") {
-    return "🧿"
-  }
-  if (ruleType === "hole") {
-    return "🕳"
-  }
-  if (ruleType === "stone") {
-    return "🗿"
-  }
-  if (ruleType === "diagonal") {
-    return "↗"
-  }
-}
-
 export const UIScoreView = (props: {
   players: Participant[]
   map: MapWithTiles | null
+  rules: GameSettings["rules"]
   onRuleHover: (coordinates: Coordinate2D[]) => void
 }) => {
-  const viewPortWidthFactor = 0.1
-
   const player1 = props.players.find((player) => player.playerNumber === 0)
   assert(player1)
 
@@ -62,7 +51,7 @@ export const UIScoreView = (props: {
   assert(player2)
 
   const rulesMap = props.map
-    ? getEvaluationsMap(props.map, props.players)
+    ? getEvaluationsMap(props.map, props.players, props.rules)
     : null
 
   return (
@@ -70,21 +59,21 @@ export const UIScoreView = (props: {
       <VStack
         bg="gray.700"
         borderWidth={viewFactorWidth(1)}
-        borderRadius={viewPortWidthFactor * 10 + "vmin"}
-        spacing={viewPortWidthFactor * 10 + "vmin"}
-        p={viewPortWidthFactor * 10 + "vmin"}
-        m={viewPortWidthFactor * 10 + "vmin"}
+        borderRadius={viewFactorWidth(10)}
+        spacing={viewFactorWidth(10)}
+        p={viewFactorWidth(10)}
+        m={viewFactorWidth(10)}
       >
-        <HStack spacing={viewPortWidthFactor * 16 + "vmin"}>
-          <HStack key={player1.id} spacing={viewPortWidthFactor * 16 + "vmin"}>
-            <Heading fontSize={viewPortWidthFactor * 25 + "vmin"} size="md">
+        <HStack spacing={viewFactorWidth(16)}>
+          <HStack key={player1.id} spacing={viewFactorWidth(16)}>
+            <Heading fontSize={viewFactorWidth(25)} size="md">
               {RenderSettings.getPlayerAppearance(player1.playerNumber).unit}{" "}
               {player1.score}
             </Heading>
           </HStack>
           <Divider orientation="vertical"></Divider>
-          <HStack key={player2.id} spacing={viewPortWidthFactor * 16 + "vmin"}>
-            <Heading fontSize={viewPortWidthFactor * 25 + "vmin"} size="md">
+          <HStack key={player2.id} spacing={viewFactorWidth(16)}>
+            <Heading fontSize={viewFactorWidth(25)} size="md">
               {player2.score}{" "}
               {RenderSettings.getPlayerAppearance(player2.playerNumber).unit}
             </Heading>
@@ -135,7 +124,9 @@ export const UIScoreView = (props: {
                         fontSize={viewFactorWidth(25)}
                         size="md"
                       >
-                        {getRuleAppearance(ruleEvaluations[0].type)}
+                        {RenderSettings.getRuleAppearance(
+                          ruleEvaluations[0].type
+                        )}
                       </Heading>
                       <Heading
                         minWidth={viewFactorWidth(30)}

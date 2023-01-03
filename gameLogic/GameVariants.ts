@@ -1,19 +1,20 @@
-import { Match, Participant, UnitConstellation } from "@prisma/client"
+import { Match, Participant, Rule, UnitConstellation } from "@prisma/client"
 import assert from "assert"
-import { MatchRich, MatchWithPlayers } from "../types/Match"
+import { MatchRich } from "../types/Match"
 import { shuffleArray } from "../utils/arrayUtils"
 import { getTileLookup } from "../utils/coordinateUtils"
 import {
-  inBounds,
-  noUnit,
   adjacentToAlly,
+  inBounds,
   noTerrain,
+  noUnit,
   PlacementRule,
 } from "./PlacementRule"
 import {
   diagnoalRule,
   holeRule,
   ScoringRule,
+  ScoringRulesMap,
   stoneRule,
   waterRule,
 } from "./ScoringRule"
@@ -29,6 +30,27 @@ export interface GameType {
   evaluate: Evaluation
   scoringRules: ScoringRule[]
   placementRules: PlacementRule[]
+}
+
+export const createCustomGame: (scoringRuleNames: Rule[] | null) => GameType = (
+  scoringRuleNames
+) => {
+  if (!scoringRuleNames) {
+    return defaultGame
+  }
+
+  return {
+    ...defaultGame,
+    scoringRules: [...ScoringRulesMap.entries()].reduce<ScoringRule[]>(
+      (acc, [ruleName, scoringRule]) => {
+        if (scoringRuleNames.includes(ruleName)) {
+          return [...acc, scoringRule]
+        }
+        return [...acc]
+      },
+      []
+    ),
+  }
 }
 
 export const defaultGame: GameType = {

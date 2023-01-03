@@ -9,10 +9,18 @@ export default async function handler(
 ) {
   const { body, method, query } = req
   let match: MatchRich | null
-  const { participantId, mapSize } = body
+  const {
+    participantId,
+    mapSize,
+    rules,
+    maxTurns,
+    waterRatio,
+    treeRatio,
+    stoneRatio,
+  } = body
   const { id: matchId } = query
 
-  if (!participantId && !mapSize) {
+  if (!participantId && !(mapSize || rules)) {
     res.status(400).end("Query is not complete")
     return
   }
@@ -45,6 +53,11 @@ export default async function handler(
           gameSettings: {
             update: {
               mapSize,
+              rules,
+              maxTurns,
+              waterRatio,
+              stoneRatio,
+              treeRatio,
             },
           },
           updatedAt: new Date(),

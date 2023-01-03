@@ -19,17 +19,15 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
     ...boxProps
   } = props
 
-  const viewPortWidthFactor = 0.1
   const padding = 10
-  const containerSize =
-    (tileSize *
+  const containerSize = viewFactorWidth(
+    tileSize *
       Math.max(
         3,
         Math.max(...coordinates.map(([row, col]) => Math.max(row, col))) + 1
       ) +
-      2 * padding) *
-      viewPortWidthFactor +
-    "vmin"
+      2 * padding
+  )
 
   return (
     <Box
@@ -106,6 +104,7 @@ export const UIConstellationView = (props: UIConstellationViewProps) => (
             key={"unitConstellationView " + constellation}
             hotkey={`${index + 1}`}
             coordinates={constellation}
+            pointerEvents={props.readonly ? "none" : "all"}
             tileSize={20}
             onClick={() => props.onSelect(constellation)}
           />

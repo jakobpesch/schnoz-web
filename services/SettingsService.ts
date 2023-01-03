@@ -1,4 +1,4 @@
-import { Participant } from "@prisma/client"
+import { Participant, Rule } from "@prisma/client"
 
 export const RenderSettings = {
   tileSize: 50,
@@ -16,6 +16,20 @@ export const RenderSettings = {
       color = "gray.700"
     }
     return { unit, color }
+  },
+  getRuleAppearance: (rule: Rule) => {
+    if (rule === "TERRAIN_WATER_POSITIVE") {
+      return "🧿"
+    }
+    if (rule === "HOLE") {
+      return "🕳"
+    }
+    if (rule === "TERRAIN_STONE_NEGATIVE") {
+      return "🗿"
+    }
+    if (rule === "DIAGONAL_NORTHEAST") {
+      return "↗"
+    }
   },
 }
 
