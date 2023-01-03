@@ -200,9 +200,11 @@ export default async function handler(
 
           const status = MatchStatus.STARTED
           const startedAt = new Date()
+          console.time("initialisePayload")
           const mapCreatePayload = getInitialiseMapPayload(
             matchRich.gameSettings
           )
+          console.timeEnd("initialisePayload")
           const activePlayerId = matchRich.players.find(
             (player) => player.userId === body.userId
           )?.id
@@ -217,6 +219,7 @@ export default async function handler(
             Object.values({ ...UnitConstellation })
           ).slice(0, 3)
 
+          console.time("updateMatch")
           const startedMatch = await prisma.match.update({
             where: { id: matchRich.id },
             data: {
@@ -231,6 +234,7 @@ export default async function handler(
             },
             include: matchRichInclude,
           })
+          console.timeEnd("updateMatch")
 
           res.status(200).json(startedMatch)
           break
