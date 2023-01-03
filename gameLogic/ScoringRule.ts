@@ -3,6 +3,7 @@ import { Coordinate2D } from "../models/UnitConstellation.model"
 import { addCoordinates } from "../utils/constallationTransformer"
 import {
   buildTileLookupId,
+  coordinatesAreEqual,
   getAdjacentCoordinates,
   TileLookup,
 } from "../utils/coordinateUtils"
@@ -127,12 +128,12 @@ export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
 
   const processedTileIds = new Set<string>()
   unitTiles.forEach((unitTile) => {
-    if (processedTileIds.has(unitTile.id)) {
+    const startCoordinate: Coordinate2D = [unitTile.row, unitTile.col]
+    if (processedTileIds.has(buildTileLookupId(startCoordinate))) {
       return
     }
-    processedTileIds.add(unitTile.id)
+    processedTileIds.add(buildTileLookupId(startCoordinate))
 
-    const startCoordinate: Coordinate2D = [unitTile.row, unitTile.col]
     const fulfillment: RuleEvaluation["fulfillments"][0] = [
       [...startCoordinate],
     ]
@@ -154,8 +155,11 @@ export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
           break
         }
 
-        const topRightUnitTile = unitTiles.find(
-          (unitTile) => unitTile.id === topRightTile.id
+        const topRightUnitTile = unitTiles.find((unitTile) =>
+          coordinatesAreEqual(
+            [topRightTile.row, topRightTile.col],
+            [unitTile.row, unitTile.col]
+          )
         )
         const topRightIsPlayersUnit =
           !topRightUnitTile ||
@@ -166,7 +170,9 @@ export const diagnoalRule: ScoringRule = (playerId, tileLookup) => {
           break
         }
 
-        processedTileIds.add(topRightUnitTile.id)
+        processedTileIds.add(
+          buildTileLookupId([topRightUnitTile.row, topRightUnitTile.col])
+        )
         fulfillment.push(topRightCoordinate)
         currentCoordinate = [...topRightCoordinate]
       }
