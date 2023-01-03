@@ -25,7 +25,6 @@ model Participant {
   userId       String
   user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   score        Int    @default(0)
-  move         Move[]
   Unit         Unit[]
   activePlayer Match? @relation("activePlayer")
   winner       Match? @relation("winner")
@@ -51,7 +50,6 @@ model Match {
   turn           Int                 @default(0)
   openCards      UnitConstellation[] @default([])
   Rule           Rule[]
-  Move           Move[]
   gameSettings   GameSettings?
 }
 
@@ -63,7 +61,7 @@ model GameSettings {
   stoneRatio Int    @default(1)
   treeRatio  Int    @default(3)
   maxTurns   Int    @default(12)
-  match      Match  @relation(fields: [matchId], references: [id])
+  match      Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
   matchId    String @unique
 }
 
@@ -77,26 +75,15 @@ model Map {
 }
 
 model Tile {
-  id      String   @id @default(uuid())
+  mapId   String
+  map     Map      @relation(fields: [mapId], references: [id], onDelete: Cascade)
   row     Int
   col     Int
   visible Boolean  @default(false)
   terrain Terrain?
   unit    Unit?
-  mapId   String
-  map     Map      @relation(fields: [mapId], references: [id], onDelete: Cascade)
-  Move    Move[]
-}
 
-model Move {
-  id            String      @id @default(uuid())
-  rotationCount Int
-  participantId String
-  participant   Participant @relation(fields: [participantId], references: [id])
-  targetId      String
-  target        Tile        @relation(fields: [targetId], references: [id])
-  match         Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  matchId       String
+  @@id([mapId, row, col])
 }
 
 model Unit {
@@ -104,8 +91,12 @@ model Unit {
   type    UnitType
   ownerId String?
   owner   Participant? @relation(fields: [ownerId], references: [id])
-  tileId  String       @unique
-  tile    Tile         @relation(fields: [tileId], references: [id], onDelete: Cascade)
+  mapId   String
+  row     Int
+  col     Int
+  tile    Tile         @relation(fields: [mapId, row, col], references: [mapId, row, col], onDelete: Cascade)
+
+  @@unique([mapId, row, col])
 }
 
 enum UnitConstellation {

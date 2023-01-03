@@ -1,5 +1,6 @@
 import {
   GameSettings,
+  Map,
   Match,
   MatchStatus,
   Participant,
@@ -61,9 +62,30 @@ export const startMatch = async (matchId: string, userId: string) => {
   }
 
   const response = await fetch(BASE_URL + "/match/" + matchId, options)
-
   if (response.status !== 200) {
     throw new Error("Failed to start match")
+  }
+
+  return await response.json()
+}
+
+export const createMap = async (
+  matchId: string,
+  userId: string
+): Promise<Map> => {
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      matchId,
+    }),
+  }
+
+  const response = await fetch(BASE_URL + "/maps", options)
+
+  if (response.status !== 201) {
+    throw new Error("Failed to create map")
   }
 
   return await response.json()

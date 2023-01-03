@@ -2,102 +2,16 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 
 import {
-  GameSettings,
   Match,
   MatchStatus,
   Participant,
-  Prisma,
-  Terrain,
   UnitConstellation,
-  UnitType,
 } from "@prisma/client"
-import { Coordinate2D } from "../../../models/UnitConstellation.model"
+import assert from "assert"
 import { prisma } from "../../../prisma/client"
-import { matchRichInclude, MatchRich } from "../../../types/Match"
-import { translateCoordinatesTo } from "../../../utils/constallationTransformer"
-import {
-  coordinateIncludedIn,
-  coordinatesAreEqual,
-  getCoordinateCircle,
-} from "../../../utils/coordinateUtils"
+import { MatchRich, matchRichInclude } from "../../../types/Match"
 import { shuffleArray } from "../../../utils/arrayUtils"
 
-const getRandomTerrain = (gameSettings: GameSettings) => {
-  const nullProbability = 30
-  const waterProbability = gameSettings.waterRatio
-  const treeProbability = gameSettings.treeRatio
-  const stoneProbability = gameSettings.stoneRatio
-
-  const probabilityArray = [
-    ...Array(nullProbability).fill(null),
-    ...Array(waterProbability).fill(Terrain.WATER),
-    ...Array(treeProbability).fill(Terrain.TREE),
-    ...Array(stoneProbability).fill(Terrain.STONE),
-  ]
-
-  const randomNumber = Math.random()
-  const threshold = 1 / probabilityArray.length
-  for (let i = 0; i < probabilityArray.length; i++) {
-    if (randomNumber < i * threshold) {
-      return probabilityArray[i]
-    }
-  }
-  return null
-}
-const getInitialiseMapPayload = (gameSettings: GameSettings) => {
-  const halfMapSize = Math.floor(gameSettings.mapSize / 2)
-  const centerCoordinate: Coordinate2D = [halfMapSize, halfMapSize]
-
-  const initialVisionRadius = 3
-  const initialVision = translateCoordinatesTo(
-    centerCoordinate,
-    getCoordinateCircle(initialVisionRadius)
-  )
-
-  const saveAreaRadius = 2
-  const safeArea = translateCoordinatesTo(
-    centerCoordinate,
-    getCoordinateCircle(saveAreaRadius)
-  )
-
-  const tilesCreatePayload: Prisma.TileCreateWithoutMapInput[] = []
-  const indices = [...Array(gameSettings.mapSize).keys()]
-
-  indices.forEach((row) => {
-    indices.forEach((col) => {
-      const coordinate: Coordinate2D = [row, col]
-
-      const tilePayload: Prisma.TileCreateWithoutMapInput = {
-        row,
-        col,
-      }
-
-      if (!coordinateIncludedIn(safeArea, coordinate)) {
-        tilePayload.terrain = getRandomTerrain(gameSettings)
-      }
-
-      if (coordinateIncludedIn(initialVision, coordinate)) {
-        tilePayload.visible = true
-      }
-
-      if (coordinatesAreEqual(coordinate, centerCoordinate)) {
-        tilePayload.unit = {
-          create: { type: UnitType.MAIN_BUILDING },
-        }
-      }
-
-      tilesCreatePayload.push(tilePayload)
-    })
-  })
-
-  const mapCreatePayload: Prisma.MapCreateWithoutMatchInput = {
-    rowCount: gameSettings.mapSize,
-    colCount: gameSettings.mapSize,
-    tiles: { create: tilesCreatePayload },
-  }
-
-  return mapCreatePayload
-}
 const checkConditionsForCreation = (match: MatchRich, userId: string) => {
   if (match.status === MatchStatus.STARTED) {
     return { error: "Match has already started" }
@@ -105,6 +19,10 @@ const checkConditionsForCreation = (match: MatchRich, userId: string) => {
 
   if (match.createdById !== userId) {
     return { error: "Only the match's creator can start the match" }
+  }
+
+  if (!match.map) {
+    return { error: "No map" }
   }
 
   if (match.players.length < 2) {
@@ -121,7 +39,6 @@ const checkConditionsForCreation = (match: MatchRich, userId: string) => {
 
   return { error: null }
 }
-
 const checkConditionsForJoining = (
   participants: Participant[],
   userId: string
@@ -134,7 +51,6 @@ const checkConditionsForJoining = (
   }
   return { error: null }
 }
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -201,24 +117,18 @@ export default async function handler(
 
           const status = MatchStatus.STARTED
           const startedAt = new Date()
-          console.time("initialisePayload")
-          const mapCreatePayload = getInitialiseMapPayload(
-            matchRich.gameSettings
-          )
-          console.timeEnd("initialisePayload")
+
           const activePlayerId = matchRich.players.find(
             (player) => player.userId === body.userId
           )?.id
 
-          if (!activePlayerId) {
-            res.status(500).end("Could not find active player")
-            break
-          }
-          const turn = 1
+          assert(activePlayerId)
 
           const openCards = shuffleArray<UnitConstellation>(
             Object.values({ ...UnitConstellation })
           ).slice(0, 3)
+
+          const turn = 1
 
           console.time("updateMatch")
           const startedMatch = await prisma.match.update({
@@ -229,9 +139,6 @@ export default async function handler(
               startedAt,
               activePlayerId,
               turn,
-              map: {
-                create: mapCreatePayload,
-              },
             },
             include: matchRichInclude,
           })

@@ -1,4 +1,4 @@
-import { Match, MatchStatus, Prisma, Tile, UnitType } from "@prisma/client"
+import { MatchStatus, Prisma, Tile, UnitType } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { createCustomGame } from "../../../../gameLogic/GameVariants"
 import { prisma } from "../../../../prisma/client"
@@ -116,11 +116,15 @@ export default async function handler(
 
       const updateTilesPromises: Prisma.Prisma__TileClient<Tile, never>[] = []
       translatedCoordinates.forEach((coordinate) => {
-        const tile = tileLookup[buildTileLookupId(coordinate)]
+        const { mapId, row, col } = tileLookup[buildTileLookupId(coordinate)]
         updateTilesPromises.push(
           prisma.tile.update({
             where: {
-              id: tile.id,
+              mapId_row_col: {
+                mapId,
+                row,
+                col,
+              },
             },
             data: {
               unit: {
@@ -133,11 +137,11 @@ export default async function handler(
           })
         )
       })
-      revealedTiles.forEach((tile) => {
+      revealedTiles.forEach(({ mapId, row, col }) => {
         updateTilesPromises.push(
           prisma.tile.update({
             where: {
-              id: tile.id,
+              mapId_row_col: { mapId, row, col },
             },
             data: {
               visible: true,

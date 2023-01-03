@@ -28,6 +28,7 @@ import {
 import { getCookie } from "../../services/CookieService"
 import {
   checkConditionsForUnitConstellationPlacement,
+  createMap,
   makeMove,
   startMatch,
   updateSettings,
@@ -311,7 +312,9 @@ const MatchView = () => {
         }
         tile.unit = {
           id: "pending-unit-" + index,
-          tileId: tile.id,
+          row: tile.row,
+          col: tile.col,
+          mapId: tile.mapId,
           ownerId: participantId,
           type: UnitType.UNIT,
         }
@@ -348,7 +351,9 @@ const MatchView = () => {
             ) {
               updatedTile.unit = {
                 id: "pending-unit-" + index,
-                tileId: tile.id,
+                row: tile.row,
+                col: tile.col,
+                mapId: tile.mapId,
                 ownerId: participantId,
                 type: UnitType.UNIT,
               }
@@ -394,7 +399,10 @@ const MatchView = () => {
     }
 
     try {
-      const startedMatch = await startMatch(match.id, userId)
+      if (!match.map) {
+        await createMap(match.id, userId)
+      }
+      await startMatch(match.id, userId)
       updateMatch()
     } catch (e) {
       console.error(e)
