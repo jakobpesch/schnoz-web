@@ -150,11 +150,12 @@ export default async function handler(
 
   switch (method) {
     case "PUT":
+      console.time("getMatch")
       const matchRich = await prisma.match.findUnique({
         where: { id: matchId },
         include: matchRichInclude,
       })
-
+      console.timeEnd("getMatch")
       if (matchRich === null) {
         res.status(404).end(`Match with id ${matchId} not found.`)
         return
