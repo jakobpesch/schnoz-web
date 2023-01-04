@@ -34,6 +34,7 @@ import {
   updateSettings,
 } from "../../services/GameManagerService"
 import { MatchSettings } from "../../services/SettingsService"
+import { fetcher } from "../../services/swrUtils"
 import { MapWithTiles } from "../../types/Map"
 import { MatchRich } from "../../types/Match"
 import { TileWithUnits } from "../../types/Tile"
@@ -48,9 +49,6 @@ import {
   getTileLookup,
 } from "../../utils/coordinateUtils"
 import { MatchCheckResponseData } from "../api/match/[id]/check"
-
-// @ts-ignore
-const fetcher = (...args) => fetch(...args).then((res) => res.json())
 
 function useMatch(id: string) {
   const { data, error, isLoading, mutate } = useSWR<MatchRich>(
@@ -77,7 +75,7 @@ function useMatchUpdate(options: {
   shouldFetch?: boolean
   refreshInterval?: number
 }) {
-  const { match, shouldFetch = true, refreshInterval = 1000 } = options
+  const { match, shouldFetch = true, refreshInterval = 2500 } = options
   const { data, error, isLoading } = useSWR<MatchCheckResponseData>(
     () => {
       if (!shouldFetch) {

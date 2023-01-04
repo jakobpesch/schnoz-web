@@ -171,7 +171,7 @@ export default async function handler(
       res.status(200).json(match)
       break
     default:
-      res.setHeader("Allow", ["POST", "GET", "DELETE"])
+      res.setHeader("Allow", ["PUT", "GET", "DELETE"])
       res.status(405).end(`Method ${method} Not Allowed`)
   }
 }

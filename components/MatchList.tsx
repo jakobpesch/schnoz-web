@@ -13,11 +13,12 @@ import {
   Tr,
 } from "@chakra-ui/react"
 import { MatchStatus } from "@prisma/client"
-import { MatchRich } from "../types/Match"
+import { MatchWithPlayers } from "../types/Match"
 import { MinusIcon } from "@chakra-ui/icons"
+
 interface MatchListProps {
   userId: string
-  matches: MatchRich[]
+  matches: MatchWithPlayers[]
   onJoinClick: (id: string) => void
   onDeleteClick: (id: string) => void
   onGoToMatchClick: (id: string) => void
@@ -26,16 +27,16 @@ interface MatchListProps {
 const MatchList = (props: MatchListProps) => {
   const { userId, matches, onJoinClick, onDeleteClick, onGoToMatchClick } =
     props
-  const canJoin = (match: MatchRich) => {
+  const canJoin = (match: MatchWithPlayers) => {
     return (
       match.players.length === 1 &&
       !match.players.some((player) => player.userId === userId)
     )
   }
-  const canDelete = (match: MatchRich, userId: string) => {
+  const canDelete = (match: MatchWithPlayers, userId: string) => {
     return match.createdById === userId
   }
-  const hasJoined = (match: MatchRich, userId: string) => {
+  const hasJoined = (match: MatchWithPlayers, userId: string) => {
     return match.players.some((participant) => participant.userId === userId)
   }
   if (matches.length === 0) {

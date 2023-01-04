@@ -30,7 +30,7 @@ export default async function handler(
       break
     case "GET":
       const matches = await prisma.match.findMany({
-        include: matchRichInclude,
+        include: { players: true },
       })
       res.status(200).json(matches)
       break

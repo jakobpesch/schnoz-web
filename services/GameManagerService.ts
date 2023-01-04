@@ -4,7 +4,6 @@ import {
   Match,
   MatchStatus,
   Participant,
-  User,
 } from "@prisma/client"
 import { defaultGame } from "../gameLogic/GameVariants"
 import {
@@ -18,6 +17,8 @@ import {
   translateCoordinatesTo,
 } from "../utils/constallationTransformer"
 import { buildTileLookupId, TileLookup } from "../utils/coordinateUtils"
+import { setCookie } from "./CookieService"
+import { fetcher } from "./swrUtils"
 
 const BASE_URL =
   process.env.NODE_ENV === "development"
@@ -30,10 +31,13 @@ export const signInAnonymously = async () => {
     headers: { "Content-Type": "application/json" },
     body: "{}",
   }
-
-  const response = await fetch(BASE_URL + "/users", options)
-  const user: User = await response.json()
-  return user
+  try {
+    const user = await fetcher(BASE_URL + "/users", options)
+    setCookie("userId", user.id, 30)
+    return user
+  } catch (e) {
+    throw e
+  }
 }
 
 export const getMatches = async () => {
