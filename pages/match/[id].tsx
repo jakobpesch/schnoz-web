@@ -51,7 +51,7 @@ import {
 import { MatchCheckResponseData } from "../api/match/[id]/check"
 
 function useMatch(id: string) {
-  const { data, error, isLoading, mutate } = useSWR<MatchRich>(
+  const { data, error, isLoading, isValidating, mutate } = useSWR<MatchRich>(
     () => {
       if (!id) {
         throw new Error("No id")
@@ -66,6 +66,7 @@ function useMatch(id: string) {
     match: data,
     isLoading,
     isError: error,
+    isValidating,
     mutate,
   }
 }
@@ -76,28 +77,30 @@ function useMatchUpdate(options: {
   refreshInterval?: number
 }) {
   const { match, shouldFetch = true, refreshInterval = 2500 } = options
-  const { data, error, isLoading } = useSWR<MatchCheckResponseData>(
-    () => {
-      if (!shouldFetch) {
-        throw new Error()
+  const { data, error, isLoading, isValidating } =
+    useSWR<MatchCheckResponseData>(
+      () => {
+        if (!shouldFetch) {
+          throw new Error()
+        }
+        if (!match) {
+          throw new Error(
+            "Cannot load match update. `useMatchUpdate` depends on `match`"
+          )
+        }
+        return `/api/match/${match.id}/check?time=${match.updatedAt}`
+      },
+      fetcher,
+      {
+        refreshInterval: refreshInterval,
+        refreshWhenHidden: true,
+        dedupingInterval: 100,
       }
-      if (!match) {
-        throw new Error(
-          "Cannot load match update. `useMatchUpdate` depends on `match`"
-        )
-      }
-      return `/api/match/${match.id}/check?time=${match.updatedAt}`
-    },
-    fetcher,
-    {
-      refreshInterval: refreshInterval,
-      refreshWhenHidden: true,
-      dedupingInterval: 100,
-    }
-  )
+    )
   return {
     hasUpdate: data?.hasUpdate ?? false,
     isLoading,
+    isValidating,
     isError: error,
   }
 }
@@ -124,6 +127,7 @@ const MatchView = () => {
     isLoading: isLoadingMatch,
     isError: isErrorMatch,
     mutate: updateMatch,
+    isValidating,
   } = useMatch(matchId)
 
   const yourTurn = userId === match?.activePlayer?.userId
@@ -397,11 +401,12 @@ const MatchView = () => {
     }
 
     try {
+      setIsUpdatingMatch(true)
       if (!match.map) {
         await createMap(match.id, userId)
       }
       await startMatch(match.id, userId)
-      updateMatch()
+      updateMatch().finally(() => setIsUpdatingMatch(false))
     } catch (e) {
       console.error(e)
     }
@@ -460,7 +465,7 @@ const MatchView = () => {
           rollbackOnError: true,
           revalidate: true,
         }
-      ).then(() => setIsUpdatingMatch(false))
+      ).finally(() => setIsUpdatingMatch(false))
 
       setStatus("Updated Settings")
     } catch (e: any) {
@@ -472,7 +477,8 @@ const MatchView = () => {
     <Container height="100vh" color="white">
       {isPreMatch && (
         <UIPreMatchView
-          pt="16"
+          py="16"
+          isLoading={isUpdatingMatch || isValidating}
           settings={match.gameSettings}
           onSettingsChange={handleSettingsChange}
           onStartGameClick={onStartGameClick}

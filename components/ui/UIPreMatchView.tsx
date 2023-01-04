@@ -24,6 +24,7 @@ interface UIPreMatchViewProps extends StackProps {
   userId: string
   createdById: string
   isGameFull: boolean
+  isLoading: boolean
   onSettingsChange: (settings: {
     mapSize?: GameSettings["mapSize"]
     rules?: GameSettings["rules"]
@@ -38,6 +39,7 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
     userId,
     createdById,
     isGameFull,
+    isLoading,
     onSettingsChange,
     onStartGameClick,
     ...stackProps
@@ -235,7 +237,8 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
         <Button
           size="lg"
           colorScheme="blue"
-          disabled={!isGameFull}
+          disabled={!isGameFull || isLoading}
+          isLoading={isLoading}
           onClick={() => {
             onStartGameClick()
           }}

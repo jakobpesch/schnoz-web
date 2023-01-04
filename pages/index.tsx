@@ -84,8 +84,6 @@ const Home: NextPage = () => {
       }
       setIsCreatingMatch(true)
       const match = await createMatch(user.id)
-      setIsCreatingMatch(false)
-      setStatus("Created match: " + match.id.slice(-5))
       router.push("/match/" + match.id)
     } catch (e: any) {
       setIsCreatingMatch(false)
