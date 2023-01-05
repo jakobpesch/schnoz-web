@@ -63,7 +63,7 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
           />
         )
       })}
-      <Circle
+      {/* <Circle
         position="absolute"
         top={viewFactorWidth(-7)}
         right={viewFactorWidth(-7)}
@@ -77,7 +77,7 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
         >
           2
         </Text>
-      </Circle>
+      </Circle> */}
       <Kbd
         position="absolute"
         bottom={viewFactorWidth(-5)}
