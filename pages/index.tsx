@@ -1,5 +1,6 @@
 import { AddIcon, RepeatIcon } from "@chakra-ui/icons"
 import {
+  Box,
   Button,
   Center,
   Container,
@@ -13,9 +14,11 @@ import {
   TabPanels,
   Tabs,
   Text,
+  Tooltip,
 } from "@chakra-ui/react"
 import { MatchStatus, User } from "@prisma/client"
 import type { NextPage } from "next"
+import Image from "next/image"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import useSWR from "swr"
@@ -29,6 +32,8 @@ import {
 } from "../services/GameManagerService"
 import { fetcher } from "../services/swrUtils"
 import { MatchWithPlayers } from "../types/Match"
+import KoFiLogo from "../assets/images/kofi_logo.png"
+import Link from "next/link"
 
 const Home: NextPage = () => {
   const router = useRouter()
@@ -226,6 +231,18 @@ const Home: NextPage = () => {
           )}
         </Container>
       </Stack>
+      <Tooltip hasArrow placement="left" label="Buy me a coffee">
+        <Box position="fixed" top="4" right="4" cursor="pointer">
+          <Link href="https://ko-fi.com/I2I1FR7RZ">
+            <Image
+              src={KoFiLogo}
+              alt="Buy Me a Coffee at ko-fi.com"
+              width="36px"
+              height="36px"
+            />
+          </Link>
+        </Box>
+      </Tooltip>
     </Flex>
   )
 }

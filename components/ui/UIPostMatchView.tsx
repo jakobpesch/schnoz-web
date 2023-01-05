@@ -1,6 +1,9 @@
 import { Button, Center, Heading, Text, VStack } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
+import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/router"
+import KoFiLogo from "../../assets/images/kofi_logo.png"
 import { RenderSettings } from "../../services/SettingsService"
 interface UIPostMatchViewProps {
   winner: Participant | null
@@ -30,11 +33,26 @@ export const UIPostMatchView = (props: UIPostMatchViewProps) => {
             : "Draw!"}
         </Text>
         <Button
+          width="full"
           onClick={() => {
             onBackToMenuClick()
           }}
         >
           Back to menu
+        </Button>
+        <Button
+          bg="#13C3FF"
+          _hover={{ bg: "#47d1ff" }}
+          leftIcon={
+            <Image
+              src={KoFiLogo}
+              alt="Buy Me a Coffee at ko-fi.com"
+              width="36px"
+              height="36px"
+            />
+          }
+        >
+          <Link href="https://ko-fi.com/I2I1FR7RZ">Support me</Link>
         </Button>
       </VStack>
     </Center>
