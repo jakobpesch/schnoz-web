@@ -1,4 +1,12 @@
-import { Box, BoxProps, Center, HStack, Kbd } from "@chakra-ui/react"
+import {
+  Box,
+  BoxProps,
+  Center,
+  Circle,
+  HStack,
+  Kbd,
+  Text,
+} from "@chakra-ui/react"
 import { Coordinate2D } from "../../models/UnitConstellation.model"
 import { RenderSettings } from "../../services/SettingsService"
 import { viewFactorWidth } from "./UIScoreView"
@@ -55,6 +63,21 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
           />
         )
       })}
+      <Circle
+        position="absolute"
+        top={viewFactorWidth(-7)}
+        right={viewFactorWidth(-7)}
+        size={viewFactorWidth(20)}
+        bg="yellow.400"
+      >
+        <Text
+          fontSize={viewFactorWidth(15)}
+          fontWeight="bold"
+          color="yellow.800"
+        >
+          2
+        </Text>
+      </Circle>
       <Kbd
         position="absolute"
         bottom={viewFactorWidth(-5)}

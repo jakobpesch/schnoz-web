@@ -50,13 +50,18 @@ export const getNewlyRevealedTiles = (
   return { tiles }
 }
 
-export const getCoordinateCircle = (radius: number) => {
+export const getSquareMatrix = (radius: number) => {
   const range = Array.from(
     { length: 2 * radius + 1 },
     (v, index) => index - radius
   )
   const squareMatrix: Coordinate2D[] = []
   range.forEach((row) => range.forEach((col) => squareMatrix.push([row, col])))
+  return squareMatrix
+}
+
+export const getCoordinateCircle = (radius: number) => {
+  const squareMatrix = getSquareMatrix(radius)
   return squareMatrix.filter(
     ([row, col]) => Math.sqrt(row ** 2 + col ** 2) <= radius + 0.5
   )

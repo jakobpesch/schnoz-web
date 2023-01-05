@@ -1,4 +1,4 @@
-import { Participant, Rule } from "@prisma/client"
+import { Participant, Rule, Terrain } from "@prisma/client"
 
 export const RenderSettings = {
   tileSize: 50,
@@ -29,6 +29,31 @@ export const RenderSettings = {
     }
     if (rule === "DIAGONAL_NORTHEAST") {
       return "↗"
+    }
+  },
+  getTerrainAppearance: (terrain: Terrain) => {
+    if (terrain === Terrain.WATER) {
+      return "🧿"
+    }
+    if (terrain === Terrain.TREE) {
+      return "🌳"
+    }
+    if (terrain === Terrain.STONE) {
+      return "🗿"
+    }
+  },
+  getRuleName: (rule: Rule) => {
+    if (rule === "TERRAIN_WATER_POSITIVE") {
+      return "Water D. Law"
+    }
+    if (rule === "TERRAIN_STONE_NEGATIVE") {
+      return "Stoned"
+    }
+    if (rule === "HOLE") {
+      return "Glorious Holes"
+    }
+    if (rule === "DIAGONAL_NORTHEAST") {
+      return "Diagon-Alley NE"
     }
   },
 }
