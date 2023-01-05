@@ -53,7 +53,7 @@ export const RenderSettings = {
       return "Glorious Holes"
     }
     if (rule === "DIAGONAL_NORTHEAST") {
-      return "Diagon-Alley NE"
+      return "Diagon-Alley"
     }
   },
 }
