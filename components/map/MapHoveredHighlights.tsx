@@ -101,7 +101,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
           <Box
             position="fixed"
             left={viewFactorWidth(10)}
-            top={viewFactorWidth(100)}
+            top={viewFactorWidth(200)}
             cursor="default"
           >
             <Stack spacing={viewFactorWidth(10)}>

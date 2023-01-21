@@ -25,6 +25,7 @@ model Participant {
   userId       String
   user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   score        Int    @default(0)
+  bonusPoints  Int    @default(0)
   Unit         Unit[]
   activePlayer Match? @relation("activePlayer")
   winner       Match? @relation("winner")
@@ -99,22 +100,18 @@ model Unit {
   @@unique([mapId, row, col])
 }
 
-model UnitConstellation2 {
-  name UnitConstellation @id
-}
-
 enum UnitConstellation {
-  r0c0
-  r0c0_r0c1
-  r0c0_r1c1
-  r0c0_r0c2
-  r0c0_r0c1_r1c1
-  r0c0_r0c1_r1c2
-  r0c0_r1c1_r2c0
-  r0c0_r0c1_r0c2_r1c2
-  r0c0_r0c1_r1c1_r1c2
-  r0c0_r0c1_r2c0_r2c1
-  r0c0_r0c1_r0c2_r1c0_r1_c2
+  r0c0_v0
+  r0c0_r0c1_v2
+  r0c0_r1c1_v2
+  r0c0_r0c2_v2
+  r0c0_r0c1_r1c1_v1
+  r0c0_r0c1_r1c2_v1
+  r0c0_r1c1_r2c0_v1
+  r0c0_r0c1_r0c2_r1c2_v0
+  r0c0_r0c1_r1c1_r1c2_v0
+  r0c0_r0c1_r2c0_r2c1_v0
+  r0c0_r0c1_r0c2_r1c0_r1c2_v0
 }
 
 enum UnitType {

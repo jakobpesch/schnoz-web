@@ -84,17 +84,27 @@ export const encodeUnitConstellation = (coordinates: Coordinate2D[]) => {
   return encoded
 }
 
+export interface Card {
+  value: number
+  coordinates: Coordinate2D[]
+}
+
 export const decodeUnitConstellation = (
   unitConstellationString: UnitConstellation
 ) => {
+  const value = unitConstellationString.split("_v").pop()
+  assert(value)
   const regexp = /r(?<row>[0-9]+)c(?<col>[0-9]+)_?/g
   const regExpMatch = [...unitConstellationString.matchAll(regexp)]
-  return regExpMatch.map((match) => {
-    assert(match.groups)
-    const coordinate: Coordinate2D = [
-      parseInt(match.groups.row),
-      parseInt(match.groups.col),
-    ]
-    return coordinate
-  })
+  return {
+    value: parseInt(value),
+    coordinates: regExpMatch.map((match) => {
+      assert(match.groups)
+      const coordinate: Coordinate2D = [
+        parseInt(match.groups.row),
+        parseInt(match.groups.col),
+      ]
+      return coordinate
+    }),
+  }
 }

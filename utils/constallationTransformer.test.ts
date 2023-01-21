@@ -182,7 +182,7 @@ test("encode unit constellation", () => {
       [0, 0],
       [0, 1],
     ])
-  ).toEqual(unitConstellations.r0c0_r0c1)
+  ).toEqual(unitConstellations.r0c0_r0c1_v2)
 
   expect(
     encodeUnitConstellation([
@@ -190,12 +190,15 @@ test("encode unit constellation", () => {
       [0, 1],
       [1, 2],
     ])
-  ).toEqual(unitConstellations.r0c0_r0c1_r1c2)
+  ).toEqual(unitConstellations.r0c0_r0c1_r1c2_v1)
 })
 
 test("decode unit constellation", () => {
-  expect(decodeUnitConstellation("r0c0_r0c1")).toEqual([
-    [0, 0],
-    [0, 1],
-  ])
+  expect(decodeUnitConstellation("r0c0_r0c1_v2")).toEqual({
+    value: 0,
+    coordiantes: [
+      [0, 0],
+      [0, 1],
+    ],
+  })
 })

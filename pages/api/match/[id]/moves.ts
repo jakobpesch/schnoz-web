@@ -1,6 +1,7 @@
 import { MatchStatus, Prisma, Tile, UnitType } from "@prisma/client"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { createCustomGame } from "../../../../gameLogic/GameVariants"
+import { IUnitConstellation } from "../../../../models/UnitConstellation.model"
 import { prisma } from "../../../../prisma/client"
 import { checkConditionsForUnitConstellationPlacement } from "../../../../services/GameManagerService"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
@@ -97,11 +98,13 @@ export default async function handler(
         break
       }
 
+      const unitConstellation: IUnitConstellation = body.unitConstellation
+
       const tileLookup = getTileLookup(match.map.tiles)
       const { translatedCoordinates, error } =
         checkConditionsForUnitConstellationPlacement(
           [targetRow, targetCol],
-          body.unitConstellation,
+          unitConstellation,
           match,
           match.map,
           tileLookup,
@@ -181,10 +184,14 @@ export default async function handler(
 
       for (let i = 0; i < playersWithUpdatedScore.length; i++) {
         const player = playersWithUpdatedScore[i]
-
+        const bonusPointsFromCard =
+          player.id === match.activePlayerId ? unitConstellation.value : 0
         await prisma.participant.update({
           where: { id: player.id },
-          data: { score: player.score },
+          data: {
+            score: player.score,
+            bonusPoints: match.activePlayer.bonusPoints + bonusPointsFromCard,
+          },
         })
       }
 

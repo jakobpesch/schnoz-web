@@ -13,7 +13,8 @@ import { MapPlaceableTiles } from "../../components/map/MapPlaceableTiles"
 import { MapRuleEvaluations } from "../../components/map/MapRuleEvaluations"
 import { MapTerrains } from "../../components/map/MapTerrains"
 import { MapUnits } from "../../components/map/MapUnits"
-import { UIConstellationView } from "../../components/ui/UIConstellationsView"
+import { UIBonusPointsView } from "../../components/ui/UIBonusPointsView"
+import { UICardsView as UICardsView } from "../../components/ui/UICardsView"
 import { UILoadingIndicator } from "../../components/ui/UILoadingIndicator"
 import { UILoggingView } from "../../components/ui/UILoggingView"
 import { UIPostMatchView } from "../../components/ui/UIPostMatchView"
@@ -24,7 +25,7 @@ import { UITurnsView } from "../../components/ui/UITurnsView"
 import { PlacementRuleName } from "../../gameLogic/PlacementRule"
 import {
   Coordinate2D,
-  IUnitConstellation
+  IUnitConstellation,
 } from "../../models/UnitConstellation.model"
 import { getCookie } from "../../services/CookieService"
 import {
@@ -32,14 +33,17 @@ import {
   createMap,
   makeMove,
   startMatch,
-  updateSettings
+  updateSettings,
 } from "../../services/GameManagerService"
 import { MatchSettings } from "../../services/SettingsService"
 import { fetcher } from "../../services/swrUtils"
 import { MapWithTiles } from "../../types/Map"
 import { MatchRich } from "../../types/Match"
 import { TileWithUnits } from "../../types/Tile"
-import { decodeUnitConstellation } from "../../utils/constallationTransformer"
+import {
+  Card,
+  decodeUnitConstellation,
+} from "../../utils/constallationTransformer"
 import {
   buildTileLookupId,
   coordinateIncludedIn,
@@ -47,7 +51,7 @@ import {
   getAdjacentCoordinates,
   getAdjacentCoordinatesOfConstellation,
   getNewlyRevealedTiles,
-  getTileLookup
+  getTileLookup,
 } from "../../utils/coordinateUtils"
 import { MatchCheckResponseData } from "../api/match/[id]/check"
 
@@ -164,11 +168,9 @@ const MatchView = () => {
     mapSize: 11,
   })
 
-  const [selectedConstellation, setSelectedConstellation] = useState<
-    Coordinate2D[] | null
-  >(null)
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null)
 
-  const unitConstellations =
+  const cards =
     useMemo(() => {
       return match?.openCards?.map(decodeUnitConstellation)
     }, [match?.updatedAt]) ?? []
@@ -221,8 +223,8 @@ const MatchView = () => {
       }
 
       if (
-        selectedConstellation?.length === 1 &&
-        coordinatesAreEqual(selectedConstellation[0], [0, 0])
+        selectedCard?.coordinates.length === 1 &&
+        coordinatesAreEqual(selectedCard.coordinates[0], [0, 0])
       ) {
         const visibleAndFreeTiles: Coordinate2D[] = Object.values(tileLookup)
           .filter((tile) => tile.visible && !tile.unit && !tile.terrain)
@@ -245,7 +247,7 @@ const MatchView = () => {
         const hasUnit = tileLookup[buildTileLookupId(coordinate)]?.unit ?? false
         return !hasTerrain && !hasUnit
       })
-    }, [match?.updatedAt, selectedConstellation]) ?? []
+    }, [match?.updatedAt, selectedCard]) ?? []
 
   useEffect(() => {
     match?.openCards.forEach((unitConstellation, index) => {
@@ -253,13 +255,13 @@ const MatchView = () => {
       Mousetrap.unbind(hotkey)
       if (yourTurn) {
         Mousetrap.bind(hotkey, () =>
-          setSelectedConstellation(decodeUnitConstellation(unitConstellation))
+          setSelectedCard(decodeUnitConstellation(unitConstellation))
         )
       }
     })
     Mousetrap.unbind("esc")
     if (yourTurn) {
-      Mousetrap.bind("esc", () => setSelectedConstellation(null))
+      Mousetrap.bind("esc", () => setSelectedCard(null))
     }
   }, [match?.updatedAt])
 
@@ -284,12 +286,13 @@ const MatchView = () => {
       return
     }
 
-    if (!selectedConstellation) {
+    if (!selectedCard) {
       return
     }
 
     const unitConstellation: IUnitConstellation = {
-      coordinates: selectedConstellation,
+      coordinates: selectedCard.coordinates,
+      value: selectedCard.value,
       rotatedClockwise,
       mirrored,
     }
@@ -404,7 +407,7 @@ const MatchView = () => {
         }
       ).then(() => setIsUpdatingMatch(false))
 
-      setSelectedConstellation(null)
+      setSelectedCard(null)
       setStatus(`Placed unit on tile (${row}|${col})`)
     } catch (e: any) {
       setStatus(e.message)
@@ -519,7 +522,7 @@ const MatchView = () => {
           <MapContainer
             id="map-container"
             match={match}
-            cursor={selectedConstellation ? "none" : "default"}
+            cursor={selectedCard ? "none" : "default"}
           >
             {isOngoing && !isLoadingMatch && !isUpdatingMatch && (
               <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
@@ -535,7 +538,7 @@ const MatchView = () => {
               <MapHoveredHighlights
                 player={match.activePlayer}
                 hide={isFinished || !yourTurn}
-                constellation={selectedConstellation}
+                constellation={selectedCard?.coordinates ?? null}
                 onTileClick={onTileClick}
               />
             )}
@@ -555,13 +558,12 @@ const MatchView = () => {
       {isOngoing && (
         <>
           <UITurnsView match={match} />
-          <UIConstellationView
-            selectedConstellation={selectedConstellation}
-            constellations={unitConstellations}
+          <UIBonusPointsView match={match} />
+          <UICardsView
+            selectedCard={selectedCard}
+            cards={cards}
             readonly={!yourTurn}
-            onSelect={(constellation) =>
-              setSelectedConstellation(constellation)
-            }
+            onSelect={(constellation) => setSelectedCard(constellation)}
           />
 
           {match.activePlayer && (

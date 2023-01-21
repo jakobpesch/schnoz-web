@@ -7,21 +7,21 @@ import {
   Kbd,
   Text,
 } from "@chakra-ui/react"
-import { Coordinate2D } from "../../models/UnitConstellation.model"
 import { RenderSettings } from "../../services/SettingsService"
+import { Card } from "../../utils/constallationTransformer"
 import { viewFactorWidth } from "./UIScoreView"
 
-interface UnitConstellationViewProps extends BoxProps {
+interface CardViewProps extends BoxProps {
   selected: boolean
-  coordinates: Coordinate2D[]
+  card: Card
   hotkey: string
   tileSize?: number
 }
 
-const UnitConstellationView = (props: UnitConstellationViewProps) => {
+const CardView = (props: CardViewProps) => {
   const {
     selected,
-    coordinates,
+    card,
     hotkey,
     tileSize = RenderSettings.tileSize,
     ...boxProps
@@ -32,7 +32,8 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
     tileSize *
       Math.max(
         3,
-        Math.max(...coordinates.map(([row, col]) => Math.max(row, col))) + 1
+        Math.max(...card.coordinates.map(([row, col]) => Math.max(row, col))) +
+          1
       ) +
       2 * padding
   )
@@ -50,7 +51,7 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
       cursor="pointer"
       {...boxProps}
     >
-      {coordinates.map(([row, col]) => {
+      {card.coordinates.map(([row, col]) => {
         return (
           <Box
             key={"unitConstellation_" + row + "_" + col}
@@ -63,7 +64,7 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
           />
         )
       })}
-      {/* <Circle
+      <Circle
         position="absolute"
         top={viewFactorWidth(-7)}
         right={viewFactorWidth(-7)}
@@ -75,9 +76,10 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
           fontWeight="bold"
           color="yellow.800"
         >
-          2
+          {card.value}
         </Text>
-      </Circle> */}
+      </Circle>
+
       <Kbd
         position="absolute"
         bottom={viewFactorWidth(-5)}
@@ -93,14 +95,14 @@ const UnitConstellationView = (props: UnitConstellationViewProps) => {
   )
 }
 
-interface UIConstellationViewProps {
-  selectedConstellation: Coordinate2D[] | null
-  constellations: Coordinate2D[][]
+interface UICardsViewProps {
+  selectedCard: Card | null
+  cards: Card[]
   readonly?: boolean
-  onSelect: (constellation: Coordinate2D[]) => void
+  onSelect: (constellation: Card) => void
 }
 
-export const UIConstellationView = (props: UIConstellationViewProps) => (
+export const UICardsView = (props: UICardsViewProps) => (
   <Center
     position="fixed"
     zIndex={3}
@@ -117,19 +119,18 @@ export const UIConstellationView = (props: UIConstellationViewProps) => (
       borderWidth={viewFactorWidth(2)}
       opacity={props.readonly ? 0.5 : 1}
     >
-      {props.constellations.map((constellation, index) => {
+      {props.cards.map((card, index) => {
         const selected =
-          JSON.stringify(constellation) ===
-          JSON.stringify(props.selectedConstellation)
+          JSON.stringify(card) === JSON.stringify(props.selectedCard)
         return (
-          <UnitConstellationView
+          <CardView
             selected={selected}
-            key={"unitConstellationView " + constellation}
+            key={"unitConstellationView " + card}
             hotkey={`${index + 1}`}
-            coordinates={constellation}
+            card={card}
             pointerEvents={props.readonly ? "none" : "all"}
             tileSize={20}
-            onClick={() => props.onSelect(constellation)}
+            onClick={() => props.onSelect(card)}
           />
         )
       })}
