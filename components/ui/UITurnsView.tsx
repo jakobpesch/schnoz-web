@@ -1,6 +1,7 @@
-import { Flex, Heading, HStack, Stack } from "@chakra-ui/react"
+import { Box, Flex, Heading, HStack, Stack } from "@chakra-ui/react"
 import { Match, Participant } from "@prisma/client"
 import assert from "assert"
+import Image, { StaticImageData } from "next/image"
 import { useMemo } from "react"
 import { defaultGame } from "../../gameLogic/GameVariants"
 import { RenderSettings } from "../../services/SettingsService"
@@ -12,7 +13,7 @@ const getTurns = (match: MatchRich) => {
     | {
         turn: Match["turn"]
         playerId: Participant["id"]
-        icon: string
+        icon: StaticImageData
         evaluate?: undefined
       }
     | {
@@ -98,16 +99,21 @@ export const UITurnsView = (props: { match: MatchRich }) => {
               )
             } else {
               return (
-                <Heading
+                <Flex
+                  align="center"
+                  justify="center"
                   key={index + "player"}
-                  textAlign="center"
-                  fontSize={
-                    index === 0 ? viewFactorWidth(35) : viewFactorWidth(20)
-                  }
                   {...borderStyle}
                 >
-                  {turnUI.icon}
-                </Heading>
+                  <Box
+                    width={viewFactorWidth(40)}
+                    height={viewFactorWidth(40)}
+                    minWidth={viewFactorWidth(40)}
+                    minHeight={viewFactorWidth(40)}
+                  >
+                    <Image src={turnUI.icon} />
+                  </Box>
+                </Flex>
               )
             }
           })}

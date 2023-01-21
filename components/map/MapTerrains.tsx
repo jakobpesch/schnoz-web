@@ -1,22 +1,25 @@
-import { Flex, Heading } from "@chakra-ui/react"
+import { Flex } from "@chakra-ui/react"
 import { Terrain } from "@prisma/client"
+import Image, { StaticImageData } from "next/image"
+import terrainStone from "../../assets/sprites/terrain_stone.png"
+import terrainTree from "../../assets/sprites/terrain_tree.png"
+import terrainWater from "../../assets/sprites/terrain_water.png"
 import { RenderSettings } from "../../services/SettingsService"
 import { TileWithUnits } from "../../types/Tile"
-import { MapObject } from "./MapObject"
 
 export const MapTerrains = (props: { terrainTiles: TileWithUnits[] }) => {
-  let terrain = ""
+  let terrain: StaticImageData
   return (
     <>
       {props.terrainTiles.map((tile) => {
         if (tile.terrain === Terrain.WATER) {
-          terrain = "🧿"
+          terrain = terrainWater
         }
         if (tile.terrain === Terrain.TREE) {
-          terrain = "🌳"
+          terrain = terrainTree
         }
         if (tile.terrain === Terrain.STONE) {
-          terrain = "🗿"
+          terrain = terrainStone
         }
         return (
           <Flex
@@ -30,7 +33,8 @@ export const MapTerrains = (props: { terrainTiles: TileWithUnits[] }) => {
             height={RenderSettings.tileSize + "px"}
             pointerEvents="none"
           >
-            <MapObject object={terrain} />
+            <Image src={terrain} height="100%" width="100%" />
+            {/* <MapObject object={terrain} /> */}
           </Flex>
         )
       })}

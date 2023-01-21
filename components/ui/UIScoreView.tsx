@@ -6,10 +6,11 @@ import {
   HStack,
   Stack,
   Text,
-  VStack,
+  VStack
 } from "@chakra-ui/react"
 import { GameSettings, Participant, Rule, Terrain } from "@prisma/client"
 import assert from "assert"
+import Image from "next/image"
 import { ReactNode } from "react"
 import { createCustomGame } from "../../gameLogic/GameVariants"
 import { RuleEvaluation } from "../../gameLogic/ScoringRule"
@@ -95,9 +96,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getPlayerAppearance(0).unit}
-                  </Text>
+                  <Image src={RenderSettings.getPlayerAppearance(0).unit} />
                 </Flex>
               )
             })}
@@ -106,6 +105,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
               [1, 3],
               [3, 2],
             ].map(([row, col]) => {
+              const terrain = RenderSettings.getTerrainAppearance(Terrain.WATER)
               return (
                 <Flex
                   key={row + "_" + col}
@@ -118,9 +118,9 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getTerrainAppearance(Terrain.WATER)}
-                  </Text>
+                  {terrain && (
+                    <Image src={terrain} width="100%" height="100%" />
+                  )}
                 </Flex>
               )
             })}
@@ -198,9 +198,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getPlayerAppearance(0).unit}
-                  </Text>
+                  <Image src={RenderSettings.getPlayerAppearance(0).unit} />
                 </Flex>
               )
             })}
@@ -221,9 +219,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getPlayerAppearance(0).unit}
-                  </Text>
+                  <Image src={RenderSettings.getPlayerAppearance(0).unit} />
                 </Flex>
               )
             })}
@@ -232,6 +228,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
               [1, 3],
               [3, 2],
             ].map(([row, col]) => {
+              const terrain = RenderSettings.getTerrainAppearance(Terrain.STONE)
               return (
                 <Flex
                   key={row + "_" + col}
@@ -244,9 +241,9 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getTerrainAppearance(Terrain.STONE)}
-                  </Text>
+                  {terrain && (
+                    <Image src={terrain} width="100%" height="100%" />
+                  )}
                 </Flex>
               )
             })}
@@ -333,9 +330,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getPlayerAppearance(0).unit}
-                  </Text>
+                  <Image src={RenderSettings.getPlayerAppearance(0).unit} />
                 </Flex>
               )
             })}
@@ -356,9 +351,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getPlayerAppearance(1).unit}
-                  </Text>
+                  <Image src={RenderSettings.getPlayerAppearance(1).unit} />
                 </Flex>
               )
             })}
@@ -375,13 +368,12 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getPlayerAppearance().unit}
-                  </Text>
+                  <Image src={RenderSettings.getPlayerAppearance().unit} />
                 </Flex>
               )
             })}
             {[[2, 3]].map(([row, col]) => {
+              const terrain = RenderSettings.getTerrainAppearance(Terrain.TREE)
               return (
                 <Flex
                   key={row + "_" + col}
@@ -394,9 +386,9 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getTerrainAppearance(Terrain.TREE)}
-                  </Text>
+                  {terrain && (
+                    <Image src={terrain} width="100%" height="100%" />
+                  )}
                 </Flex>
               )
             })}
@@ -493,13 +485,12 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getPlayerAppearance(0).unit}
-                  </Text>
+                  <Image src={RenderSettings.getPlayerAppearance(0).unit} />
                 </Flex>
               )
             })}
             {[[2, 3]].map(([row, col]) => {
+              const terrain = RenderSettings.getTerrainAppearance(Terrain.TREE)
               return (
                 <Flex
                   key={row + "_" + col}
@@ -512,9 +503,9 @@ const ruleExplainations = new Map<Rule, ReactNode>([
                   height={viewFactorWidth(size)}
                   pointerEvents="none"
                 >
-                  <Text fontSize={viewFactorWidth(40)}>
-                    {RenderSettings.getTerrainAppearance(Terrain.TREE)}
-                  </Text>
+                  {terrain && (
+                    <Image src={terrain} width="100%" height="100%" />
+                  )}
                 </Flex>
               )
             })}
@@ -609,30 +600,48 @@ export const UIScoreView = (props: {
         m={viewFactorWidth(10)}
       >
         <HStack spacing={viewFactorWidth(16)}>
-          <HStack key={player1.id} spacing={viewFactorWidth(16)}>
-            <Heading fontSize={viewFactorWidth(25)} size="md">
-              {RenderSettings.getPlayerAppearance(player1.playerNumber).unit}{" "}
-              {player1.score}
-            </Heading>
-          </HStack>
+          <Flex
+            key={player1.id}
+            align="center"
+            justify="center"
+            gap={viewFactorWidth(16)}
+          >
+            <Image
+              src={
+                RenderSettings.getPlayerAppearance(player1.playerNumber).unit
+              }
+              width={viewFactorWidth(300)}
+              height={viewFactorWidth(300)}
+            />
+            <Heading fontSize={viewFactorWidth(25)}>{player1.score}</Heading>
+          </Flex>
           <Divider orientation="vertical"></Divider>
-          <HStack key={player2.id} spacing={viewFactorWidth(16)}>
-            <Heading fontSize={viewFactorWidth(25)} size="md">
-              {player2.score}{" "}
-              {RenderSettings.getPlayerAppearance(player2.playerNumber).unit}
-            </Heading>
-          </HStack>
+          <Flex
+            key={player2.id}
+            align="center"
+            justify="center"
+            gap={viewFactorWidth(16)}
+          >
+            <Heading fontSize={viewFactorWidth(25)}>{player2.score}</Heading>
+            <Image
+              src={
+                RenderSettings.getPlayerAppearance(player2.playerNumber).unit
+              }
+              width={viewFactorWidth(300)}
+              height={viewFactorWidth(300)}
+            />
+          </Flex>
         </HStack>
         <Divider />
         {rulesMap && (
-          <Stack spacing={viewFactorWidth(5)}>
+          <Stack spacing={viewFactorWidth(5)} width="full">
             {Array.from(rulesMap.values()).map(
               (ruleEvaluations, ruleEvalsIndex) => {
                 return (
                   <VStack
                     key={"ruleEvals_" + ruleEvalsIndex}
                     p={viewFactorWidth(5)}
-                    borderRadius="lg"
+                    borderRadius={viewFactorWidth(10)}
                     bg={
                       ruleEvaluations[0].points === ruleEvaluations[1].points
                         ? "none"
@@ -645,7 +654,13 @@ export const UIScoreView = (props: {
                           ).color
                     }
                   >
-                    <HStack spacing={viewFactorWidth(16)} color="white">
+                    <Flex
+                      gap={viewFactorWidth(16)}
+                      align="center"
+                      justify="space-around"
+                      width="full"
+                      color="white"
+                    >
                       <Heading
                         minWidth={viewFactorWidth(30)}
                         textAlign="center"
@@ -663,26 +678,34 @@ export const UIScoreView = (props: {
                       </Heading>
                       <HoveredTooltip
                         trigger={
-                          <Heading
-                            minWidth={viewFactorWidth(30)}
-                            textAlign="center"
-                            cursor="default"
-                            fontSize={viewFactorWidth(25)}
-                          >
-                            {RenderSettings.getRuleAppearance(
+                          <Image
+                            src={RenderSettings.getRuleAppearance(
                               ruleEvaluations[0].type
                             )}
-                          </Heading>
+                            width={viewFactorWidth(300)}
+                            height={viewFactorWidth(300)}
+                          />
                         }
                         header={
-                          <Heading fontSize={viewFactorWidth(25)}>
-                            {RenderSettings.getRuleAppearance(
-                              ruleEvaluations[0].type
-                            )}{" "}
-                            {RenderSettings.getRuleName(
-                              ruleEvaluations[0].type
-                            )}
-                          </Heading>
+                          <HStack>
+                            <Box
+                              minWidth={viewFactorWidth(40)}
+                              minHeight={viewFactorWidth(40)}
+                              width={viewFactorWidth(40)}
+                              height={viewFactorWidth(40)}
+                            >
+                              <Image
+                                src={RenderSettings.getRuleAppearance(
+                                  ruleEvaluations[0].type
+                                )}
+                              />
+                            </Box>
+                            <Heading fontSize={viewFactorWidth(25)}>
+                              {RenderSettings.getRuleName(
+                                ruleEvaluations[0].type
+                              )}
+                            </Heading>
+                          </HStack>
                         }
                         body={ruleExplainations.get(ruleEvaluations[0].type)}
                       />
@@ -702,7 +725,7 @@ export const UIScoreView = (props: {
                       >
                         {ruleEvaluations[1].points}
                       </Heading>
-                    </HStack>
+                    </Flex>
                   </VStack>
                 )
               }

@@ -21,9 +21,10 @@ import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
 import { UIScoreView } from "../../components/ui/UIScoreView"
 import { UITurnChangeIndicator } from "../../components/ui/UITurnChangeIndicator"
 import { UITurnsView } from "../../components/ui/UITurnsView"
+import { PlacementRuleName } from "../../gameLogic/PlacementRule"
 import {
   Coordinate2D,
-  IUnitConstellation,
+  IUnitConstellation
 } from "../../models/UnitConstellation.model"
 import { getCookie } from "../../services/CookieService"
 import {
@@ -31,7 +32,7 @@ import {
   createMap,
   makeMove,
   startMatch,
-  updateSettings,
+  updateSettings
 } from "../../services/GameManagerService"
 import { MatchSettings } from "../../services/SettingsService"
 import { fetcher } from "../../services/swrUtils"
@@ -46,7 +47,7 @@ import {
   getAdjacentCoordinates,
   getAdjacentCoordinatesOfConstellation,
   getNewlyRevealedTiles,
-  getTileLookup,
+  getTileLookup
 } from "../../utils/coordinateUtils"
 import { MatchCheckResponseData } from "../api/match/[id]/check"
 
@@ -219,6 +220,16 @@ const MatchView = () => {
         return []
       }
 
+      if (
+        selectedConstellation?.length === 1 &&
+        coordinatesAreEqual(selectedConstellation[0], [0, 0])
+      ) {
+        const visibleAndFreeTiles: Coordinate2D[] = Object.values(tileLookup)
+          .filter((tile) => tile.visible && !tile.unit && !tile.terrain)
+          .map((tile) => [tile.row, tile.col])
+        return visibleAndFreeTiles
+      }
+
       const alliedTiles =
         match.map.tiles.filter(
           (tile) =>
@@ -234,7 +245,7 @@ const MatchView = () => {
         const hasUnit = tileLookup[buildTileLookupId(coordinate)]?.unit ?? false
         return !hasTerrain && !hasUnit
       })
-    }, [match?.updatedAt]) ?? []
+    }, [match?.updatedAt, selectedConstellation]) ?? []
 
   useEffect(() => {
     match?.openCards.forEach((unitConstellation, index) => {
@@ -262,7 +273,8 @@ const MatchView = () => {
   const onTileClick = async (
     row: number,
     col: number,
-    rotatedClockwise: IUnitConstellation["rotatedClockwise"]
+    rotatedClockwise: IUnitConstellation["rotatedClockwise"],
+    mirrored: IUnitConstellation["mirrored"]
   ) => {
     if (isUpdatingMatch) {
       return
@@ -279,6 +291,7 @@ const MatchView = () => {
     const unitConstellation: IUnitConstellation = {
       coordinates: selectedConstellation,
       rotatedClockwise,
+      mirrored,
     }
 
     try {
@@ -289,6 +302,12 @@ const MatchView = () => {
       assert(participantId)
       assert(match.map)
 
+      const ignoredRules: PlacementRuleName[] =
+        unitConstellation.coordinates.length === 1 &&
+        coordinatesAreEqual(unitConstellation.coordinates[0], [0, 0])
+          ? ["ADJACENT_TO_ALLY"]
+          : []
+
       const { translatedCoordinates, error } =
         checkConditionsForUnitConstellationPlacement(
           [row, col],
@@ -296,6 +315,7 @@ const MatchView = () => {
           match,
           match.map,
           tileLookup,
+          ignoredRules,
           participantId
         )
 
@@ -368,7 +388,14 @@ const MatchView = () => {
       }
       setIsUpdatingMatch(true)
       updateMatch(
-        makeMove(match.id, row, col, participantId, unitConstellation),
+        makeMove(
+          match.id,
+          row,
+          col,
+          participantId,
+          unitConstellation,
+          ignoredRules
+        ),
         {
           optimisticData,
           populateCache: true,

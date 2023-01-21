@@ -6,6 +6,7 @@ import {
   Participant,
 } from "@prisma/client"
 import { defaultGame } from "../gameLogic/GameVariants"
+import { PlacementRuleName } from "../gameLogic/PlacementRule"
 import {
   Coordinate2D,
   IUnitConstellation,
@@ -233,7 +234,8 @@ export const makeMove = async (
   row: number,
   col: number,
   participantId: string,
-  unitConstellation: IUnitConstellation
+  unitConstellation: IUnitConstellation,
+  ignoredRules?: PlacementRuleName[]
 ) => {
   const options = {
     method: "POST",
@@ -243,6 +245,7 @@ export const makeMove = async (
       row,
       col,
       unitConstellation,
+      ignoredRules,
     }),
   }
 
@@ -264,6 +267,7 @@ export const checkConditionsForUnitConstellationPlacement = (
   match: Match,
   map: MapWithTiles,
   tileLookup: TileLookup,
+  ignoredRules: PlacementRuleName[],
   placingPlayer: Participant["id"]
 ) => {
   if (!match) {
@@ -288,10 +292,11 @@ export const checkConditionsForUnitConstellationPlacement = (
     return { error: { message: "Could not find target tile", statusCode: 400 } }
   }
 
-  const { coordinates, rotatedClockwise } = unitConstellation
+  const { coordinates, rotatedClockwise, mirrored } = unitConstellation
 
   const transformedCoordinates = transformCoordinates(coordinates, {
     rotatedClockwise,
+    mirrored,
   })
 
   const translatedCoordinates = translateCoordinatesTo(
@@ -299,8 +304,11 @@ export const checkConditionsForUnitConstellationPlacement = (
     transformedCoordinates
   )
 
-  const canBePlaced = defaultGame.placementRules.every((rule) =>
-    rule(translatedCoordinates, map, placingPlayer)
+  const canBePlaced = Array.from(defaultGame.placementRuleMap).every(
+    ([ruleName, rule]) =>
+      ignoredRules.includes(ruleName)
+        ? true
+        : rule(translatedCoordinates, map, placingPlayer)
   )
 
   if (!canBePlaced) {

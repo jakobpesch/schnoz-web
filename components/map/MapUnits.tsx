@@ -1,8 +1,8 @@
-import { Flex, Heading } from "@chakra-ui/react"
+import { Flex } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
+import Image from "next/image"
 import { RenderSettings } from "../../services/SettingsService"
 import { TileWithUnits } from "../../types/Tile"
-import { MapObject } from "./MapObject"
 
 export const MapUnits = (props: {
   players: Participant[]
@@ -27,9 +27,10 @@ export const MapUnits = (props: {
             height={RenderSettings.tileSize + "px"}
             pointerEvents="none"
             // bg={color}
-            bg={"rgba(0,0,0,0.4)"}
+            bg={"rgba(0,0,0,0.1)"}
           >
-            <MapObject object={unit} />
+            <Image src={unit} height="100%" width="100%" />
+            {/* <MapObject object={unit} /> */}
           </Flex>
         )
       })}

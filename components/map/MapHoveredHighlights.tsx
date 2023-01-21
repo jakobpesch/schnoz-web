@@ -1,6 +1,7 @@
-import { Box, Center, Flex, HStack, Kbd, Text } from "@chakra-ui/react"
+import { Box, Flex, HStack, Kbd, Stack, Text } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import Mousetrap from "mousetrap"
+import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import {
   Coordinate2D,
@@ -12,7 +13,6 @@ import {
   translateCoordinatesTo,
 } from "../../utils/constallationTransformer"
 import { viewFactorWidth } from "../ui/UIScoreView"
-import { MapObject } from "./MapObject"
 
 const mousePositionToMapCoordinates = (
   mouseX: number,
@@ -31,7 +31,8 @@ export interface MapHoveredHighlightsProps {
   onTileClick: (
     row: number,
     col: number,
-    rotatedClockwise: IUnitConstellation["rotatedClockwise"]
+    rotatedClockwise: IUnitConstellation["rotatedClockwise"],
+    mirrored: IUnitConstellation["mirrored"]
   ) => void
 }
 
@@ -40,6 +41,8 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
     useState<Coordinate2D | null>(null)
   const [rotatedClockwise, setRotationCount] =
     useState<IUnitConstellation["rotatedClockwise"]>(0)
+  const [mirrored, setMirrored] =
+    useState<IUnitConstellation["mirrored"]>(false)
 
   const mapContainerElement = document.getElementById("map-container")
   const bounds = mapContainerElement?.getBoundingClientRect()
@@ -50,8 +53,16 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
 
     setRotationCount(correctedRotationCount)
   }
+  const mirror = () => {
+    setMirrored(!mirrored)
+  }
+
   useEffect(() => {
     Mousetrap.bind("r", rotate)
+  })
+
+  useEffect(() => {
+    Mousetrap.bind("e", mirror)
   })
 
   document.onmousemove = (event: MouseEvent) => {
@@ -70,13 +81,14 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
     if (props.constellation && hoveredCoordinate) {
       const transformed = transformCoordinates(props.constellation, {
         rotatedClockwise,
+        mirrored,
       })
       const translated = translateCoordinatesTo(hoveredCoordinate, transformed)
 
       return translated
     }
     return []
-  }, [props.constellation, hoveredCoordinate, rotatedClockwise])
+  }, [props.constellation, hoveredCoordinate, rotatedClockwise, mirrored])
 
   if (!props.player || props.hide) {
     return null
@@ -85,35 +97,61 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
   return (
     <>
       {props.constellation && (
-        <Box
-          position="fixed"
-          left={viewFactorWidth(10)}
-          top={viewFactorWidth(100)}
-          cursor="default"
-        >
-          <HStack
-            p={viewFactorWidth(10)}
-            borderRadius={viewFactorWidth(10)}
-            borderWidth={viewFactorWidth(2)}
-            color="gray.100"
-            bg="gray.700"
-            cursor="pointer"
-            onClick={() => rotate()}
+        <>
+          <Box
+            position="fixed"
+            left={viewFactorWidth(10)}
+            top={viewFactorWidth(100)}
+            cursor="default"
           >
-            <Kbd
-              borderColor="gray.100"
-              fontSize={viewFactorWidth(30)}
-              userSelect="none"
-            >
-              <Text transform={"rotate(" + 90 * rotatedClockwise + "deg)"}>
-                R
-              </Text>
-            </Kbd>
-            <Text fontSize={viewFactorWidth(30)} userSelect="none">
-              Rotate
-            </Text>
-          </HStack>
-        </Box>
+            <Stack spacing={viewFactorWidth(10)}>
+              <HStack
+                p={viewFactorWidth(10)}
+                borderRadius={viewFactorWidth(10)}
+                borderWidth={viewFactorWidth(2)}
+                color="gray.100"
+                bg="gray.700"
+                cursor="pointer"
+                onClick={() => rotate()}
+              >
+                <Kbd
+                  borderColor="gray.100"
+                  fontSize={viewFactorWidth(30)}
+                  userSelect="none"
+                >
+                  <Text
+                  // transform={"rotate(" + 90 * rotatedClockwise + "deg)"}
+                  >
+                    R
+                  </Text>
+                </Kbd>
+                <Text fontSize={viewFactorWidth(30)} userSelect="none">
+                  Rotate
+                </Text>
+              </HStack>
+              <HStack
+                p={viewFactorWidth(10)}
+                borderRadius={viewFactorWidth(10)}
+                borderWidth={viewFactorWidth(2)}
+                color="gray.100"
+                bg="gray.700"
+                cursor="pointer"
+                onClick={() => mirror()}
+              >
+                <Kbd
+                  borderColor="gray.100"
+                  fontSize={viewFactorWidth(30)}
+                  userSelect="none"
+                >
+                  <Text>E</Text>
+                </Kbd>
+                <Text fontSize={viewFactorWidth(30)} userSelect="none">
+                  Mirror
+                </Text>
+              </HStack>
+            </Stack>
+          </Box>
+        </>
       )}
       {hoveredCoordinates.map(([row, col]) => {
         return (
@@ -128,14 +166,24 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
             height={RenderSettings.tileSize + "px"}
             bg={"whiteAlpha.500"}
             opacity={0.6}
-            onClick={() => props.onTileClick(row, col, rotatedClockwise)}
+            onClick={() =>
+              props.onTileClick(row, col, rotatedClockwise, mirrored)
+            }
           >
-            <MapObject
+            <Image
+              src={
+                RenderSettings.getPlayerAppearance(props.player?.playerNumber)
+                  .unit
+              }
+              height="100%"
+              width="100%"
+            />
+            {/* <MapObject
               object={
                 RenderSettings.getPlayerAppearance(props.player?.playerNumber)
                   .unit
               }
-            />
+            /> */}
           </Flex>
         )
       })}

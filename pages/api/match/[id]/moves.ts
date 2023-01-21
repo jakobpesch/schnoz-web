@@ -55,7 +55,7 @@ export default async function handler(
 ) {
   const { body, method, query } = req
   let match: MatchRich | null
-  const { participantId, row: targetRow, col: targetCol } = body
+  const { participantId, row: targetRow, col: targetCol, ignoredRules } = body
   const { id: matchId } = query
 
   if (
@@ -64,6 +64,13 @@ export default async function handler(
     typeof targetCol !== "number"
   ) {
     res.status(400).end("Query is not complete")
+    return
+  }
+
+  if (!Array.isArray(ignoredRules)) {
+    res
+      .status(400)
+      .end("ignoredRules must be an Array. Received: " + ignoredRules)
     return
   }
 
@@ -98,6 +105,7 @@ export default async function handler(
           match,
           match.map,
           tileLookup,
+          ignoredRules,
           participantId
         )
 

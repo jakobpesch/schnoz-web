@@ -1,10 +1,11 @@
-import { Button, Center, Heading, Text, VStack } from "@chakra-ui/react"
+import { Button, Center, Heading, HStack, Text, VStack } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import KoFiLogo from "../../assets/images/kofi_logo.png"
 import { RenderSettings } from "../../services/SettingsService"
+import { viewFactorWidth } from "./UIScoreView"
 interface UIPostMatchViewProps {
   winner: Participant | null
 }
@@ -26,12 +27,23 @@ export const UIPostMatchView = (props: UIPostMatchViewProps) => {
         top="10vw"
       >
         <Heading>Finished</Heading>
-        <Text fontSize="2vw">
-          {props.winner
-            ? RenderSettings.getPlayerAppearance(props.winner.playerNumber)
-                .unit + " wins!"
-            : "Draw!"}
-        </Text>
+
+        {props.winner ? (
+          <HStack>
+            <Image
+              src={
+                RenderSettings.getPlayerAppearance(props.winner.playerNumber)
+                  .unit
+              }
+              width={viewFactorWidth(500)}
+              height={viewFactorWidth(500)}
+            />
+            <Text>wins!</Text>
+          </HStack>
+        ) : (
+          <Text fontSize="2vw">Draw!</Text>
+        )}
+
         <Button
           width="full"
           onClick={() => {

@@ -1,5 +1,6 @@
 import { Fade, Flex, Heading, ScaleFade, VStack } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
+import Image from "next/image"
 import { useEffect, useState } from "react"
 import { useUserId } from "../../pages/match/[id]"
 import { RenderSettings } from "../../services/SettingsService"
@@ -54,13 +55,16 @@ export const UITurnChangeIndicator = (props: {
               m={viewFactorWidth(10)}
               boxShadow="dark-lg"
             >
-              <Heading>
-                {
+              <Image
+                src={
                   RenderSettings.getPlayerAppearance(
                     props.activePlayer.playerNumber
                   ).unit
                 }
-              </Heading>
+                width={viewFactorWidth(1000)}
+                height={viewFactorWidth(1000)}
+              />
+
               <Heading>{yourTurn ? "Your" : "Oppenents"} turn!</Heading>
             </VStack>
           </ScaleFade>

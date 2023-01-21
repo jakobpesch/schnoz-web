@@ -1,12 +1,10 @@
 import { UnitType } from "@prisma/client"
-import { IMap } from "../models/Map.model"
-import { ITile } from "../models/Tile.model"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { MatchRich } from "../types/Match"
 import { TileWithUnits } from "../types/Tile"
 import {
-  getAdjacentCoordinatesOfConstellation,
   coordinatesAreEqual,
+  getAdjacentCoordinatesOfConstellation,
 } from "../utils/coordinateUtils"
 
 export const inBounds: PlacementRule = (constellation, map) =>
@@ -57,3 +55,18 @@ export const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
   )
   return isAdjacentToAlly
 }
+
+export type PlacementRuleName =
+  | "NO_UNIT"
+  | "ADJACENT_TO_ALLY"
+  | "NO_TERRAIN"
+  | "IN_BOUNDS"
+
+export const placementRulesMap = new Map<PlacementRuleName, PlacementRule>([
+  ["NO_UNIT", noUnit],
+  ["ADJACENT_TO_ALLY", adjacentToAlly],
+  ["NO_TERRAIN", noTerrain],
+  ["IN_BOUNDS", inBounds],
+])
+
+export type PlacementRuleMap = typeof placementRulesMap

@@ -3,13 +3,7 @@ import assert from "assert"
 import { MatchRich } from "../types/Match"
 import { shuffleArray } from "../utils/arrayUtils"
 import { getTileLookup } from "../utils/coordinateUtils"
-import {
-  adjacentToAlly,
-  inBounds,
-  noTerrain,
-  noUnit,
-  PlacementRule,
-} from "./PlacementRule"
+import { PlacementRuleMap, placementRulesMap } from "./PlacementRule"
 import {
   diagnoalRule,
   holeRule,
@@ -29,7 +23,7 @@ export interface GameType {
   shouldEvaluate: EvaluationCondition
   evaluate: Evaluation
   scoringRules: ScoringRule[]
-  placementRules: PlacementRule[]
+  placementRuleMap: PlacementRuleMap
 }
 
 export const createCustomGame: (scoringRuleNames: Rule[] | null) => GameType = (
@@ -111,5 +105,5 @@ export const defaultGame: GameType = {
     return turn % 6 === 0
   },
   scoringRules: [waterRule, stoneRule, holeRule, diagnoalRule],
-  placementRules: [inBounds, noUnit, noTerrain, adjacentToAlly],
+  placementRuleMap: placementRulesMap,
 }

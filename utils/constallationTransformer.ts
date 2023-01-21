@@ -21,6 +21,7 @@ export const transformCoordinates = (
   coordinates: Coordinate2D[],
   transformation: {
     rotatedClockwise?: number
+    mirrored?: boolean
   }
 ) => {
   let transformedCoordinates: Coordinate2D[] = coordinates
@@ -28,6 +29,9 @@ export const transformCoordinates = (
     for (let i = 0; i < transformation.rotatedClockwise; i++) {
       transformedCoordinates = rotateClockwise(transformedCoordinates)
     }
+  }
+  if (transformation.mirrored) {
+    transformedCoordinates = mirrorAlongXAxis(transformedCoordinates)
   }
   return transformedCoordinates
 }

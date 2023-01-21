@@ -1,5 +1,5 @@
 import {
-  Box,
+  Flex,
   Popover,
   PopoverArrow,
   PopoverBody,
@@ -43,12 +43,14 @@ export const HoveredTooltip = (props: {
     >
       <PopoverArrow />
       <PopoverTrigger>
-        <Box
+        <Flex
+          align="center"
+          justify="center"
           onMouseEnter={() => setHovering(true)}
           onMouseLeave={() => setHovering(false)}
         >
           {props.trigger}
-        </Box>
+        </Flex>
       </PopoverTrigger>
       <PopoverContent maxWidth="min-content">
         {props.header && (
