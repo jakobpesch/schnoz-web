@@ -88,7 +88,7 @@ export default async function handler(
   }
 
   if (!(Array.isArray(specials) && specials.every(isSpecial))) {
-    res.status(404).end(`Invalid query param value for specials.`)
+    res.status(404).end("Invalid query param value for specials.")
     return
   }
 

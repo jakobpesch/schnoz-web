@@ -168,6 +168,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
                 { hotkey: "M", label: "Mirror", action: mirror },
               ].map((s) => (
                 <HStack
+                  key={s.label}
                   p={viewFactorWidth(5)}
                   color="gray.100"
                   cursor="pointer"
