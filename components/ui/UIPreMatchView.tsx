@@ -119,6 +119,16 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
               size="sm"
               disabled={!isHost}
               _disabled={{ opacity: 1, cursor: "default" }}
+              colorScheme={settings.maxTurns === 6 ? "blue" : "gray"}
+              onClick={() => onSettingsChange({ maxTurns: 6 })}
+            >
+              Very Short
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!isHost}
+              _disabled={{ opacity: 1, cursor: "default" }}
               colorScheme={settings.maxTurns === 12 ? "blue" : "gray"}
               onClick={() => onSettingsChange({ maxTurns: 12 })}
             >
