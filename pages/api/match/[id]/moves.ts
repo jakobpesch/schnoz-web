@@ -17,9 +17,10 @@ import {
 } from "../../../../utils/coordinateUtils"
 
 const getLeadingPlayer = (match: MatchRich) => {
-  const isSameScore = match.players.every((player) => {
-    player.score === match.players[0].score
-  })
+  const isSameScore = match.players.every(
+    (player) => player.score === match.players[0].score
+  )
+
   if (isSameScore) {
     return null
   }
