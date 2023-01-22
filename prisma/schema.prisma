@@ -101,17 +101,17 @@ model Unit {
 }
 
 enum UnitConstellation {
-  r0c0_v0
-  r0c0_r0c1_v2
-  r0c0_r1c1_v2
-  r0c0_r0c2_v2
-  r0c0_r0c1_r1c1_v1
-  r0c0_r0c1_r1c2_v1
-  r0c0_r1c1_r2c0_v1
-  r0c0_r0c1_r0c2_r1c2_v0
-  r0c0_r0c1_r1c1_r1c2_v0
-  r0c0_r0c1_r2c0_r2c1_v0
-  r0c0_r0c1_r0c2_r1c0_r1c2_v0
+  r0c0_v0 // single piece: .
+  r0c0_r0c1_v4 // straight_2: --
+  r0c0_r1c1_v2 // diagonal_2: /
+  r0c0_r0c2_v2 // skip_2: - -
+  r0c0_r0c1_r1c1_v3 // r_3: r
+  r0c0_r0c1_r1c2_v1 // horse_3: -.
+  r0c0_r1c1_r2c0_v1 // arrow_3: _-_
+  r0c0_r0c1_r0c2_r1c2_v0 // L_4: L
+  r0c0_r0c1_r1c1_r1c2_v0 // Z_4: Z
+  r0c0_r0c1_r2c0_r2c1_v0 // skip_4: | |
+  r0c0_r0c1_r0c2_r1c0_r1c2_v0 // U_5: U
 }
 
 enum UnitType {
