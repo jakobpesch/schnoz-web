@@ -32,6 +32,8 @@ import {
   checkConditionsForUnitConstellationPlacement,
   createMap,
   makeMove,
+  Special,
+  expandBuildRadiusByOne,
   startMatch,
   updateSettings,
 } from "../../services/GameManagerService"
@@ -124,6 +126,7 @@ const MatchView = () => {
   const router = useRouter()
   const [isUpdatingMatch, setIsUpdatingMatch] = useState(false)
   const [isChangingTurns, setIsChangingTurns] = useState(false)
+  const [activatedSpecials, setActivatedSpecials] = useState<Special[]>([])
 
   const matchId = typeof router.query.id === "string" ? router.query.id : ""
 
@@ -135,6 +138,7 @@ const MatchView = () => {
     isValidating,
   } = useMatch(matchId)
 
+  const you = match?.players.find((player) => player.userId === userId)
   const yourTurn = userId === match?.activePlayer?.userId
 
   const {
@@ -239,7 +243,7 @@ const MatchView = () => {
             tile?.unit?.type === UnitType.MAIN_BUILDING
         ) ?? []
 
-      return getAdjacentCoordinatesOfConstellation(
+      let placeableCoordiantes = getAdjacentCoordinatesOfConstellation(
         alliedTiles.map((tile) => [tile.row, tile.col])
       ).filter((coordinate) => {
         const hasTerrain =
@@ -247,7 +251,31 @@ const MatchView = () => {
         const hasUnit = tileLookup[buildTileLookupId(coordinate)]?.unit ?? false
         return !hasTerrain && !hasUnit
       })
-    }, [match?.updatedAt, selectedCard]) ?? []
+
+      const usesSpecial = activatedSpecials.find((special) => {
+        assert(match.activePlayer)
+        return (
+          special.type === "EXPAND_BUILD_RADIUS_BY_1" &&
+          match.activePlayer.bonusPoints + (selectedCard?.value ?? 0) >=
+            special.cost
+        )
+      })
+      if (usesSpecial) {
+        placeableCoordiantes = [
+          ...placeableCoordiantes,
+          ...getAdjacentCoordinatesOfConstellation(placeableCoordiantes).filter(
+            (coordinate) => {
+              const hasTerrain =
+                tileLookup[buildTileLookupId(coordinate)]?.terrain ?? false
+              const hasUnit =
+                tileLookup[buildTileLookupId(coordinate)]?.unit ?? false
+              return !hasTerrain && !hasUnit
+            }
+          ),
+        ]
+      }
+      return placeableCoordiantes
+    }, [match?.updatedAt, selectedCard, activatedSpecials]) ?? []
 
   useEffect(() => {
     match?.openCards.forEach((unitConstellation, index) => {
@@ -319,7 +347,8 @@ const MatchView = () => {
           match.map,
           tileLookup,
           ignoredRules,
-          participantId
+          participantId,
+          activatedSpecials
         )
 
       if (error) {
@@ -390,6 +419,7 @@ const MatchView = () => {
         updatedAt: new Date(),
       }
       setIsUpdatingMatch(true)
+
       updateMatch(
         makeMove(
           match.id,
@@ -397,7 +427,12 @@ const MatchView = () => {
           col,
           participantId,
           unitConstellation,
-          ignoredRules
+          ignoredRules,
+          ignoredRules.includes("ADJACENT_TO_ALLY")
+            ? activatedSpecials.filter(
+                (special) => special.type !== "EXPAND_BUILD_RADIUS_BY_1"
+              )
+            : activatedSpecials
         ),
         {
           optimisticData,
@@ -408,6 +443,7 @@ const MatchView = () => {
       ).then(() => setIsUpdatingMatch(false))
 
       setSelectedCard(null)
+      setActivatedSpecials([])
       setStatus(`Placed unit on tile (${row}|${col})`)
     } catch (e: any) {
       setStatus(e.message)
@@ -538,7 +574,16 @@ const MatchView = () => {
               <MapHoveredHighlights
                 player={match.activePlayer}
                 hide={isFinished || !yourTurn}
-                constellation={selectedCard?.coordinates ?? null}
+                specials={[expandBuildRadiusByOne]}
+                activeSpecials={activatedSpecials}
+                setSpecial={(specialType, active) => {
+                  if (active) {
+                    setActivatedSpecials([expandBuildRadiusByOne])
+                  } else {
+                    setActivatedSpecials([])
+                  }
+                }}
+                card={selectedCard}
                 onTileClick={onTileClick}
               />
             )}
@@ -558,12 +603,27 @@ const MatchView = () => {
       {isOngoing && (
         <>
           <UITurnsView match={match} />
-          <UIBonusPointsView match={match} />
+          {/* {you?.bonusPoints != null && (
+            <UIBonusPointsView bonusPoints={you.bonusPoints} />
+          )} */}
           <UICardsView
             selectedCard={selectedCard}
             cards={cards}
             readonly={!yourTurn}
-            onSelect={(constellation) => setSelectedCard(constellation)}
+            onSelect={(card) => {
+              const insufficientBonusPoints =
+                (match.activePlayer?.bonusPoints ?? 0) + (card.value ?? 0) <
+                activatedSpecials.reduce((a, s) => a + s.cost, 0)
+
+              const isSinglePiece =
+                card.coordinates.length === 1 &&
+                coordinatesAreEqual(card.coordinates[0], [0, 0])
+
+              if (isSinglePiece || insufficientBonusPoints) {
+                setActivatedSpecials([])
+              }
+              setSelectedCard(card)
+            }}
           />
 
           {match.activePlayer && (

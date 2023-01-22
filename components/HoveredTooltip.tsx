@@ -18,13 +18,11 @@ export const HoveredTooltip = (props: {
 }) => {
   const [hovering, setHovering] = useState(false)
   useEffect(() => {
-    console.log("useEffect:hovering", hovering)
     let timer: NodeJS.Timeout
     if (!hovering) {
       setIsOpen(false)
     } else {
       timer = setTimeout(() => {
-        console.log("setTimeout:hovering", hovering)
         setIsOpen(true)
       }, 1000)
     }

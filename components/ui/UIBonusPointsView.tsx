@@ -1,8 +1,7 @@
-import { Flex, Heading, HStack, Stack } from "@chakra-ui/react"
-import { MatchRich } from "../../types/Match"
+import { Circle, Flex, HStack, Stack, Text } from "@chakra-ui/react"
 import { viewFactorWidth } from "./UIScoreView"
 
-export const UIBonusPointsView = (props: { match: MatchRich }) => {
+export const UIBonusPointsView = (props: { bonusPoints: number }) => {
   return (
     <Flex position="fixed" top={viewFactorWidth(100)} left="0">
       <Stack
@@ -16,9 +15,15 @@ export const UIBonusPointsView = (props: { match: MatchRich }) => {
         overflowX="hidden"
       >
         <HStack position="relative" spacing={viewFactorWidth(16)}>
-          <Heading textAlign="center" fontSize={viewFactorWidth(35)}>
-            {props.match.activePlayer?.bonusPoints} 🟡
-          </Heading>
+          <Circle size={viewFactorWidth(30)} bg="yellow.400">
+            <Text
+              fontSize={viewFactorWidth(20)}
+              fontWeight="bold"
+              color="yellow.800"
+            >
+              {props.bonusPoints}
+            </Text>
+          </Circle>
         </HStack>
       </Stack>
     </Flex>

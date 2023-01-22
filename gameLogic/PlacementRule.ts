@@ -56,15 +56,43 @@ export const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
   return isAdjacentToAlly
 }
 
+export const adjacentToAlly2: PlacementRule = (
+  constellation,
+  map,
+  playerId
+) => {
+  let adjacentCoordinates = getAdjacentCoordinatesOfConstellation(constellation)
+  adjacentCoordinates = [
+    ...adjacentCoordinates,
+    ...getAdjacentCoordinatesOfConstellation(adjacentCoordinates),
+  ]
+  const adjacentTiles2 = adjacentCoordinates
+    .map((coordinate) =>
+      map.tiles.find((tile) =>
+        coordinatesAreEqual([tile.row, tile.col], coordinate)
+      )
+    )
+    .filter((tile): tile is TileWithUnits => !!tile)
+
+  const isAdjacentToAlly2 = adjacentTiles2.some(
+    (tile) =>
+      tile.unit?.ownerId === playerId ||
+      tile.unit?.type === UnitType.MAIN_BUILDING
+  )
+  return isAdjacentToAlly2
+}
+
 export type PlacementRuleName =
   | "NO_UNIT"
   | "ADJACENT_TO_ALLY"
+  | "ADJACENT_TO_ALLY_2"
   | "NO_TERRAIN"
   | "IN_BOUNDS"
 
 export const placementRulesMap = new Map<PlacementRuleName, PlacementRule>([
   ["NO_UNIT", noUnit],
   ["ADJACENT_TO_ALLY", adjacentToAlly],
+  ["ADJACENT_TO_ALLY_2", adjacentToAlly2],
   ["NO_TERRAIN", noTerrain],
   ["IN_BOUNDS", inBounds],
 ])

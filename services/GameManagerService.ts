@@ -6,7 +6,7 @@ import {
   Participant,
 } from "@prisma/client"
 import { defaultGame } from "../gameLogic/GameVariants"
-import { PlacementRuleName } from "../gameLogic/PlacementRule"
+import { adjacentToAlly2, PlacementRuleName } from "../gameLogic/PlacementRule"
 import {
   Coordinate2D,
   IUnitConstellation,
@@ -229,13 +229,27 @@ export const getMap = () => {
   console.log("getMap not yet implemented")
 }
 
+export const SPECIAL_TYPES = ["EXPAND_BUILD_RADIUS_BY_1"] as const
+export type SpecialType = typeof SPECIAL_TYPES[number]
+
+export interface Special {
+  cost: number
+  type: SpecialType
+}
+
+export const expandBuildRadiusByOne: Special = {
+  type: "EXPAND_BUILD_RADIUS_BY_1",
+  cost: 5,
+}
+
 export const makeMove = async (
   matchId: string,
   row: number,
   col: number,
   participantId: string,
   unitConstellation: IUnitConstellation,
-  ignoredRules?: PlacementRuleName[]
+  ignoredRules?: PlacementRuleName[],
+  specials?: Special[]
 ) => {
   const options = {
     method: "POST",
@@ -246,6 +260,7 @@ export const makeMove = async (
       col,
       unitConstellation,
       ignoredRules,
+      specials,
     }),
   }
 
@@ -264,11 +279,12 @@ export const makeMove = async (
 export const checkConditionsForUnitConstellationPlacement = (
   targetCoordinate: Coordinate2D,
   unitConstellation: IUnitConstellation,
-  match: Match,
+  match: MatchRich,
   map: MapWithTiles,
   tileLookup: TileLookup,
   ignoredRules: PlacementRuleName[],
-  placingPlayer: Participant["id"]
+  placingPlayer: Participant["id"],
+  specials: Special[]
 ) => {
   if (!match) {
     return { error: { message: "Could not find match", statusCode: 400 } }
@@ -303,6 +319,19 @@ export const checkConditionsForUnitConstellationPlacement = (
     targetCoordinate,
     transformedCoordinates
   )
+
+  if (
+    specials.some(
+      (special) =>
+        special.type === "EXPAND_BUILD_RADIUS_BY_1" &&
+        match.activePlayer &&
+        match.activePlayer.bonusPoints + unitConstellation.value >=
+          expandBuildRadiusByOne.cost
+    )
+  ) {
+    defaultGame.placementRuleMap.delete("ADJACENT_TO_ALLY")
+    defaultGame.placementRuleMap.set("ADJACENT_TO_ALLY_2", adjacentToAlly2)
+  }
 
   const canBePlaced = Array.from(defaultGame.placementRuleMap).every(
     ([ruleName, rule]) =>

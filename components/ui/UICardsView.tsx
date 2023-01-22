@@ -64,21 +64,23 @@ const CardView = (props: CardViewProps) => {
           />
         )
       })}
-      <Circle
-        position="absolute"
-        top={viewFactorWidth(-7)}
-        right={viewFactorWidth(-7)}
-        size={viewFactorWidth(20)}
-        bg="yellow.400"
-      >
-        <Text
-          fontSize={viewFactorWidth(15)}
-          fontWeight="bold"
-          color="yellow.800"
+      {card.value > 0 && (
+        <Circle
+          position="absolute"
+          top={viewFactorWidth(-7)}
+          right={viewFactorWidth(-7)}
+          size={viewFactorWidth(20)}
+          bg="yellow.400"
         >
-          {card.value}
-        </Text>
-      </Circle>
+          <Text
+            fontSize={viewFactorWidth(15)}
+            fontWeight="bold"
+            color="yellow.800"
+          >
+            {card.value}
+          </Text>
+        </Circle>
+      )}
 
       <Kbd
         position="absolute"
@@ -99,7 +101,7 @@ interface UICardsViewProps {
   selectedCard: Card | null
   cards: Card[]
   readonly?: boolean
-  onSelect: (constellation: Card) => void
+  onSelect: (card: Card) => void
 }
 
 export const UICardsView = (props: UICardsViewProps) => (
@@ -125,7 +127,7 @@ export const UICardsView = (props: UICardsViewProps) => (
         return (
           <CardView
             selected={selected}
-            key={"unitConstellationView " + card}
+            key={"unitConstellationView " + card.coordinates}
             hotkey={`${index + 1}`}
             card={card}
             pointerEvents={props.readonly ? "none" : "all"}

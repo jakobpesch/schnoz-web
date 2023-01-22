@@ -1,9 +1,14 @@
 import { MatchStatus, Prisma, Tile, UnitType } from "@prisma/client"
+import assert from "assert"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { createCustomGame } from "../../../../gameLogic/GameVariants"
 import { IUnitConstellation } from "../../../../models/UnitConstellation.model"
 import { prisma } from "../../../../prisma/client"
-import { checkConditionsForUnitConstellationPlacement } from "../../../../services/GameManagerService"
+import {
+  checkConditionsForUnitConstellationPlacement,
+  Special,
+  SPECIAL_TYPES,
+} from "../../../../services/GameManagerService"
 import { MatchRich, matchRichInclude } from "../../../../types/Match"
 import {
   buildTileLookupId,
@@ -50,13 +55,26 @@ const determineWinner = (match: MatchRich) => {
   return leadingPlayer
 }
 
+function isSpecial(value: unknown): value is Special {
+  const special = value as Special
+  return (
+    typeof special.cost === "number" && SPECIAL_TYPES.includes(special.type)
+  )
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<MatchRich>
 ) {
   const { body, method, query } = req
   let match: MatchRich | null
-  const { participantId, row: targetRow, col: targetCol, ignoredRules } = body
+  const {
+    participantId,
+    row: targetRow,
+    col: targetCol,
+    ignoredRules,
+    specials,
+  } = body
   const { id: matchId } = query
 
   if (
@@ -65,6 +83,11 @@ export default async function handler(
     typeof targetCol !== "number"
   ) {
     res.status(400).end("Query is not complete")
+    return
+  }
+
+  if (!(Array.isArray(specials) && specials.every(isSpecial))) {
+    res.status(404).end(`Invalid query param value for specials.`)
     return
   }
 
@@ -100,6 +123,21 @@ export default async function handler(
 
       const unitConstellation: IUnitConstellation = body.unitConstellation
 
+      assert(match.activePlayer)
+      const currentBonusPoints =
+        match.activePlayer.bonusPoints + unitConstellation.value
+
+      const canAffordSpecials =
+        currentBonusPoints >=
+        specials.reduce((totalCost, special) => {
+          return totalCost + special.cost
+        }, 0)
+
+      if (!canAffordSpecials) {
+        res.status(500).end("Not enough bonus points for specials")
+        break
+      }
+
       const tileLookup = getTileLookup(match.map.tiles)
       const { translatedCoordinates, error } =
         checkConditionsForUnitConstellationPlacement(
@@ -109,7 +147,8 @@ export default async function handler(
           match.map,
           tileLookup,
           ignoredRules,
-          participantId
+          participantId,
+          specials
         )
 
       if (error) {
@@ -184,13 +223,25 @@ export default async function handler(
 
       for (let i = 0; i < playersWithUpdatedScore.length; i++) {
         const player = playersWithUpdatedScore[i]
+
         const bonusPointsFromCard =
           player.id === match.activePlayerId ? unitConstellation.value : 0
+
+        const usedPointsFromSpecials =
+          player.id === match.activePlayerId
+            ? specials.reduce((totalCost, special) => {
+                return totalCost + special.cost
+              }, 0)
+            : 0
+
         await prisma.participant.update({
           where: { id: player.id },
           data: {
             score: player.score,
-            bonusPoints: match.activePlayer.bonusPoints + bonusPointsFromCard,
+            bonusPoints:
+              match.activePlayer.bonusPoints +
+              bonusPointsFromCard -
+              usedPointsFromSpecials,
           },
         })
       }

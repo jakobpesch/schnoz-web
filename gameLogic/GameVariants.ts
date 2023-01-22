@@ -47,6 +47,9 @@ export const createCustomGame: (scoringRuleNames: Rule[] | null) => GameType = (
   }
 }
 
+const defaultGamePlacementRulesMap = new Map(placementRulesMap)
+defaultGamePlacementRulesMap.delete("ADJACENT_TO_ALLY_2")
+
 export const defaultGame: GameType = {
   shouldChangeActivePlayer: (turn: Match["turn"]) => {
     return turn % 2 !== 0
@@ -105,5 +108,5 @@ export const defaultGame: GameType = {
     return turn % 6 === 0
   },
   scoringRules: [waterRule, stoneRule, holeRule, diagnoalRule],
-  placementRuleMap: placementRulesMap,
+  placementRuleMap: defaultGamePlacementRulesMap,
 }
