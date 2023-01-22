@@ -6,7 +6,7 @@ import {
   HStack,
   Stack,
   Text,
-  VStack
+  VStack,
 } from "@chakra-ui/react"
 import { GameSettings, Participant, Rule, Terrain } from "@prisma/client"
 import assert from "assert"
@@ -86,7 +86,13 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_player0" +
+                    Rule.TERRAIN_WATER_POSITIVE +
+                    row +
+                    "_" +
+                    col
+                  }
                   position="absolute"
                   align="center"
                   justify="center"
@@ -108,7 +114,13 @@ const ruleExplainations = new Map<Rule, ReactNode>([
               const terrain = RenderSettings.getTerrainAppearance(Terrain.WATER)
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_terrainWater" +
+                    Rule.TERRAIN_WATER_POSITIVE +
+                    row +
+                    "_" +
+                    col
+                  }
                   position="absolute"
                   align="center"
                   justify="center"
@@ -130,7 +142,13 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_star" +
+                    Rule.TERRAIN_WATER_POSITIVE +
+                    row +
+                    "_" +
+                    col
+                  }
                   position="absolute"
                   align="start"
                   justify="end"
@@ -188,28 +206,13 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
-                  position="absolute"
-                  align="center"
-                  justify="center"
-                  top={viewFactorWidth(row * size)}
-                  left={viewFactorWidth(col * size)}
-                  width={viewFactorWidth(size)}
-                  height={viewFactorWidth(size)}
-                  pointerEvents="none"
-                >
-                  <Image src={RenderSettings.getPlayerAppearance(0).unit} />
-                </Flex>
-              )
-            })}
-            {[
-              [1, 0],
-              [3, 3],
-              [3, 1],
-            ].map(([row, col]) => {
-              return (
-                <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_player0" +
+                    Rule.TERRAIN_STONE_NEGATIVE +
+                    row +
+                    "_" +
+                    col
+                  }
                   position="absolute"
                   align="center"
                   justify="center"
@@ -253,7 +256,13 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_shit" +
+                    Rule.TERRAIN_STONE_NEGATIVE +
+                    row +
+                    "_" +
+                    col
+                  }
                   position="absolute"
                   align="start"
                   justify="end"
@@ -320,7 +329,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={"tut_map_player0" + Rule.HOLE + row + "_" + col}
                   position="absolute"
                   align="center"
                   justify="center"
@@ -341,7 +350,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={"tut_map_player1" + Rule.HOLE + row + "_" + col}
                   position="absolute"
                   align="center"
                   justify="center"
@@ -358,7 +367,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             {[[3, 2]].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={"tut_map_mainBuilding" + Rule.HOLE + row + "_" + col}
                   position="absolute"
                   align="center"
                   justify="center"
@@ -376,7 +385,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
               const terrain = RenderSettings.getTerrainAppearance(Terrain.TREE)
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={"tut_map_terrainTREE" + Rule.HOLE + row + "_" + col}
                   position="absolute"
                   align="center"
                   justify="center"
@@ -399,7 +408,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={"tut_map_star" + Rule.HOLE + row + "_" + col}
                   position="absolute"
                   align="center"
                   justify="center"
@@ -462,7 +471,6 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             {[
               [0, 0],
               [1, 1],
-              [2, 2],
 
               [3, 0],
               [2, 1],
@@ -475,7 +483,13 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_player0" +
+                    Rule.DIAGONAL_NORTHEAST +
+                    row +
+                    "_" +
+                    col
+                  }
                   position="absolute"
                   align="center"
                   justify="center"
@@ -493,7 +507,13 @@ const ruleExplainations = new Map<Rule, ReactNode>([
               const terrain = RenderSettings.getTerrainAppearance(Terrain.TREE)
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_terrainTree" +
+                    Rule.DIAGONAL_NORTHEAST +
+                    row +
+                    "_" +
+                    col
+                  }
                   position="absolute"
                   align="center"
                   justify="center"
@@ -547,7 +567,9 @@ const ruleExplainations = new Map<Rule, ReactNode>([
             ].map(([row, col]) => {
               return (
                 <Flex
-                  key={row + "_" + col}
+                  key={
+                    "tut_map_star" + Rule.DIAGONAL_NORTHEAST + row + "_" + col
+                  }
                   position="absolute"
                   align="center"
                   justify="center"
