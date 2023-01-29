@@ -76,9 +76,12 @@ export const separateCoordinates = (coordinates: Coordinate2D[]) => {
   )
 }
 
-export const encodeUnitConstellation = (coordinates: Coordinate2D[]) => {
+export const encodeUnitConstellation = (
+  coordinates: Coordinate2D[],
+  value: number
+) => {
   const encoded: UnitConstellation | undefined = { ...UnitConstellation }[
-    coordinates.map(([row, col]) => `r${row}c${col}`).join("_")
+    coordinates.map(([row, col]) => `r${row}c${col}`).join("_") + "_v" + value
   ]
   assert(encoded)
   return encoded
