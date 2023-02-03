@@ -41,6 +41,43 @@ export const signInAnonymously = async () => {
   }
 }
 
+export const updateUser = async (
+  userId: string,
+  payload: {
+    email?: string
+    name?: string
+  }
+) => {
+  const options = {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }
+
+  const response = await fetch(BASE_URL + "/user/" + userId, options)
+
+  if (response.status !== 200) {
+    throw new Error("Failed to update user")
+  }
+
+  return await response.json()
+}
+export const login = async (payload: { email: string }) => {
+  const options = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }
+
+  const response = await fetch(BASE_URL + "/user/login", options)
+
+  if (response.status !== 200) {
+    throw new Error("Failed to update user. Status: " + response.status)
+  }
+
+  return await response.json()
+}
+
 export const getMatches = async () => {
   const options = {
     method: "GET",

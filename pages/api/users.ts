@@ -10,6 +10,7 @@ export default async function handler(
     case "POST":
       const user = await prisma.user.create({
         data: {
+          name: body.name,
           email: body.email,
         },
       })

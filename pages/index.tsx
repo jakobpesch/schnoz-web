@@ -5,7 +5,16 @@ import {
   Center,
   Container,
   Flex,
+  FormControl,
   Heading,
+  HStack,
+  Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Spinner,
   Stack,
   Tab,
@@ -16,39 +25,34 @@ import {
   Text,
   Tooltip,
 } from "@chakra-ui/react"
-import { MatchStatus, User } from "@prisma/client"
+import { MatchStatus } from "@prisma/client"
 import type { NextPage } from "next"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import useSWR from "swr"
+import KoFiLogo from "../assets/images/kofi_logo.png"
 import MatchList from "../components/MatchList"
-import { getCookie } from "../services/CookieService"
+import { eraseCookie, getCookie, setCookie } from "../services/CookieService"
 import {
   createMatch,
   deleteMatch,
   joinMatch,
+  login,
   signInAnonymously,
 } from "../services/GameManagerService"
 import { fetcher } from "../services/swrUtils"
 import { MatchWithPlayers } from "../types/Match"
-import KoFiLogo from "../assets/images/kofi_logo.png"
-import Link from "next/link"
+import { useUser } from "./account"
 
 const Home: NextPage = () => {
   const router = useRouter()
   const [status, setStatus] = useState("")
-
+  const { user, isAnonymous, isError: error, mutate: userMutate } = useUser()
   const [isCreatingMatch, setIsCreatingMatch] = useState(false)
-
-  const {
-    data: user,
-    error,
-    mutate: userMutate,
-  } = useSWR<User>(() => {
-    const userId = getCookie("userId")
-    return "/api/user/" + userId
-  }, fetcher)
+  const [loginDialog, setLoginDialog] = useState(false)
+  const [loginPayload, setLoginPayload] = useState({ email: "" })
 
   useEffect(() => {
     const userCookie = getCookie("userId")
@@ -120,6 +124,29 @@ const Home: NextPage = () => {
     }
   }
 
+  const handleLogout = () => {
+    eraseCookie("userId")
+    router.push("/")
+  }
+
+  const handleRegister = () => {
+    router.push("/account")
+  }
+
+  const handleLogin = async (email: typeof loginPayload.email) => {
+    userMutate(async () => {
+      const signedInUser = await login({ email })
+
+      console.log("wtf", signedInUser)
+      if (!signedInUser) {
+        return
+      }
+      setCookie("userId", signedInUser.id, 30)
+      router.push("/")
+      return signedInUser
+    })
+  }
+
   const sortedMatches = !matches
     ? []
     : [...matches].sort(
@@ -132,11 +159,6 @@ const Home: NextPage = () => {
       <Text position="absolute" bottom="4" right="4">
         {status}
       </Text>
-      {user && (
-        <Text position="fixed" bottom="4" left="4">
-          {user.id.slice(-5)}
-        </Text>
-      )}
 
       <Stack width="4xl" spacing="4" alignItems="center">
         <Heading fontFamily="Geodesic" fontSize="90px" color="teal.700">
@@ -231,18 +253,95 @@ const Home: NextPage = () => {
           )}
         </Container>
       </Stack>
-      <Tooltip hasArrow placement="left" label="Buy me a coffee">
-        <Box position="fixed" top="4" right="4" cursor="pointer">
+
+      <HStack position="fixed" top="4" right="4">
+        {isAnonymous ? (
+          <HStack>
+            <Button onClick={handleRegister}>Register</Button>
+            <Button onClick={() => setLoginDialog(true)}>Login</Button>
+            <Modal
+              isOpen={loginDialog}
+              onClose={() => {
+                setLoginDialog(false)
+              }}
+            >
+              <ModalContent>
+                <ModalHeader>Login</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  <Stack>
+                    {/* <FormControl>
+                      <Input
+                        value={loginPayload.name}
+                        onChange={(e) =>
+                          setLoginPayload({
+                            ...loginPayload,
+                            name: e.target.value,
+                          })
+                        }
+                        type="text"
+                        placeholder="Name"
+                      />
+                    </FormControl> */}
+                    <FormControl>
+                      <Input
+                        value={loginPayload.email}
+                        onChange={(e) =>
+                          setLoginPayload({
+                            ...loginPayload,
+                            email: e.target.value,
+                          })
+                        }
+                        type="email"
+                        placeholder="Email"
+                      />
+                    </FormControl>
+                  </Stack>
+                </ModalBody>
+                <ModalFooter>
+                  <FormControl>
+                    <Button
+                      type="submit"
+                      onClick={() => {
+                        handleLogin(loginPayload.email)
+                      }}
+                    >
+                      Login
+                    </Button>
+                  </FormControl>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
+          </HStack>
+        ) : (
+          <HStack>
+            <Text fontSize="xl">Hello, {user.name}!</Text>
+
+            <Link href="/account">
+              <Button>Account</Button>
+            </Link>
+
+            <Button onClick={handleLogout}>Log out</Button>
+          </HStack>
+        )}
+        <Tooltip
+          shouldWrapChildren
+          hasArrow
+          placement="bottom"
+          label="Buy me a coffee"
+        >
           <Link href="https://ko-fi.com/I2I1FR7RZ">
-            <Image
-              src={KoFiLogo}
-              alt="Buy Me a Coffee at ko-fi.com"
-              width="36px"
-              height="36px"
-            />
+            <Box cursor="pointer">
+              <Image
+                src={KoFiLogo}
+                alt="Buy Me a Coffee at ko-fi.com"
+                width="36px"
+                height="36px"
+              />
+            </Box>
           </Link>
-        </Box>
-      </Tooltip>
+        </Tooltip>
+      </HStack>
     </Flex>
   )
 }

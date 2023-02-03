@@ -7,7 +7,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { query, method } = req
+  const { query, method, body } = req
   const userId = query.id
 
   if (typeof userId !== "string") {
@@ -36,6 +36,19 @@ export default async function handler(
       }
 
       res.status(200).json(user)
+      break
+    case "PUT":
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { email: body.email, name: body.name },
+      })
+
+      if (!updatedUser) {
+        res.status(404).end(`User with id ${userId} could not be updated.`)
+        break
+      }
+
+      res.status(200).json(updatedUser)
       break
     default:
       res.setHeader("Allow", ["DELETE", "GET"])
