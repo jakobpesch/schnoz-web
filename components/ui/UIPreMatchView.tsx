@@ -1,3 +1,4 @@
+import { CheckIcon, LinkIcon } from "@chakra-ui/icons"
 import {
   Box,
   Button,
@@ -7,6 +8,7 @@ import {
   Grid,
   GridItem,
   Heading,
+  HStack,
   Slider,
   SliderFilledTrack,
   SliderThumb,
@@ -14,12 +16,14 @@ import {
   Stack,
   StackProps,
   Text,
+  useClipboard,
   VStack,
 } from "@chakra-ui/react"
-import { GameSettings, Rule, Terrain } from "@prisma/client"
+import { GameSettings, Match, Rule, Terrain } from "@prisma/client"
 import { Fragment, useEffect, useState } from "react"
 
 interface UIPreMatchViewProps extends StackProps {
+  matchId: Match["id"]
   settings: GameSettings | null
   userId: string
   createdById: string
@@ -35,6 +39,7 @@ interface UIPreMatchViewProps extends StackProps {
 
 export const UIPreMatchView = (props: UIPreMatchViewProps) => {
   const {
+    matchId,
     settings,
     userId,
     createdById,
@@ -44,6 +49,11 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
     onStartGameClick,
     ...stackProps
   } = props
+
+  const { onCopy, hasCopied } = useClipboard(
+    `${window.location.origin}/match/${matchId}/join`
+  )
+
   const [sliderValueWater, setSliderValueWater] = useState(
     settings?.waterRatio ?? 0
   )
@@ -244,17 +254,31 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
         </VStack> */}
 
       {userId === createdById && (
-        <Button
-          size="lg"
-          colorScheme="blue"
-          disabled={!isGameFull || isLoading}
-          isLoading={isLoading}
-          onClick={() => {
-            onStartGameClick()
-          }}
-        >
-          {isGameFull ? "Start Game" : "Waiting for opponent..."}
-        </Button>
+        <HStack>
+          <Button
+            size="lg"
+            colorScheme="blue"
+            disabled={!isGameFull || isLoading}
+            isLoading={isLoading}
+            onClick={() => {
+              onStartGameClick()
+            }}
+          >
+            {isGameFull ? "Start Game" : "Waiting for opponent..."}
+          </Button>
+
+          <Button
+            size="lg"
+            colorScheme="blue"
+            isLoading={isLoading}
+            onClick={() => {
+              onCopy()
+            }}
+            leftIcon={hasCopied ? <CheckIcon /> : <LinkIcon />}
+          >
+            Invite Link
+          </Button>
+        </HStack>
       )}
     </VStack>
   )

@@ -551,6 +551,7 @@ const MatchView = () => {
           userId={userId}
           createdById={match.createdById}
           isGameFull={isMatchFull}
+          matchId={match.id}
         />
       )}
       {wasStarted && (

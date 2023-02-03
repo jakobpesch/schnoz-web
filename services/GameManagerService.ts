@@ -21,7 +21,7 @@ import { buildTileLookupId, TileLookup } from "../utils/coordinateUtils"
 import { setCookie } from "./CookieService"
 import { fetcher } from "./swrUtils"
 
-const BASE_URL =
+export const BASE_URL =
   process.env.NODE_ENV === "development"
     ? "http://localhost:3000/api"
     : "https://schnoz-web-jakobpesch.vercel.app/api"
