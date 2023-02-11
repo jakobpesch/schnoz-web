@@ -69,24 +69,31 @@ function useParticipations(userId?: string) {
 const UserPage: NextPage = () => {
   const { user } = useUser()
   const { participations } = useParticipations(user?.id)
-  const [payload, setPayload] = useState<User>({
+  const [payload, setPayload] = useState<{
+    id: User["id"]
+    name: User["name"]
+    email: User["email"]
+    password: string
+  }>({
     id: "",
     name: null,
     email: null,
+    password: "",
   })
   useEffect(() => {
     if (user) {
-      setPayload(user)
+      setPayload({ ...user, password: "" })
     }
   }, [user])
 
   const createAccount = () => {
-    if (user && payload.email && payload.name) {
+    if (user && payload.email && payload.name && payload.password) {
       mutate(
         async () =>
           await updateUser(user.id, {
             email: payload.email!,
             name: payload.name!,
+            password: payload.password,
           })
       )
     }
@@ -152,6 +159,19 @@ const UserPage: NextPage = () => {
                   }}
                 />
                 {/* <FormHelperText>We'll never share your email.</FormHelperText> */}
+              </FormControl>
+              <FormControl>
+                {/* <FormLabel>Name</FormLabel> */}
+                <Input
+                  variant="outline"
+                  placeholder="Password"
+                  type="password"
+                  value={payload.password ?? ""}
+                  onChange={(e) => {
+                    setPayload({ ...payload, password: e.target.value })
+                  }}
+                />
+                {/* <FormHelperText>Your user name</FormHelperText> */}
               </FormControl>
               <Button
                 disabled={!payload.email || !payload.name}

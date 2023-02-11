@@ -44,8 +44,9 @@ export const signInAnonymously = async () => {
 export const updateUser = async (
   userId: string,
   payload: {
-    email?: string
-    name?: string
+    email: string
+    name: string
+    password: string
   }
 ) => {
   const options = {
@@ -62,7 +63,7 @@ export const updateUser = async (
 
   return await response.json()
 }
-export const login = async (payload: { email: string }) => {
+export const login = async (payload: { email: string; password: string }) => {
   const options = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -72,7 +73,9 @@ export const login = async (payload: { email: string }) => {
   const response = await fetch(BASE_URL + "/user/login", options)
 
   if (response.status !== 200) {
-    throw new Error("Failed to update user. Status: " + response.status)
+    throw new Error("Login failed", {
+      cause: { status: response.status, message: await response.text() },
+    })
   }
 
   return await response.json()

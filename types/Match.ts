@@ -9,7 +9,7 @@ export type MatchWithPlayers = Prisma.MatchGetPayload<typeof matchWithPlayers>
 export const matchRichInclude = {
   players: true,
   map: { include: { tiles: { include: { unit: true } } } },
-  activePlayer: true,
+  activePlayer: { include: { user: { select: { name: true } } } },
   winner: true,
   gameSettings: true,
 }

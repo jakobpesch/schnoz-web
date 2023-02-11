@@ -1,17 +1,19 @@
 import { Fade, Flex, Heading, ScaleFade, VStack } from "@chakra-ui/react"
-import { Participant } from "@prisma/client"
+import assert from "assert"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { useUserId } from "../../pages/match/[id]"
 import { RenderSettings } from "../../services/SettingsService"
+import { MatchRich } from "../../types/Match"
 import { viewFactorWidth } from "./UIScoreView"
 
 export const UITurnChangeIndicator = (props: {
-  activePlayer: Participant
+  activePlayer: MatchRich["activePlayer"]
   onChangingTurnsStart: () => void
   onChangingTurnsEnd: () => void
 }) => {
   const userId = useUserId()
+  assert(props.activePlayer)
   const yourTurn = props.activePlayer.userId === userId
   const [isOpen, setIsOpen] = useState(false)
   useEffect(() => {
@@ -64,8 +66,12 @@ export const UITurnChangeIndicator = (props: {
                 width={viewFactorWidth(1000)}
                 height={viewFactorWidth(1000)}
               />
-
-              <Heading>{yourTurn ? "Your" : "Oppenents"} turn!</Heading>
+              <Heading>
+                {yourTurn
+                  ? "Your "
+                  : (props.activePlayer.user.name ?? "Anon ") + "'s "}
+                turn!
+              </Heading>
             </VStack>
           </ScaleFade>
         </Flex>

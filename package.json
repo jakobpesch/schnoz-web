@@ -16,6 +16,8 @@
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
     "@prisma/client": "^4.8.0",
+    "bcrypt": "^5.1.0",
+    "formik": "^2.2.9",
     "framer-motion": "^7.5.3",
     "mongoose": "^6.6.5",
     "mousetrap": "^1.6.5",
@@ -25,6 +27,7 @@
     "swr": "^2.0.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
     "@types/jest": "^29.2.4",
     "@types/mousetrap": "^1.6.9",
     "@types/node": "18.11.0",

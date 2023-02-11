@@ -45,6 +45,8 @@ import {
 import { fetcher } from "../services/swrUtils"
 import { MatchWithPlayers } from "../types/Match"
 import { useUser } from "./account"
+import React from "react"
+import { Formik } from "formik"
 
 const Home: NextPage = () => {
   const router = useRouter()
@@ -52,7 +54,7 @@ const Home: NextPage = () => {
   const { user, isAnonymous, isError: error, mutate: userMutate } = useUser()
   const [isCreatingMatch, setIsCreatingMatch] = useState(false)
   const [loginDialog, setLoginDialog] = useState(false)
-  const [loginPayload, setLoginPayload] = useState({ email: "" })
+  const [loginPayload, setLoginPayload] = useState({ email: "", password: "" })
 
   useEffect(() => {
     const userCookie = getCookie("userId")
@@ -133,17 +135,20 @@ const Home: NextPage = () => {
     router.push("/account")
   }
 
-  const handleLogin = async (email: typeof loginPayload.email) => {
-    userMutate(async () => {
-      const signedInUser = await login({ email })
-
-      console.log("wtf", signedInUser)
-      if (!signedInUser) {
-        return
+  const handleLogin = async (
+    email: typeof loginPayload.email,
+    password: typeof loginPayload.password
+  ) => {
+    return await userMutate(async () => {
+      try {
+        const signedInUser = await login({ email, password })
+        setCookie("userId", signedInUser.id, 30)
+        router.push("/")
+        return signedInUser
+      } catch (e: any) {
+        console.log(e.cause)
+        return user
       }
-      setCookie("userId", signedInUser.id, 30)
-      router.push("/")
-      return signedInUser
     })
   }
 
@@ -162,7 +167,7 @@ const Home: NextPage = () => {
 
       <Stack width="4xl" spacing="4" alignItems="center">
         <Heading fontFamily="Geodesic" fontSize="90px" color="teal.700">
-          schnoz
+          schnozzz
         </Heading>
         <Stack direction="row">
           <Button
@@ -268,48 +273,87 @@ const Home: NextPage = () => {
               <ModalContent>
                 <ModalHeader>Login</ModalHeader>
                 <ModalCloseButton />
-                <ModalBody>
-                  <Stack>
-                    {/* <FormControl>
-                      <Input
-                        value={loginPayload.name}
-                        onChange={(e) =>
-                          setLoginPayload({
-                            ...loginPayload,
-                            name: e.target.value,
-                          })
-                        }
-                        type="text"
-                        placeholder="Name"
-                      />
-                    </FormControl> */}
-                    <FormControl>
-                      <Input
-                        value={loginPayload.email}
-                        onChange={(e) =>
-                          setLoginPayload({
-                            ...loginPayload,
-                            email: e.target.value,
-                          })
-                        }
-                        type="email"
-                        placeholder="Email"
-                      />
-                    </FormControl>
-                  </Stack>
-                </ModalBody>
-                <ModalFooter>
-                  <FormControl>
-                    <Button
-                      type="submit"
-                      onClick={() => {
-                        handleLogin(loginPayload.email)
-                      }}
-                    >
-                      Login
-                    </Button>
-                  </FormControl>
-                </ModalFooter>
+                <Formik
+                  initialValues={{ email: "", password: "" }}
+                  validate={(values) => {
+                    const errors: { email?: string; password?: string } = {}
+                    if (!values.email) {
+                      errors.email = "Required"
+                    } else if (
+                      !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
+                        values.email
+                      )
+                    ) {
+                      errors.email = "Invalid email address"
+                    }
+                    return errors
+                  }}
+                  onSubmit={async (values, { setSubmitting, setStatus }) => {
+                    const loggedInUser = await handleLogin(
+                      values.email,
+                      values.password
+                    )
+                    if (!loggedInUser?.email) {
+                      setStatus("Invalid credentials")
+                    }
+                    setSubmitting(false)
+                  }}
+                >
+                  {({
+                    values,
+                    errors,
+                    touched,
+                    status,
+                    handleChange,
+                    handleBlur,
+                    handleSubmit,
+                    isSubmitting,
+                    /* and other goodies */
+                  }) => (
+                    <form onSubmit={handleSubmit}>
+                      <ModalBody>
+                        <Stack>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              name="email"
+                              placeholder="Email"
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              value={values.email}
+                            />
+                          </FormControl>
+                          <Text>
+                            {errors.email && touched.email && errors.email}
+                          </Text>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              name="password"
+                              placeholder="Password"
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              value={values.password}
+                            />
+                          </FormControl>
+                          <Text>
+                            {errors.password &&
+                              touched.password &&
+                              errors.password}
+                          </Text>
+                          <Text>{status}</Text>
+                        </Stack>
+                      </ModalBody>
+                      <ModalFooter>
+                        <FormControl>
+                          <Button type="submit" disabled={isSubmitting}>
+                            Submit
+                          </Button>
+                        </FormControl>
+                      </ModalFooter>
+                    </form>
+                  )}
+                </Formik>
               </ModalContent>
             </Modal>
           </HStack>
