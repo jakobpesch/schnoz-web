@@ -1,6 +1,21 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { Container } from "@chakra-ui/react"
-import { GameSettings, Match, MatchStatus, UnitType } from "@prisma/client"
+import {
+  Box,
+  Button,
+  Center,
+  Container,
+  Heading,
+  Spinner,
+  Text,
+  VStack,
+} from "@chakra-ui/react"
+import {
+  GameSettings,
+  Match,
+  MatchStatus,
+  UnitType,
+  User,
+} from "@prisma/client"
 import assert from "assert"
 import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
@@ -38,7 +53,14 @@ import {
   updateSettings,
 } from "../../services/GameManagerService"
 import { MatchSettings } from "../../services/SettingsService"
+import {
+  socketApi,
+  SocketIOApi,
+  UpdateGameSettingsPayload,
+} from "../../services/SocketService"
 import { fetcher } from "../../services/swrUtils"
+import { ClientEvent } from "../../shared-server/client-event.enum"
+import { StoreModel, useStoreActions, useStoreState } from "../../store"
 import { MapWithTiles } from "../../types/Map"
 import { MatchRich } from "../../types/Match"
 import { TileWithUnits } from "../../types/Tile"
@@ -57,26 +79,26 @@ import {
 } from "../../utils/coordinateUtils"
 import { MatchCheckResponseData } from "../api/match/[id]/check"
 
-function useMatch(id: string) {
-  const { data, error, isLoading, isValidating, mutate } = useSWR<MatchRich>(
-    () => {
-      if (!id) {
-        throw new Error("No id")
-      }
-      return `/api/match/${id}/rich`
-    },
-    fetcher,
-    { revalidateOnFocus: false }
-  )
+// function useMatch(id: string) {
+//   const { data, error, isLoading, isValidating, mutate } = useSWR<MatchRich>(
+//     () => {
+//       if (!id) {
+//         throw new Error("No id")
+//       }
+//       return `/api/match/${id}/rich`
+//     },
+//     fetcher,
+//     { revalidateOnFocus: false }
+//   )
 
-  return {
-    match: data,
-    isLoading,
-    isError: error,
-    isValidating,
-    mutate,
-  }
-}
+//   return {
+//     match: data,
+//     isLoading,
+//     isError: error,
+//     isValidating,
+//     mutate,
+//   }
+// }
 
 function useMatchUpdate(options: {
   match: Match | undefined
@@ -114,49 +136,68 @@ function useMatchUpdate(options: {
 
 export function useUserId() {
   try {
-    const userId = getCookie("userId")
-    return userId
+    return getCookie("userId")
   } catch (e) {
     return null
   }
 }
 
+function useMatch(userId: User["id"], matchId: Match["id"]) {
+  const [match, setMatch] = useState<MatchRich>()
+  const [gameSettings, setGameSettings] = useState<GameSettings>()
+  useEffect(() => {
+    if (socketApi.isConnected) {
+      return
+    }
+    if (!userId || !matchId) {
+      return
+    }
+    if (!socketApi.isConnected) {
+      socketApi.connectToMatch(userId, matchId, { setMatch, setGameSettings })
+    }
+  }, [matchId, userId])
+  return { match, gameSettings }
+}
+
 const MatchView = () => {
-  const userId = useUserId()
   const router = useRouter()
+  const userId = useUserId()
+
+  const matchId = typeof router.query.id === "string" ? router.query.id : ""
+
   const [isUpdatingMatch, setIsUpdatingMatch] = useState(false)
   const [isChangingTurns, setIsChangingTurns] = useState(false)
   const [activatedSpecials, setActivatedSpecials] = useState<Special[]>([])
 
-  const matchId = typeof router.query.id === "string" ? router.query.id : ""
+  const match = useMatch(userId ?? "", matchId)
 
-  const {
-    match,
-    isLoading: isLoadingMatch,
-    isError: isErrorMatch,
-    mutate: updateMatch,
-    isValidating,
-  } = useMatch(matchId)
+  // const {
+  //   match,
+  //   isLoading: isLoadingMatch,
+  //   isError: isErrorMatch,
+  //   mutate: updateMatch,
+  //   isValidating,
+  // } = useMatch(matchId)
 
   const you = match?.players.find((player) => player.userId === userId)
   const yourTurn = userId === match?.activePlayer?.userId
 
-  const {
-    hasUpdate,
-    isLoading: isLoadingUpdate,
-    isError: isErrorUpdate,
-  } = useMatchUpdate({
-    match,
-    shouldFetch:
-      (!yourTurn && match?.status === MatchStatus.STARTED) ||
-      (match?.status === MatchStatus.CREATED &&
-        match.players.length !== match.maxPlayers) ||
-      (match?.status === MatchStatus.CREATED && match.createdById !== userId),
-  })
+  // const {
+  //   hasUpdate,
+  //   isLoading: isLoadingUpdate,
+  //   isError: isErrorUpdate,
+  // } = useMatchUpdate({
+  //   match,
+  //   shouldFetch:
+  //     (!yourTurn && match?.status === MatchStatus.STARTED) ||
+  //     (match?.status === MatchStatus.CREATED &&
+  //       match.players.length !== match.maxPlayers) ||
+  //     (match?.status === MatchStatus.CREATED && match.createdById !== userId),
+  // })
 
-  useEffect(() => {
-    updateMatch()
-  }, [hasUpdate])
+  // useEffect(() => {
+  //   updateMatch()
+  // }, [hasUpdate])
 
   const setStatus = (status: string) => {
     setStatusLog([
@@ -294,7 +335,28 @@ const MatchView = () => {
   }, [match?.updatedAt])
 
   if (!userId || !match) {
-    return null
+    console.log(userId, match)
+
+    return <Box>TEST</Box>
+  }
+
+  if (!socketApi.isConnected) {
+    return (
+      <Center height="100vh">
+        <VStack>
+          <Heading>Disconnected</Heading>
+          <Text>You were disconnected by the server.</Text>
+          <Button
+            isLoading={socketApi.isConnecting}
+            onClick={() => {
+              socketApi.connectToMatch(userId, matchId)
+            }}
+          >
+            Reconnect
+          </Button>
+        </VStack>
+      </Center>
+    )
   }
 
   const isMatchFull =
@@ -420,27 +482,27 @@ const MatchView = () => {
       }
       setIsUpdatingMatch(true)
 
-      updateMatch(
-        makeMove(
-          match.id,
-          row,
-          col,
-          participantId,
-          unitConstellation,
-          ignoredRules,
-          ignoredRules.includes("ADJACENT_TO_ALLY")
-            ? activatedSpecials.filter(
-                (special) => special.type !== "EXPAND_BUILD_RADIUS_BY_1"
-              )
-            : activatedSpecials
-        ),
-        {
-          optimisticData,
-          populateCache: true,
-          rollbackOnError: true,
-          revalidate: true,
-        }
-      ).then(() => setIsUpdatingMatch(false))
+      // updateMatch(
+      //   makeMove(
+      //     match.id,
+      //     row,
+      //     col,
+      //     participantId,
+      //     unitConstellation,
+      //     ignoredRules,
+      //     ignoredRules.includes("ADJACENT_TO_ALLY")
+      //       ? activatedSpecials.filter(
+      //           (special) => special.type !== "EXPAND_BUILD_RADIUS_BY_1"
+      //         )
+      //       : activatedSpecials
+      //   ),
+      //   {
+      //     optimisticData,
+      //     populateCache: true,
+      //     rollbackOnError: true,
+      //     revalidate: true,
+      //   }
+      // ).then(() => setIsUpdatingMatch(false))
 
       setSelectedCard(null)
       setActivatedSpecials([])
@@ -472,25 +534,20 @@ const MatchView = () => {
         await createMap(match.id, userId)
       }
       await startMatch(match.id, userId)
-      updateMatch().finally(() => setIsUpdatingMatch(false))
+      // updateMatch().finally(() => setIsUpdatingMatch(false))
     } catch (e) {
       console.error(e)
     }
   }
 
-  const handleSettingsChange = async (settings: {
-    mapSize?: GameSettings["mapSize"]
-    rules?: GameSettings["rules"]
-    maxTurns?: GameSettings["maxTurns"]
-    waterRatio?: GameSettings["waterRatio"]
-    treeRatio?: GameSettings["treeRatio"]
-    stoneRatio?: GameSettings["stoneRatio"]
-  }) => {
+  const handleSettingsChange = async (
+    settings: Omit<UpdateGameSettingsPayload, "matchId">
+  ) => {
     if (!userId || !match.gameSettings) {
       return
     }
     try {
-      const gameSettings = { ...match.gameSettings }
+      const gameSettings: UpdateGameSettingsPayload = {}
       if (settings.mapSize) {
         gameSettings.mapSize = settings.mapSize
       }
@@ -509,29 +566,35 @@ const MatchView = () => {
       if (settings.stoneRatio != null) {
         gameSettings.stoneRatio = settings.stoneRatio
       }
-      const optimisticData: MatchRich = {
-        ...match,
-        gameSettings,
-        updatedAt: new Date(),
-      }
-      updateMatch(
-        updateSettings({
-          matchId,
-          userId,
-          mapSize: gameSettings.mapSize,
-          rules: gameSettings.rules,
-          maxTurns: gameSettings.maxTurns,
-          waterRatio: gameSettings.waterRatio,
-          stoneRatio: gameSettings.stoneRatio,
-          treeRatio: gameSettings.treeRatio,
-        }),
-        {
-          optimisticData,
-          populateCache: true,
-          rollbackOnError: true,
-          revalidate: true,
-        }
-      ).finally(() => setIsUpdatingMatch(false))
+      // const optimisticData: MatchRich = {
+      //   ...match,
+      //   gameSettings,
+      //   updatedAt: new Date(),
+      // }
+
+      socketApi.sendRequest({
+        event: ClientEvent.UPDATE_GAME_SETTINGS,
+        data: gameSettings,
+      })
+
+      // updateMatch(
+      //   updateSettings({
+      //     matchId,
+      //     userId,
+      //     mapSize: gameSettings.mapSize,
+      //     rules: gameSettings.rules,
+      //     maxTurns: gameSettings.maxTurns,
+      //     waterRatio: gameSettings.waterRatio,
+      //     stoneRatio: gameSettings.stoneRatio,
+      //     treeRatio: gameSettings.treeRatio,
+      //   }),
+      //   {
+      //     optimisticData,
+      //     populateCache: true,
+      //     rollbackOnError: true,
+      //     revalidate: true,
+      //   }
+      // ).finally(() => setIsUpdatingMatch(false))
 
       setStatus("Updated Settings")
     } catch (e: any) {
@@ -544,7 +607,7 @@ const MatchView = () => {
       {isPreMatch && (
         <UIPreMatchView
           py="16"
-          isLoading={isUpdatingMatch || isValidating}
+          isLoading={isUpdatingMatch /*|| isValidating*/}
           settings={match.gameSettings}
           onSettingsChange={handleSettingsChange}
           onStartGameClick={onStartGameClick}
@@ -561,7 +624,7 @@ const MatchView = () => {
             match={match}
             cursor={selectedCard ? "none" : "default"}
           >
-            {isOngoing && !isLoadingMatch && !isUpdatingMatch && (
+            {isOngoing && /*!isLoadingMatch && */ !isUpdatingMatch && (
               <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
             )}
 
@@ -571,23 +634,25 @@ const MatchView = () => {
             )}
             <MapTerrains terrainTiles={terrainTiles} />
             <MapFog fogTiles={fogTiles} halfFogTiles={halfFogTiles} />
-            {!isLoadingMatch && !isUpdatingMatch && !isChangingTurns && (
-              <MapHoveredHighlights
-                player={match.activePlayer}
-                hide={isFinished || !yourTurn}
-                specials={[expandBuildRadiusByOne]}
-                activeSpecials={activatedSpecials}
-                setSpecial={(specialType, active) => {
-                  if (active) {
-                    setActivatedSpecials([expandBuildRadiusByOne])
-                  } else {
-                    setActivatedSpecials([])
-                  }
-                }}
-                card={selectedCard}
-                onTileClick={onTileClick}
-              />
-            )}
+            {
+              /*!isLoadingMatch && */ !isUpdatingMatch && !isChangingTurns && (
+                <MapHoveredHighlights
+                  player={match.activePlayer}
+                  hide={isFinished || !yourTurn}
+                  specials={[expandBuildRadiusByOne]}
+                  activeSpecials={activatedSpecials}
+                  setSpecial={(specialType, active) => {
+                    if (active) {
+                      setActivatedSpecials([expandBuildRadiusByOne])
+                    } else {
+                      setActivatedSpecials([])
+                    }
+                  }}
+                  card={selectedCard}
+                  onTileClick={onTileClick}
+                />
+              )
+            }
           </MapContainer>
 
           <UIScoreView
@@ -642,7 +707,7 @@ const MatchView = () => {
       )}
       <UILoggingView statusLog={statusLog} />
       <UILoadingIndicator
-        loading={isLoadingMatch || isLoadingUpdate || isUpdatingMatch}
+        loading={/*!isLoadingMatch ||  isLoadingUpdate || */ isUpdatingMatch}
       />
     </Container>
   )

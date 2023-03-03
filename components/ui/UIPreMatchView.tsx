@@ -21,6 +21,7 @@ import {
 } from "@chakra-ui/react"
 import { GameSettings, Match, Rule, Terrain } from "@prisma/client"
 import { Fragment, useEffect, useState } from "react"
+import { UpdateGameSettingsPayload } from "../../services/SocketService"
 
 interface UIPreMatchViewProps extends StackProps {
   matchId: Match["id"]
@@ -29,11 +30,7 @@ interface UIPreMatchViewProps extends StackProps {
   createdById: string
   isGameFull: boolean
   isLoading: boolean
-  onSettingsChange: (settings: {
-    mapSize?: GameSettings["mapSize"]
-    rules?: GameSettings["rules"]
-    maxTurns?: GameSettings["maxTurns"]
-  }) => void
+  onSettingsChange: (settings: UpdateGameSettingsPayload) => void
   onStartGameClick: () => void
 }
 

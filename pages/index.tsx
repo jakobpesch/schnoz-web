@@ -47,6 +47,8 @@ import { MatchWithPlayers } from "../types/Match"
 import { useUser } from "./account"
 import React from "react"
 import { Formik } from "formik"
+import { socketApi } from "../services/SocketService"
+import { log } from "console"
 
 const Home: NextPage = () => {
   const router = useRouter()

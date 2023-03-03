@@ -24,13 +24,13 @@ export const UILoggingView = (props: UILoggingViewProps) => (
       borderColor: "initial",
       maxHeight: "30vw",
     }}
-    css={{
-      "-webkit-mask-image":
-        "-webkit-gradient(linear, left bottom, left top, color-stop(0%, rgba(0,0,0,1)),color-stop(60%, rgba(0,0,0,1)), color-stop(90%, rgba(0,0,0,0)));",
-      "&:hover": {
-        "-webkit-mask-image": "none",
-      },
-    }}
+    // css={{
+    //   "-webkit-mask-image":
+    //     "-webkit-gradient(linear, left bottom, left top, color-stop(0%, rgba(0,0,0,1)),color-stop(60%, rgba(0,0,0,1)), color-stop(90%, rgba(0,0,0,0)));",
+    //   "&:hover": {
+    //     "-webkit-mask-image": "none",
+    //   },
+    // }}
   >
     {props.statusLog.map((status, index) => (
       <Text key={index} fontSize="0.9vw">

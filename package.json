@@ -4,9 +4,9 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 8080",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 8080",
     "lint": "next lint",
     "test": "jest --coverage"
   },
@@ -17,6 +17,7 @@
     "@emotion/styled": "^11.10.4",
     "@prisma/client": "^4.8.0",
     "bcrypt": "^5.1.0",
+    "easy-peasy": "^5.2.0",
     "formik": "^2.2.9",
     "framer-motion": "^7.5.3",
     "mongoose": "^6.6.5",
@@ -24,6 +25,7 @@
     "next": "12.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "socket.io-client": "^4.6.0",
     "swr": "^2.0.0"
   },
   "devDependencies": {
