@@ -105,8 +105,6 @@ const MatchView = () => {
     match?.status
   )
 
-  console.log("selectedCard", selectedCard)
-
   if (!userId || !match) {
     return null
   }
