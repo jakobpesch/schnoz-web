@@ -14,7 +14,8 @@ export function useMatch(userId: User["id"], matchId: Match["id"]) {
       return
     }
     if (!socketApi.isConnected) {
-      socketApi.connectToMatch(userId, matchId, { setMatch, setGameSettings })
+      socketApi.setCallbacks({ setMatch, setGameSettings })
+      socketApi.connectToMatch(userId, matchId)
     }
   }, [matchId, userId])
   return { match, gameSettings }

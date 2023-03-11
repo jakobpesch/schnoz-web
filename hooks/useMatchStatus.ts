@@ -1,6 +1,6 @@
 import { Match, MatchStatus } from "@prisma/client"
 
-export const useMatchStatus = (status: Match["status"]) => {
+export const useMatchStatus = (status: Match["status"] | undefined) => {
   const isPreMatch = status === MatchStatus.CREATED
   const wasStarted =
     status === MatchStatus.STARTED || status === MatchStatus.FINISHED

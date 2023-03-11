@@ -14,6 +14,7 @@ import {
   SpecialType,
 } from "../../services/GameManagerService"
 import { RenderSettings } from "../../services/SettingsService"
+import { socketApi } from "../../services/SocketService"
 import {
   Card,
   transformCoordinates,
@@ -49,6 +50,9 @@ export interface MapHoveredHighlightsProps {
 export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
   const [hoveredCoordinate, setHoveredCoordinate] =
     useState<Coordinate2D | null>(null)
+  const [opponentsHoveredTiles, setOpponentsHoveredTiles] = useState<
+    Coordinate2D[] | null
+  >(null)
   const [rotatedClockwise, setRotationCount] =
     useState<IUnitConstellation["rotatedClockwise"]>(0)
   const [mirrored, setMirrored] =
@@ -66,6 +70,10 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
   const mirror = () => {
     setMirrored(!mirrored)
   }
+
+  useEffect(() => {
+    socketApi.setCallbacks({ setOpponentsHoveredTiles })
+  }, [])
 
   useEffect(() => {
     Mousetrap.bind("r", rotate)
@@ -94,11 +102,17 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
         mirrored,
       })
       const translated = translateCoordinatesTo(hoveredCoordinate, transformed)
-
+      socketApi.sendHoveredCoordinates(translated)
       return translated
     }
     return []
   }, [props.card, hoveredCoordinate, rotatedClockwise, mirrored])
+
+  useEffect(() => {
+    if (props.card === null) {
+      socketApi.sendHoveredCoordinates(null)
+    }
+  }, [props.card])
 
   if (!props.player || props.hide) {
     return null
@@ -106,10 +120,6 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
   const hasExpandBuildRaidusByOneActive = props.activeSpecials.some(
     (special) => special.type === "EXPAND_BUILD_RADIUS_BY_1"
   )
-
-  const changeInBonusPoints = props.card
-    ? props.card.value - props.activeSpecials.reduce((a, s) => a + s.cost, 0)
-    : 0
 
   const availableBonusPoints =
     props.player.bonusPoints + (props.card?.value ?? 0)
@@ -233,6 +243,40 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
       </Box>
 
       {hoveredCoordinates.map(([row, col]) => {
+        return (
+          <Flex
+            key={row + "_" + col}
+            position="absolute"
+            align="center"
+            justify="center"
+            top={row * RenderSettings.tileSize + "px"}
+            left={col * RenderSettings.tileSize + "px"}
+            width={RenderSettings.tileSize + "px"}
+            height={RenderSettings.tileSize + "px"}
+            bg={"whiteAlpha.500"}
+            opacity={0.6}
+            onClick={() =>
+              props.onTileClick(row, col, rotatedClockwise, mirrored)
+            }
+          >
+            <Image
+              src={
+                RenderSettings.getPlayerAppearance(props.player?.playerNumber)
+                  .unit
+              }
+              height="100%"
+              width="100%"
+            />
+            {/* <MapObject
+              object={
+                RenderSettings.getPlayerAppearance(props.player?.playerNumber)
+                  .unit
+              }
+            /> */}
+          </Flex>
+        )
+      })}
+      {opponentsHoveredTiles?.map(([row, col]) => {
         return (
           <Flex
             key={row + "_" + col}

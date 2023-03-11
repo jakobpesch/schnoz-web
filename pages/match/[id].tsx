@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import {
-  Box,
   Button,
   Center,
   Container,
@@ -10,9 +9,8 @@ import {
 } from "@chakra-ui/react"
 import { UnitType } from "@prisma/client"
 import assert from "assert"
-import Mousetrap from "mousetrap"
 import { useRouter } from "next/router"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { MapContainer } from "../../components/map/MapContainer"
 import { MapFog } from "../../components/map/MapFog"
 import { MapHoveredHighlights } from "../../components/map/MapHoveredHighlights"
@@ -54,10 +52,6 @@ import {
 import { MapWithTiles } from "../../types/Map"
 import { MatchRich } from "../../types/Match"
 import { TileWithUnits } from "../../types/Tile"
-import {
-  Card,
-  decodeUnitConstellation,
-} from "../../utils/constallationTransformer"
 import {
   coordinateIncludedIn,
   coordinatesAreEqual,
@@ -106,6 +100,12 @@ const MatchView = () => {
     selectedCard,
     activatedSpecials
   )
+
+  const { isPreMatch, wasStarted, isOngoing, isFinished } = useMatchStatus(
+    match?.status
+  )
+
+  console.log("selectedCard", selectedCard)
 
   if (!userId || !match) {
     return null
@@ -311,10 +311,6 @@ const MatchView = () => {
     }
   }
 
-  const { isPreMatch, wasStarted, isOngoing, isFinished } = useMatchStatus(
-    match.status
-  )
-
   return (
     <Container height="100vh" color="white">
       {isPreMatch && (
@@ -351,7 +347,7 @@ const MatchView = () => {
               /*!isLoadingMatch && */ !isUpdatingMatch && !isChangingTurns && (
                 <MapHoveredHighlights
                   player={match.activePlayer}
-                  hide={isFinished || !yourTurn}
+                  hide={isFinished}
                   specials={[expandBuildRadiusByOne]}
                   activeSpecials={activatedSpecials}
                   setSpecial={(specialType, active) => {

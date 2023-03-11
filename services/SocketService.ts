@@ -1,6 +1,8 @@
 import { GameSettings, Match } from "@prisma/client"
 import { io } from "socket.io-client"
 import { Socket } from "socket.io-client"
+import { Coordinate2D } from "../models/UnitConstellation.model"
+import { ClientEvent } from "../shared-server/client-event.enum"
 import { ServerEvent } from "../shared-server/server-event.enum"
 import { MatchRich } from "../types/Match"
 
@@ -10,6 +12,7 @@ export class SocketIOApi {
   private socket: Socket | undefined
   private match: MatchRich | undefined
   public lastUpdatedAt: string = ""
+
   get Match() {
     return this.match
   }
@@ -21,14 +24,16 @@ export class SocketIOApi {
     return !!this.socket?.connected
   }
 
-  public connectToMatch = (
-    userId: string,
-    matchId: string,
-    callbacks?: {
-      setMatch?: (match: MatchRich) => void
-      setGameSettings?: (gameSettings: GameSettings) => void
-    }
-  ) => {
+  private callbacks: {
+    setMatch?: (match: MatchRich) => void
+    setGameSettings?: (gameSettings: GameSettings) => void
+    setOpponentsHoveredTiles?: (hoveringTiles: Coordinate2D[] | null) => void
+  } = {}
+
+  public setCallbacks = (callbacks: typeof this.callbacks) => {
+    this.callbacks = { ...this.callbacks, ...callbacks }
+  }
+  public connectToMatch = (userId: string, matchId: string) => {
     console.log("ENTER: connectToMatch")
     this._isConnecting = true
     this.socket = io("http://localhost:3000", {
@@ -41,19 +46,11 @@ export class SocketIOApi {
     this.socket.on(
       ServerEvent.PLAYER_CONNECTED_TO_MATCH,
       (match: MatchRich) => {
-        console.log("connectToMatch:" + ServerEvent.PLAYER_CONNECTED_TO_MATCH, {
-          match,
-        })
-
-        callbacks?.setMatch?.(match)
+        this.callbacks.setMatch?.(match)
         if (match.gameSettings) {
-          callbacks?.setGameSettings?.(match.gameSettings)
+          this.callbacks.setGameSettings?.(match.gameSettings)
         }
-
-        console.log("wtf")
-
         this.lastUpdatedAt = new Date().toISOString()
-        console.log(this.lastUpdatedAt)
       }
     )
 
@@ -68,8 +65,14 @@ export class SocketIOApi {
     this.socket.on(
       ServerEvent.UPDATED_GAME_SETTINGS,
       (gameSettings: GameSettings) => {
-        console.log("connectToMatch:updateGameSettings", gameSettings)
-        callbacks?.setGameSettings?.(gameSettings)
+        this.callbacks.setGameSettings?.(gameSettings)
+      }
+    )
+
+    this.socket.on(
+      ServerEvent.HOVERED,
+      (hoveredCoordinates: Coordinate2D[] | null) => {
+        this.callbacks.setOpponentsHoveredTiles?.(hoveredCoordinates)
       }
     )
 
@@ -98,6 +101,42 @@ export class SocketIOApi {
     console.log("disconnect")
 
     this.socket?.disconnect()
+  }
+
+  async updateGameSettings(
+    settings: Omit<UpdateGameSettingsPayload, "matchId">
+  ) {
+    const gameSettings: UpdateGameSettingsPayload = {}
+    if (settings.mapSize) {
+      gameSettings.mapSize = settings.mapSize
+    }
+    if (settings.rules) {
+      gameSettings.rules = settings.rules
+    }
+    if (settings.maxTurns != null) {
+      gameSettings.maxTurns = settings.maxTurns
+    }
+    if (settings.waterRatio != null) {
+      gameSettings.waterRatio = settings.waterRatio
+    }
+    if (settings.treeRatio != null) {
+      gameSettings.treeRatio = settings.treeRatio
+    }
+    if (settings.stoneRatio != null) {
+      gameSettings.stoneRatio = settings.stoneRatio
+    }
+
+    await socketApi.sendRequest({
+      event: ClientEvent.UPDATE_GAME_SETTINGS,
+      data: gameSettings,
+    })
+  }
+
+  async sendHoveredCoordinates(hoveredCoordinates: Coordinate2D[] | null) {
+    await socketApi.sendRequest({
+      event: ClientEvent.HOVER,
+      data: hoveredCoordinates,
+    })
   }
 }
 
