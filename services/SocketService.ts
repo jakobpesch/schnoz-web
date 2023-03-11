@@ -24,7 +24,7 @@ export class SocketIOApi {
   public connectToMatch = (
     userId: string,
     matchId: string,
-    callback?: {
+    callbacks?: {
       setMatch?: (match: MatchRich) => void
       setGameSettings?: (gameSettings: GameSettings) => void
     }
@@ -45,7 +45,11 @@ export class SocketIOApi {
           match,
         })
 
-        callback?.setMatch?.(match)
+        callbacks?.setMatch?.(match)
+        if (match.gameSettings) {
+          callbacks?.setGameSettings?.(match.gameSettings)
+        }
+
         console.log("wtf")
 
         this.lastUpdatedAt = new Date().toISOString()
@@ -65,9 +69,7 @@ export class SocketIOApi {
       ServerEvent.UPDATED_GAME_SETTINGS,
       (gameSettings: GameSettings) => {
         console.log("connectToMatch:updateGameSettings", gameSettings)
-        if (this.match) {
-          this.match.gameSettings = gameSettings
-        }
+        callbacks?.setGameSettings?.(gameSettings)
       }
     )
 
