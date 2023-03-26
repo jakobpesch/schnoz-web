@@ -51,7 +51,6 @@ export class SocketIOApi {
 
   public connectToMatch = (userId: string, matchId: string) => {
     this.isConnecting = true
-    this.callbacks.setIsConnecting?.(true)
     this.socket = io("http://localhost:3000", {
       query: { userId, matchId },
       autoConnect: false,
@@ -90,11 +89,13 @@ export class SocketIOApi {
       }
     )
     this.socket.on(ServerEvent.DISCONNECTED_FROM_MATCH, () => {
+      this.isConnecting = false
       console.log("connectToMatch:disconnectedFromMatch")
     })
 
     this.socket.on("connect_error", (error: Error) => {
       console.error("connect error", error)
+      this.isConnecting = false
       throw error
     })
 
@@ -168,8 +169,8 @@ export class SocketIOApi {
   }
 
   public async disconnect() {
+    this.isConnecting = false
     console.log("disconnect")
-
     this.socket?.disconnect()
   }
 

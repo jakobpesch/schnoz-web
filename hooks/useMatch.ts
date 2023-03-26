@@ -42,14 +42,17 @@ export function useMatch(userId: User["id"], matchId: Match["id"]) {
 
   useEffect(() => {
     if (socketApi.IsConnected) {
+      // console.log("useMatch socketApi.IsConnected", socketApi.IsConnected)
       return
     }
 
     if (socketApi.IsConnecting) {
+      // console.log("useMatch socketApi.IsConnecting", socketApi.IsConnecting)
       return
     }
 
     if (!userId || !matchId) {
+      // console.log("useMatch no userId or matchId", userId, matchId)
       return
     }
 
@@ -62,6 +65,10 @@ export function useMatch(userId: User["id"], matchId: Match["id"]) {
       setPlayers,
     })
     socketApi.connectToMatch(userId, matchId)
+
+    return () => {
+      socketApi.disconnect()
+    }
   }, [matchId, userId])
   return {
     match,
