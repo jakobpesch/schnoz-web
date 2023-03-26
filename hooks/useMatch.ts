@@ -41,23 +41,27 @@ export function useMatch(userId: User["id"], matchId: Match["id"]) {
   }, [updatedTilesWithUnits])
 
   useEffect(() => {
-    if (socketApi.isConnected) {
+    if (socketApi.IsConnected) {
       return
     }
+
+    if (socketApi.IsConnecting) {
+      return
+    }
+
     if (!userId || !matchId) {
       return
     }
-    if (!socketApi.isConnected) {
-      socketApi.setCallbacks({
-        setMatch,
-        setGameSettings,
-        setMap,
-        setTilesWithUnits,
-        setUpdatedTilesWithUnits,
-        setPlayers,
-      })
-      socketApi.connectToMatch(userId, matchId)
-    }
+
+    socketApi.setCallbacks({
+      setMatch,
+      setGameSettings,
+      setMap,
+      setTilesWithUnits,
+      setUpdatedTilesWithUnits,
+      setPlayers,
+    })
+    socketApi.connectToMatch(userId, matchId)
   }, [matchId, userId])
   return {
     match,

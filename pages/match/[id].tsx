@@ -107,6 +107,7 @@ const MatchView = () => {
     selectedCard,
     activatedSpecials
   )
+
   const { isPreMatch, wasStarted, isOngoing, isFinished } = useMatchStatus(
     match?.status
   )
@@ -131,14 +132,14 @@ const MatchView = () => {
     return null
   }
 
-  if (!socketApi.isConnected) {
+  if (!socketApi.IsConnected) {
     return (
       <Center height="100vh">
         <VStack>
           <Heading>Disconnected</Heading>
           <Text>You were disconnected by the server.</Text>
           <Button
-            isLoading={socketApi.isConnecting}
+            isLoading={socketApi.IsConnecting}
             onClick={() => {
               socketApi.connectToMatch(userId, matchId)
             }}
@@ -321,7 +322,7 @@ const MatchView = () => {
     }
   }
 
-  const onStartGameClick = async () => {
+  const handleStartGameClick = async () => {
     if (!userId) {
       return
     }
@@ -331,9 +332,11 @@ const MatchView = () => {
       if (!map) {
         await createMap(match.id, userId)
       }
-      await startMatch(match.id, userId)
+      await socketApi.startMatch(userId)
     } catch (e) {
       console.error(e)
+    } finally {
+      setIsUpdatingMatch(false)
     }
   }
 
@@ -356,7 +359,7 @@ const MatchView = () => {
           isLoading={isUpdatingMatch /*|| isValidating*/}
           settings={gameSettings ?? null}
           onSettingsChange={handleSettingsChange}
-          onStartGameClick={onStartGameClick}
+          onStartGameClick={handleStartGameClick}
           userId={userId}
           createdById={match.createdById}
           isGameFull={isMatchFull}

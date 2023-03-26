@@ -1,4 +1,11 @@
-import { GameSettings, Map, Match, Participant, Unit } from "@prisma/client"
+import {
+  GameSettings,
+  Map,
+  Match,
+  Participant,
+  Unit,
+  User,
+} from "@prisma/client"
 import { io, Socket } from "socket.io-client"
 import { PlacementRuleName } from "../gameLogic/PlacementRule"
 import {
@@ -11,20 +18,22 @@ import { MatchRich } from "../types/Match"
 import { TileWithUnit } from "../types/Tile"
 import { Special } from "./GameManagerService"
 
+// TODO: Make type proper
 export type UpdateGameSettingsPayload = Partial<Omit<GameSettings, "id">>
 
 export class SocketIOApi {
   private socket: Socket | undefined
 
-  private _isConnecting = false
-  public get isConnecting() {
-    return this._isConnecting
+  private isConnecting = false
+  public get IsConnecting() {
+    return this.isConnecting
   }
-  public get isConnected() {
+  public get IsConnected() {
     return !!this.socket?.connected
   }
 
   private callbacks: {
+    setIsConnecting?: (isConnecting: boolean) => void
     setMatch?: (match: Match) => void
     setGameSettings?: (gameSettings: GameSettings) => void
     setMap?: (map: Map) => void
@@ -41,15 +50,25 @@ export class SocketIOApi {
   }
 
   public connectToMatch = (userId: string, matchId: string) => {
-    this._isConnecting = true
+    this.isConnecting = true
+    this.callbacks.setIsConnecting?.(true)
     this.socket = io("http://localhost:3000", {
       query: { userId, matchId },
       autoConnect: false,
+    })
+    this.socket.on("connect", () => {
+      this.isConnecting = false
     })
     this.socket.on(
       ServerEvent.PLAYER_CONNECTED_TO_MATCH,
       (data: Parameters<typeof this.onPlayerConnectedToMatch>[number]) => {
         this.onPlayerConnectedToMatch(data)
+      }
+    )
+    this.socket.on(
+      ServerEvent.STARTED_MATCH,
+      (data: Parameters<typeof this.onStartedMatch>[number]) => {
+        this.onStartedMatch(data)
       }
     )
     this.socket.on(
@@ -107,13 +126,26 @@ export class SocketIOApi {
   private onUpdatedGameSettings = (gameSettings: GameSettings) => {
     this.callbacks.setGameSettings?.(gameSettings)
   }
+  private onStartedMatch = (payload: {
+    match: Match
+    map: Map
+    tilesWithUnits: TileWithUnit[]
+    players: Participant[]
+  }) => {
+    console.log("onStartedMatch", payload)
+
+    this.callbacks.setMatch?.(payload.match)
+    this.callbacks.setPlayers?.(payload.players)
+    this.callbacks.setTilesWithUnits?.(payload.tilesWithUnits)
+    this.callbacks.setMap?.(payload.map)
+  }
 
   private onHovered = (hoveredCoordinates: Coordinate2D[] | null) => {
     this.callbacks.setOpponentsHoveredTiles?.(hoveredCoordinates)
   }
 
   private onMadeMove = (payload: {
-    updatedMatch: MatchRich
+    updatedMatch: Match
     updatedTilesWithUnits: TileWithUnit[]
     updatedPlayers: Participant[]
   }) => {
@@ -139,6 +171,13 @@ export class SocketIOApi {
     console.log("disconnect")
 
     this.socket?.disconnect()
+  }
+
+  async startMatch(userId: User["id"]) {
+    socketApi.sendRequest({
+      event: ClientEvent.START_MATCH,
+      data: { userId },
+    })
   }
 
   async updateGameSettings(
