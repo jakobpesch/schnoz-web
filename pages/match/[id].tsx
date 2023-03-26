@@ -113,6 +113,7 @@ const MatchView = () => {
   )
 
   if (
+    !you ||
     !userId ||
     !match ||
     !players ||
@@ -122,6 +123,7 @@ const MatchView = () => {
     !gameSettings
   ) {
     console.log("match data not yet complete", {
+      you,
       userId,
       match,
       map,
@@ -179,12 +181,8 @@ const MatchView = () => {
     }
 
     try {
-      const participantId = players?.find(
-        (player) => player.userId === userId
-      )?.id
-
-      if (!participantId) {
-        throw new Error("Could not find participantId")
+      if (!you.id) {
+        throw new Error("Could not find your id")
       }
 
       const ignoredRules: PlacementRuleName[] =
@@ -203,7 +201,7 @@ const MatchView = () => {
           tilesWithUnits,
           tileLookup,
           ignoredRules,
-          participantId,
+          you.id,
           activatedSpecials
         )
 
@@ -227,7 +225,7 @@ const MatchView = () => {
           row: tile.row,
           col: tile.col,
           mapId: tile.mapId,
-          ownerId: participantId,
+          ownerId: you.id,
           type: UnitType.UNIT,
         }
       })
@@ -278,32 +276,11 @@ const MatchView = () => {
       // }
       setIsUpdatingMatch(true)
 
-      // updateMatch(
-      //   makeMove(
-      //     match.id,
-      //     row,
-      //     col,
-      //     participantId,
-      //     unitConstellation,
-      //     ignoredRules,
-      //     ignoredRules.includes("ADJACENT_TO_ALLY")
-      //       ? activatedSpecials.filter(
-      //           (special) => special.type !== "EXPAND_BUILD_RADIUS_BY_1"
-      //         )
-      //       : activatedSpecials
-      //   ),
-      //   {
-      //     optimisticData,
-      //     populateCache: true,
-      //     rollbackOnError: true,
-      //     revalidate: true,
-      //   }
-      // ).then(() => setIsUpdatingMatch(false))
       await socketApi.makeMove({
         matchId: match.id,
         row,
         col,
-        participantId,
+        participantId: you.id,
         unitConstellation,
         ignoredRules,
         specials: ignoredRules.includes("ADJACENT_TO_ALLY")
@@ -388,23 +365,26 @@ const MatchView = () => {
             <MapTerrains terrainTiles={terrainTiles} />
             <MapFog fogTiles={fogTiles} halfFogTiles={halfFogTiles} />
             {
-              /*!isLoadingMatch && */ !isUpdatingMatch && !isChangingTurns && (
-                <MapHoveredHighlights
-                  player={activePlayer}
-                  hide={isFinished}
-                  specials={[expandBuildRadiusByOne]}
-                  activeSpecials={activatedSpecials}
-                  setSpecial={(specialType, active) => {
-                    if (active) {
-                      setActivatedSpecials([expandBuildRadiusByOne])
-                    } else {
-                      setActivatedSpecials([])
-                    }
-                  }}
-                  card={selectedCard}
-                  onTileClick={onTileClick}
-                />
-              )
+              /*!isLoadingMatch && */ you &&
+                !isUpdatingMatch &&
+                !isChangingTurns && (
+                  <MapHoveredHighlights
+                    you={you}
+                    activePlayer={activePlayer}
+                    hide={isFinished}
+                    specials={[expandBuildRadiusByOne]}
+                    activeSpecials={activatedSpecials}
+                    setSpecial={(specialType, active) => {
+                      if (active) {
+                        setActivatedSpecials([expandBuildRadiusByOne])
+                      } else {
+                        setActivatedSpecials([])
+                      }
+                    }}
+                    card={selectedCard}
+                    onTileClick={onTileClick}
+                  />
+                )
             }
           </MapContainer>
 

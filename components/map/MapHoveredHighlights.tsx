@@ -33,7 +33,8 @@ const mousePositionToMapCoordinates = (
 }
 
 export interface MapHoveredHighlightsProps {
-  player: Participant | null
+  you: Participant | null
+  activePlayer: Participant | null
   hide?: boolean
   card: Card | null
   specials: Special[]
@@ -114,20 +115,19 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
     }
   }, [props.card])
 
-  if (!props.player || props.hide) {
+  if (!props.activePlayer || props.hide || !props.you) {
     return null
   }
   const hasExpandBuildRaidusByOneActive = props.activeSpecials.some(
     (special) => special.type === "EXPAND_BUILD_RADIUS_BY_1"
   )
 
-  const availableBonusPoints =
-    props.player.bonusPoints + (props.card?.value ?? 0)
+  const availableBonusPoints = props.you.bonusPoints + (props.card?.value ?? 0)
 
   const specialsCost = props.activeSpecials.reduce((a, s) => a + s.cost, 0)
   const bonusFromSelectedCard = props.card?.value ?? 0
   const resultingBonusPoints =
-    props.player.bonusPoints + bonusFromSelectedCard - specialsCost
+    props.you.bonusPoints + bonusFromSelectedCard - specialsCost
 
   return (
     <>
@@ -150,7 +150,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
                 fontWeight="bold"
                 color="yellow.800"
               >
-                {props.player.bonusPoints}
+                {props.you.bonusPoints}
               </Text>
             </Circle>
             {(specialsCost || bonusFromSelectedCard) && (
@@ -175,7 +175,7 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
             <>
               {[
                 { hotkey: "R", label: "Rotate", action: rotate },
-                { hotkey: "M", label: "Mirror", action: mirror },
+                { hotkey: "E", label: "Mirror", action: mirror },
               ].map((s) => (
                 <HStack
                   key={s.label}
@@ -261,8 +261,9 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
           >
             <Image
               src={
-                RenderSettings.getPlayerAppearance(props.player?.playerNumber)
-                  .unit
+                RenderSettings.getPlayerAppearance(
+                  props.activePlayer?.playerNumber
+                ).unit
               }
               height="100%"
               width="100%"
@@ -295,8 +296,9 @@ export const MapHoveredHighlights = (props: MapHoveredHighlightsProps) => {
           >
             <Image
               src={
-                RenderSettings.getPlayerAppearance(props.player?.playerNumber)
-                  .unit
+                RenderSettings.getPlayerAppearance(
+                  props.activePlayer?.playerNumber
+                ).unit
               }
               height="100%"
               width="100%"
