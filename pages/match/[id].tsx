@@ -8,9 +8,8 @@ import {
   VStack,
 } from "@chakra-ui/react"
 import { UnitType } from "@prisma/client"
-import assert from "assert"
 import { useRouter } from "next/router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { MapContainer } from "../../components/map/MapContainer"
 import { MapFog } from "../../components/map/MapFog"
 import { MapHoveredHighlights } from "../../components/map/MapHoveredHighlights"
@@ -24,7 +23,6 @@ import { UILoggingView } from "../../components/ui/UILoggingView"
 import { UIPostMatchView } from "../../components/ui/UIPostMatchView"
 import { UIPreMatchView } from "../../components/ui/UIPreMatchView"
 import { UIScoreView } from "../../components/ui/UIScoreView"
-import { UITurnChangeIndicator } from "../../components/ui/UITurnChangeIndicator"
 import { UITurnsView } from "../../components/ui/UITurnsView"
 import { PlacementRuleName } from "../../gameLogic/PlacementRule"
 import { useCards } from "../../hooks/useCards"
@@ -44,16 +42,12 @@ import {
   Special,
   startMatch,
 } from "../../services/GameManagerService"
-import { updateGameSettings } from "../../services/SettingsService"
 import {
   socketApi,
   UpdateGameSettingsPayload,
 } from "../../services/SocketService"
-import { MapWithTiles } from "../../types/Map"
-import { MatchRich } from "../../types/Match"
-import { TileWithUnits } from "../../types/Tile"
+import { TileWithUnit } from "../../types/Tile"
 import {
-  coordinateIncludedIn,
   coordinatesAreEqual,
   getNewlyRevealedTiles,
 } from "../../utils/coordinateUtils"
@@ -76,9 +70,20 @@ const MatchView = () => {
   const [isChangingTurns, setIsChangingTurns] = useState(false)
   const [activatedSpecials, setActivatedSpecials] = useState<Special[]>([])
 
-  const { match, gameSettings } = useMatch(userId ?? "", matchId)
-  const you = match?.players.find((player) => player.userId === userId)
-  const yourTurn = userId === match?.activePlayer?.userId
+  const {
+    match,
+    gameSettings,
+    players,
+    map,
+    tilesWithUnits,
+    updatedTilesWithUnits,
+  } = useMatch(userId ?? "", matchId)
+
+  const you = players?.find((player) => player.userId === userId)
+  const activePlayer = players?.find(
+    (player) => player.id === match?.activePlayerId
+  )
+  const yourTurn = userId === activePlayer?.userId
 
   const setStatus = (status: string) => {
     setStatusLog([
@@ -93,19 +98,36 @@ const MatchView = () => {
 
   const { cards, selectedCard, setSelectedCard } = useCards(match, yourTurn)
   const { tileLookup, terrainTiles, unitTiles, fogTiles, halfFogTiles } =
-    useTiles(match)
+    useTiles(tilesWithUnits)
   const { placeableCoordinates } = usePlaceableCoordinates(
     match,
+    tilesWithUnits,
+    players,
     yourTurn,
     selectedCard,
     activatedSpecials
   )
-
   const { isPreMatch, wasStarted, isOngoing, isFinished } = useMatchStatus(
     match?.status
   )
 
-  if (!userId || !match) {
+  if (
+    !userId ||
+    !match ||
+    !players ||
+    (!isPreMatch && !map) ||
+    (!isPreMatch && !tilesWithUnits) ||
+    (!isPreMatch && !activePlayer) ||
+    !gameSettings
+  ) {
+    console.log("match data not yet complete", {
+      userId,
+      match,
+      map,
+      players,
+      tilesWithUnits,
+      activePlayer,
+    })
     return null
   }
 
@@ -128,8 +150,7 @@ const MatchView = () => {
     )
   }
 
-  const isMatchFull =
-    match.players?.filter((player) => player !== null).length === 2
+  const isMatchFull = players.filter((player) => player !== null).length === 2
 
   const onTileClick = async (
     row: number,
@@ -157,12 +178,13 @@ const MatchView = () => {
     }
 
     try {
-      const participantId = match.players.find(
+      const participantId = players?.find(
         (player) => player.userId === userId
       )?.id
 
-      assert(participantId)
-      assert(match.map)
+      if (!participantId) {
+        throw new Error("Could not find participantId")
+      }
 
       const ignoredRules: PlacementRuleName[] =
         unitConstellation.coordinates.length === 1 &&
@@ -175,7 +197,9 @@ const MatchView = () => {
           [row, col],
           unitConstellation,
           match,
-          match.map,
+          activePlayer,
+          map,
+          tilesWithUnits,
           tileLookup,
           ignoredRules,
           participantId,
@@ -186,10 +210,12 @@ const MatchView = () => {
         setStatus(error.message)
         return
       }
-      const mapClone = JSON.parse(JSON.stringify(match.map)) as MapWithTiles
+      const tilesWithUnitsClone = JSON.parse(
+        JSON.stringify(tilesWithUnits)
+      ) as TileWithUnit[]
 
       translatedCoordinates.forEach((coordinate, index) => {
-        const tile = mapClone.tiles.find((tile) =>
+        const tile = tilesWithUnitsClone.find((tile) =>
           coordinatesAreEqual([tile.row, tile.col], coordinate)
         )
         if (!tile) {
@@ -213,42 +239,42 @@ const MatchView = () => {
         return
       }
 
-      const optimisticData: MatchRich = {
-        ...match,
-        turn: match.turn + 1,
-        map: {
-          ...mapClone,
-          tiles: mapClone.tiles.map((tile, index) => {
-            const updatedTile: TileWithUnits = { ...tile }
-            if (
-              coordinateIncludedIn(
-                revealedTiles.map((tile) => [tile.row, tile.col]),
-                [updatedTile.row, updatedTile.col]
-              )
-            ) {
-              updatedTile.visible = true
-            }
-            if (
-              coordinateIncludedIn(translatedCoordinates, [
-                updatedTile.row,
-                updatedTile.col,
-              ])
-            ) {
-              updatedTile.unit = {
-                id: "pending-unit-" + index,
-                row: tile.row,
-                col: tile.col,
-                mapId: tile.mapId,
-                ownerId: participantId,
-                type: UnitType.UNIT,
-              }
-            }
+      // const optimisticData: MatchRich = {
+      //   ...match,
+      //   turn: match.turn + 1,
+      //   map: {
+      //     ...mapClone,
+      //     tiles: mapClone.tiles.map((tile, index) => {
+      //       const updatedTile: TileWithUnit = { ...tile }
+      //       if (
+      //         coordinateIncludedIn(
+      //           revealedTiles.map((tile) => [tile.row, tile.col]),
+      //           [updatedTile.row, updatedTile.col]
+      //         )
+      //       ) {
+      //         updatedTile.visible = true
+      //       }
+      //       if (
+      //         coordinateIncludedIn(translatedCoordinates, [
+      //           updatedTile.row,
+      //           updatedTile.col,
+      //         ])
+      //       ) {
+      //         updatedTile.unit = {
+      //           id: "pending-unit-" + index,
+      //           row: tile.row,
+      //           col: tile.col,
+      //           mapId: tile.mapId,
+      //           ownerId: participantId,
+      //           type: UnitType.UNIT,
+      //         }
+      //       }
 
-            return updatedTile
-          }),
-        },
-        updatedAt: new Date(),
-      }
+      //       return updatedTile
+      //     }),
+      //   },
+      //   updatedAt: new Date(),
+      // }
       setIsUpdatingMatch(true)
 
       // updateMatch(
@@ -272,7 +298,20 @@ const MatchView = () => {
       //     revalidate: true,
       //   }
       // ).then(() => setIsUpdatingMatch(false))
-
+      await socketApi.makeMove({
+        matchId: match.id,
+        row,
+        col,
+        participantId,
+        unitConstellation,
+        ignoredRules,
+        specials: ignoredRules.includes("ADJACENT_TO_ALLY")
+          ? activatedSpecials.filter(
+              (special) => special.type !== "EXPAND_BUILD_RADIUS_BY_1"
+            )
+          : activatedSpecials,
+      })
+      setIsUpdatingMatch(false)
       setSelectedCard(null)
       setActivatedSpecials([])
       setStatus(`Placed unit on tile (${row}|${col})`)
@@ -289,7 +328,7 @@ const MatchView = () => {
 
     try {
       setIsUpdatingMatch(true)
-      if (!match.map) {
+      if (!map) {
         await createMap(match.id, userId)
       }
       await startMatch(match.id, userId)
@@ -302,7 +341,7 @@ const MatchView = () => {
     settings: Omit<UpdateGameSettingsPayload, "matchId">
   ) => {
     try {
-      await updateGameSettings(settings)
+      await socketApi.updateGameSettings(settings)
       setStatus("Updated Settings")
     } catch (e: any) {
       setStatus(e.message)
@@ -324,18 +363,22 @@ const MatchView = () => {
           matchId={match.id}
         />
       )}
-      {wasStarted && (
+      {wasStarted && map && tilesWithUnits && activePlayer && (
         <>
           <MapContainer
             id="map-container"
-            match={match}
+            map={map}
             cursor={selectedCard ? "none" : "default"}
           >
             {isOngoing && /*!isLoadingMatch && */ !isUpdatingMatch && (
               <MapPlaceableTiles placeableCoordinates={placeableCoordinates} />
             )}
 
-            <MapUnits unitTiles={unitTiles} players={match.players} />
+            <MapUnits
+              unitTiles={unitTiles}
+              players={players}
+              updatedUnitTiles={updatedTilesWithUnits ?? []}
+            />
             {showRuleEvaluationHighlights && (
               <MapRuleEvaluations coordinates={showRuleEvaluationHighlights} />
             )}
@@ -344,7 +387,7 @@ const MatchView = () => {
             {
               /*!isLoadingMatch && */ !isUpdatingMatch && !isChangingTurns && (
                 <MapHoveredHighlights
-                  player={match.activePlayer}
+                  player={activePlayer}
                   hide={isFinished}
                   specials={[expandBuildRadiusByOne]}
                   activeSpecials={activatedSpecials}
@@ -363,8 +406,8 @@ const MatchView = () => {
           </MapContainer>
 
           <UIScoreView
-            players={match.players}
-            map={match.map}
+            players={players}
+            tilesWithUnits={tilesWithUnits}
             rules={gameSettings?.rules ?? []}
             onRuleHover={(coordinates) => {
               setShowRuleEvaluationHighlights(coordinates)
@@ -372,10 +415,20 @@ const MatchView = () => {
           />
         </>
       )}
-      {isFinished && <UIPostMatchView winner={match.winner} />}
-      {isOngoing && (
+      {isFinished && (
+        <UIPostMatchView
+          winner={
+            players.find((player) => player.id === match.winnerId) ?? null
+          }
+        />
+      )}
+      {isOngoing && activePlayer && (
         <>
-          <UITurnsView match={match} />
+          <UITurnsView
+            match={match}
+            players={players}
+            gameSettings={gameSettings}
+          />
           {/* {you?.bonusPoints != null && (
             <UIBonusPointsView bonusPoints={you.bonusPoints} />
           )} */}
@@ -385,7 +438,7 @@ const MatchView = () => {
             readonly={!yourTurn}
             onSelect={(card) => {
               const insufficientBonusPoints =
-                (match.activePlayer?.bonusPoints ?? 0) + (card.value ?? 0) <
+                activePlayer.bonusPoints + (card.value ?? 0) <
                 activatedSpecials.reduce((a, s) => a + s.cost, 0)
 
               const isSinglePiece =
@@ -399,9 +452,9 @@ const MatchView = () => {
             }}
           />
 
-          {match.activePlayer && (
+          {/* {activePlayer && (
             <UITurnChangeIndicator
-              activePlayer={match.activePlayer}
+              activePlayer={activePlayer}
               onChangingTurnsStart={() => {
                 setIsChangingTurns(true)
               }}
@@ -409,7 +462,7 @@ const MatchView = () => {
                 setIsChangingTurns(false)
               }}
             />
-          )}
+          )} */}
         </>
       )}
       <UILoggingView statusLog={statusLog} />

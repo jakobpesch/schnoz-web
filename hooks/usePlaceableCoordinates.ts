@@ -1,27 +1,28 @@
-import { UnitType } from "@prisma/client"
-import assert from "assert"
+import { Match, Participant, UnitType } from "@prisma/client"
 import { useMemo } from "react"
 import { Coordinate2D } from "../models/UnitConstellation.model"
 import { Special } from "../services/GameManagerService"
-import { MatchRich } from "../types/Match"
+import { TileWithUnit } from "../types/Tile"
 import { Card } from "../utils/constallationTransformer"
 import {
+  buildTileLookupId,
   coordinatesAreEqual,
   getAdjacentCoordinatesOfConstellation,
-  buildTileLookupId,
 } from "../utils/coordinateUtils"
 import { useTiles } from "./useTiles"
 
 export function usePlaceableCoordinates(
-  match: MatchRich | undefined,
+  match: Match | undefined,
+  tilesWithUnits: TileWithUnit[] | undefined,
+  players: Participant[] | undefined,
   yourTurn: boolean,
   selectedCard: Card | null,
   activatedSpecials: Special[]
 ) {
-  const { tileLookup } = useTiles(match)
+  const { tileLookup } = useTiles(tilesWithUnits)
   const placeableCoordinates =
     useMemo(() => {
-      if (!yourTurn || !match || !match.map) {
+      if (!yourTurn || !match || !tilesWithUnits || !players) {
         return []
       }
 
@@ -36,9 +37,9 @@ export function usePlaceableCoordinates(
       }
 
       const alliedTiles =
-        match.map.tiles.filter(
+        tilesWithUnits.filter(
           (tile) =>
-            tile.unit?.ownerId === match.activePlayer?.id ||
+            tile.unit?.ownerId === match.activePlayerId ||
             tile?.unit?.type === UnitType.MAIN_BUILDING
         ) ?? []
 
@@ -52,10 +53,11 @@ export function usePlaceableCoordinates(
       })
 
       const usesSpecial = activatedSpecials.find((special) => {
-        assert(match.activePlayer)
         return (
           special.type === "EXPAND_BUILD_RADIUS_BY_1" &&
-          match.activePlayer.bonusPoints + (selectedCard?.value ?? 0) >=
+          (players.find((player) => player.id === match.activePlayerId)
+            ?.bonusPoints ?? 0) +
+            (selectedCard?.value ?? 0) >=
             special.cost
         )
       })
@@ -74,6 +76,6 @@ export function usePlaceableCoordinates(
         ]
       }
       return placeableCoordiantes
-    }, [match?.updatedAt, selectedCard, activatedSpecials]) ?? []
+    }, [match, tilesWithUnits, selectedCard, activatedSpecials]) ?? []
   return { placeableCoordinates }
 }

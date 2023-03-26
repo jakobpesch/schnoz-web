@@ -1,14 +1,18 @@
 import { Box, Flex, Heading, HStack, Stack } from "@chakra-ui/react"
-import { Match, Participant } from "@prisma/client"
+import { GameSettings, Match, Participant } from "@prisma/client"
 import assert from "assert"
 import Image, { StaticImageData } from "next/image"
 import { useMemo } from "react"
 import { defaultGame } from "../../gameLogic/GameVariants"
 import { RenderSettings } from "../../services/SettingsService"
-import { MatchRich } from "../../types/Match"
+
 import { viewFactorWidth } from "./UIScoreView"
 
-const getTurns = (match: MatchRich) => {
+const getTurns = (
+  match: Match,
+  players: Participant[],
+  gameSettings: GameSettings
+) => {
   const turnsUI: (
     | {
         turn: Match["turn"]
@@ -23,14 +27,13 @@ const getTurns = (match: MatchRich) => {
         evaluate: true
       }
   )[] = []
-  const startingPlayer = match.players.find(
+  const startingPlayer = players.find(
     (player) => player.userId === match.createdById
   )
   assert(startingPlayer)
-  assert(match.gameSettings)
 
   let activePlayer = startingPlayer
-  for (let turn = 1; turn <= match.gameSettings.maxTurns; turn++) {
+  for (let turn = 1; turn <= gameSettings.maxTurns; turn++) {
     turnsUI.push({
       turn,
       playerId: activePlayer.id,
@@ -38,9 +41,7 @@ const getTurns = (match: MatchRich) => {
     })
 
     if (defaultGame.shouldChangeActivePlayer(turn)) {
-      activePlayer = match.players.find(
-        (player) => player.id !== activePlayer.id
-      )!
+      activePlayer = players.find((player) => player.id !== activePlayer.id)!
     }
     if (defaultGame.shouldEvaluate(turn)) {
       turnsUI.push({ evaluate: true })
@@ -49,9 +50,13 @@ const getTurns = (match: MatchRich) => {
   return turnsUI
 }
 
-export const UITurnsView = (props: { match: MatchRich }) => {
+export const UITurnsView = (props: {
+  match: Match
+  players: Participant[]
+  gameSettings: GameSettings
+}) => {
   const turnsUI = useMemo(() => {
-    const turns = getTurns(props.match)
+    const turns = getTurns(props.match, props.players, props.gameSettings)
     for (let index = 1; index < props.match.turn; index++) {
       turns.shift()
       if (turns[0].evaluate) {
@@ -59,7 +64,7 @@ export const UITurnsView = (props: { match: MatchRich }) => {
       }
     }
     return turns
-  }, [props.match.updatedAt])
+  }, [props.match])
 
   return (
     <Flex position="fixed" top="0" left="0">

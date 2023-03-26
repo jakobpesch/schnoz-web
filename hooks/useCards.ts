@@ -1,18 +1,19 @@
+import { Match } from "@prisma/client"
 import Mousetrap from "mousetrap"
 import { useEffect, useMemo, useState } from "react"
-import { MatchRich } from "../types/Match"
+
 import {
   Card,
   decodeUnitConstellation,
 } from "../utils/constallationTransformer"
 
-export function useCards(match: MatchRich | undefined, yourTurn: boolean) {
+export function useCards(match: Match | undefined, yourTurn: boolean) {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
 
   const cards =
     useMemo(() => {
       return match?.openCards?.map(decodeUnitConstellation)
-    }, [match?.updatedAt]) ?? []
+    }, [match]) ?? []
 
   useEffect(() => {
     match?.openCards.forEach((unitConstellation, index) => {
@@ -28,7 +29,7 @@ export function useCards(match: MatchRich | undefined, yourTurn: boolean) {
     if (yourTurn) {
       Mousetrap.bind("esc", () => setSelectedCard(null))
     }
-  }, [match?.updatedAt])
+  }, [match])
 
   return { cards, selectedCard, setSelectedCard }
 }

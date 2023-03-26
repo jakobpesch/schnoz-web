@@ -17,6 +17,7 @@ import { RuleEvaluation } from "../../gameLogic/ScoringRule"
 import { Coordinate2D } from "../../models/UnitConstellation.model"
 import { RenderSettings } from "../../services/SettingsService"
 import { MapWithTiles } from "../../types/Map"
+import { TileWithUnit } from "../../types/Tile"
 import { getSquareMatrix, getTileLookup } from "../../utils/coordinateUtils"
 import { HoveredTooltip } from "../HoveredTooltip"
 
@@ -26,11 +27,11 @@ export const viewFactorWidth = (
 ) => viewPortWidthFactor * value + "vmin"
 
 const getEvaluationsMap = (
-  map: MapWithTiles,
+  tilesWithUnits: TileWithUnit[],
   players: Participant[],
   rules: GameSettings["rules"]
 ) => {
-  const tileLookup = getTileLookup(map.tiles)
+  const tileLookup = getTileLookup(tilesWithUnits)
   const rulesMap = new Map<Rule, RuleEvaluation[]>()
   const gameType = createCustomGame(rules)
   gameType.scoringRules.forEach((rule) => {
@@ -597,7 +598,7 @@ const ruleExplainations = new Map<Rule, ReactNode>([
 
 export const UIScoreView = (props: {
   players: Participant[]
-  map: MapWithTiles | null
+  tilesWithUnits: TileWithUnit[]
   rules: GameSettings["rules"]
   onRuleHover: (coordinates: Coordinate2D[]) => void
 }) => {
@@ -607,8 +608,8 @@ export const UIScoreView = (props: {
   const player2 = props.players.find((player) => player.playerNumber === 1)
   assert(player2)
 
-  const rulesMap = props.map
-    ? getEvaluationsMap(props.map, props.players, props.rules)
+  const rulesMap = props.tilesWithUnits
+    ? getEvaluationsMap(props.tilesWithUnits, props.players, props.rules)
     : null
 
   return (

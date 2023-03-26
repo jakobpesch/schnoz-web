@@ -140,17 +140,20 @@ export default async function handler(
       }
 
       const tileLookup = getTileLookup(match.map.tiles)
-      const { translatedCoordinates, error } =
-        checkConditionsForUnitConstellationPlacement(
-          [targetRow, targetCol],
-          unitConstellation,
-          match,
-          match.map,
-          tileLookup,
-          ignoredRules,
-          participantId,
-          specials
-        )
+      const { translatedCoordinates, error } = {
+        translatedCoordinates: [],
+        error: { message: "TODO", statusCode: 1337 },
+      }
+      // checkConditionsForUnitConstellationPlacement(
+      //   [targetRow, targetCol],
+      //   unitConstellation,
+      //   match,
+      //   match.map,
+      //   tileLookup,
+      //   ignoredRules,
+      //   participantId,
+      //   specials
+      // )
 
       if (error) {
         res.status(error.statusCode).end(error.message)

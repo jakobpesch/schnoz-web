@@ -1,6 +1,6 @@
 import { Terrain } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
-import { TileWithUnits } from "../types/Tile"
+import { TileWithUnit } from "../types/Tile"
 import {
   buildTileLookupId,
   coordinateIncludedIn,
@@ -16,7 +16,7 @@ import {
   TileLookup,
 } from "./coordinateUtils"
 
-const tiles: TileWithUnits[] = [
+const tiles: TileWithUnit[] = [
   {
     row: 0,
     col: 0,

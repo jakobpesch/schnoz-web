@@ -1,7 +1,6 @@
-import { UnitType } from "@prisma/client"
+import { Map as SchnozMap, UnitType } from "@prisma/client"
 import { Coordinate2D } from "../models/UnitConstellation.model"
-import { MatchRich } from "../types/Match"
-import { TileWithUnits } from "../types/Tile"
+import { TileWithUnit } from "../types/Tile"
 import {
   coordinatesAreEqual,
   getAdjacentCoordinatesOfConstellation,
@@ -16,37 +15,48 @@ export const inBounds: PlacementRule = (constellation, map) =>
 export type PlacementRule = (
   constellation: Coordinate2D[],
   // @todo consider replaceing with tile lookup
-  map: Exclude<MatchRich["map"], null>,
+  map: SchnozMap,
+  tilesWithUnits: TileWithUnit[],
   playerId: string
 ) => boolean
-
-export const noUnit: PlacementRule = (constellation, map) => {
+export const noUnit: PlacementRule = (constellation, map, tilesWithUnits) => {
   const hasUnit = constellation.some(
     ([row, col]) =>
-      !!map.tiles.find((tile) => tile.row === row && tile.col === col)?.unit
+      !!tilesWithUnits.find((tile) => tile.row === row && tile.col === col)
+        ?.unit
   )
   return !hasUnit
 }
 
-export const noTerrain: PlacementRule = (constellation, map) => {
+export const noTerrain: PlacementRule = (
+  constellation,
+  map,
+  tilesWithUnits
+) => {
   const hasTerrain = constellation.some(
     ([row, col]) =>
-      !!map.tiles.find((tile) => tile.row === row && tile.col === col)?.terrain
+      !!tilesWithUnits.find((tile) => tile.row === row && tile.col === col)
+        ?.terrain
   )
   return !hasTerrain
 }
 
-export const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
+export const adjacentToAlly: PlacementRule = (
+  constellation,
+  map,
+  tilesWithUnits,
+  playerId
+) => {
   const adjacentCoordinates =
     getAdjacentCoordinatesOfConstellation(constellation)
 
   const adjacentTiles = adjacentCoordinates
     .map((coordinate) =>
-      map.tiles.find((tile) =>
+      tilesWithUnits.find((tile) =>
         coordinatesAreEqual([tile.row, tile.col], coordinate)
       )
     )
-    .filter((tile): tile is TileWithUnits => !!tile)
+    .filter((tile): tile is TileWithUnit => !!tile)
 
   const isAdjacentToAlly = adjacentTiles.some(
     (tile) =>
@@ -59,6 +69,7 @@ export const adjacentToAlly: PlacementRule = (constellation, map, playerId) => {
 export const adjacentToAlly2: PlacementRule = (
   constellation,
   map,
+  tilesWithUnits,
   playerId
 ) => {
   let adjacentCoordinates = getAdjacentCoordinatesOfConstellation(constellation)
@@ -68,11 +79,11 @@ export const adjacentToAlly2: PlacementRule = (
   ]
   const adjacentTiles2 = adjacentCoordinates
     .map((coordinate) =>
-      map.tiles.find((tile) =>
+      tilesWithUnits.find((tile) =>
         coordinatesAreEqual([tile.row, tile.col], coordinate)
       )
     )
-    .filter((tile): tile is TileWithUnits => !!tile)
+    .filter((tile): tile is TileWithUnit => !!tile)
 
   const isAdjacentToAlly2 = adjacentTiles2.some(
     (tile) =>

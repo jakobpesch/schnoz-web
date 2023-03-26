@@ -186,7 +186,7 @@ const UserPage: NextPage = () => {
         <Stack spacing="4">
           <Heading>Match History</Heading>
           {participations.length === 0 ? (
-            <Text>You haven't played in any matches yet.</Text>
+            <Text>{"You haven't played in any matches yet."}</Text>
           ) : (
             <SimpleGrid gap="2" columns={4} alignItems="center">
               <Text fontWeight="bold">Created at</Text>

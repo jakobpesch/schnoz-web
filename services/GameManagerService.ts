@@ -13,6 +13,7 @@ import {
 } from "../models/UnitConstellation.model"
 import { MapWithTiles } from "../types/Map"
 import { MatchRich, MatchWithPlayers } from "../types/Match"
+import { TileWithUnit } from "../types/Tile"
 import {
   transformCoordinates,
   translateCoordinatesTo,
@@ -319,11 +320,13 @@ export const makeMove = async (
 export const checkConditionsForUnitConstellationPlacement = (
   targetCoordinate: Coordinate2D,
   unitConstellation: IUnitConstellation,
-  match: MatchRich,
-  map: MapWithTiles,
+  match: Match | undefined,
+  activePlayer: Participant | undefined,
+  map: Map | undefined,
+  tilesWithUnits: TileWithUnit[] | undefined,
   tileLookup: TileLookup,
   ignoredRules: PlacementRuleName[],
-  placingPlayer: Participant["id"],
+  placingPlayer: Participant["id"] | undefined,
   specials: Special[]
 ) => {
   if (!match) {
@@ -332,6 +335,11 @@ export const checkConditionsForUnitConstellationPlacement = (
 
   if (!map) {
     return { error: { message: "Map is missing", statusCode: 500 } }
+  }
+  if (!tilesWithUnits) {
+    return {
+      error: { message: "Tiles with units are missing", statusCode: 500 },
+    }
   }
 
   if (match.status !== MatchStatus.STARTED) {
@@ -363,10 +371,9 @@ export const checkConditionsForUnitConstellationPlacement = (
   if (
     specials.some(
       (special) =>
-        special.type === "EXPAND_BUILD_RADIUS_BY_1" &&
-        match.activePlayer &&
-        match.activePlayer.bonusPoints + unitConstellation.value >=
-          expandBuildRadiusByOne.cost
+        (special.type === "EXPAND_BUILD_RADIUS_BY_1" &&
+          activePlayer?.bonusPoints) ??
+        0 + unitConstellation.value >= expandBuildRadiusByOne.cost
     )
   ) {
     defaultGame.placementRuleMap.delete("ADJACENT_TO_ALLY")
@@ -377,7 +384,7 @@ export const checkConditionsForUnitConstellationPlacement = (
     ([ruleName, rule]) =>
       ignoredRules.includes(ruleName)
         ? true
-        : rule(translatedCoordinates, map, placingPlayer)
+        : rule(translatedCoordinates, map, tilesWithUnits, placingPlayer)
   )
 
   if (!canBePlaced) {

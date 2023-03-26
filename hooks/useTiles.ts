@@ -1,36 +1,36 @@
 import { useMemo } from "react"
 import { Coordinate2D } from "../models/UnitConstellation.model"
-import { MatchRich } from "../types/Match"
+import { TileWithUnit } from "../types/Tile"
 import {
   buildTileLookupId,
   getAdjacentCoordinates,
   getTileLookup,
 } from "../utils/coordinateUtils"
 
-export function useTiles(match?: MatchRich) {
+export function useTiles(tilesWithUnits: TileWithUnit[] | undefined) {
   const tileLookup =
     useMemo(() => {
-      return getTileLookup(match?.map?.tiles ?? [])
-    }, [match?.updatedAt]) ?? []
+      return getTileLookup(tilesWithUnits ?? [])
+    }, [tilesWithUnits]) ?? []
 
   const terrainTiles =
     useMemo(() => {
-      return match?.map?.tiles.filter((tile) => tile.terrain && tile.visible)
-    }, [match?.updatedAt]) ?? []
+      return tilesWithUnits?.filter((tile) => tile.terrain && tile.visible)
+    }, [tilesWithUnits]) ?? []
 
   const unitTiles =
     useMemo(() => {
-      return match?.map?.tiles.filter((tile) => tile.unit && tile.visible)
-    }, [match?.updatedAt]) ?? []
+      return tilesWithUnits?.filter((tile) => tile.unit && tile.visible)
+    }, [tilesWithUnits]) ?? []
 
   const fogTiles =
     useMemo(() => {
-      return match?.map?.tiles.filter((tile) => !tile.visible)
-    }, [match?.updatedAt]) ?? []
+      return tilesWithUnits?.filter((tile) => !tile.visible)
+    }, [tilesWithUnits]) ?? []
 
   const halfFogTiles =
     useMemo(() => {
-      return match?.map?.tiles.filter((tile) => {
+      return tilesWithUnits?.filter((tile) => {
         if (!tile.visible) {
           return false
         }
@@ -47,7 +47,7 @@ export function useTiles(match?: MatchRich) {
         )
         return tile.visible && hasHiddenAdjacentTile
       })
-    }, [match?.updatedAt]) ?? []
+    }, [tilesWithUnits]) ?? []
 
   return {
     tileLookup,

@@ -1,21 +1,21 @@
-import { GameSettings, Match } from "@prisma/client"
-import { io } from "socket.io-client"
-import { Socket } from "socket.io-client"
-import { Coordinate2D } from "../models/UnitConstellation.model"
+import { GameSettings, Map, Match, Participant, Unit } from "@prisma/client"
+import { io, Socket } from "socket.io-client"
+import { PlacementRuleName } from "../gameLogic/PlacementRule"
+import {
+  Coordinate2D,
+  IUnitConstellation,
+} from "../models/UnitConstellation.model"
 import { ClientEvent } from "../shared-server/client-event.enum"
 import { ServerEvent } from "../shared-server/server-event.enum"
 import { MatchRich } from "../types/Match"
+import { TileWithUnit } from "../types/Tile"
+import { Special } from "./GameManagerService"
 
 export type UpdateGameSettingsPayload = Partial<Omit<GameSettings, "id">>
 
 export class SocketIOApi {
   private socket: Socket | undefined
-  private match: MatchRich | undefined
-  public lastUpdatedAt: string = ""
 
-  get Match() {
-    return this.match
-  }
   private _isConnecting = false
   public get isConnecting() {
     return this._isConnecting
@@ -25,56 +25,54 @@ export class SocketIOApi {
   }
 
   private callbacks: {
-    setMatch?: (match: MatchRich) => void
+    setMatch?: (match: Match) => void
     setGameSettings?: (gameSettings: GameSettings) => void
+    setMap?: (map: Map) => void
+    setTilesWithUnits?: (tilesWithUnits: TileWithUnit[]) => void
+    setUpdatedTilesWithUnits?: (updatedTilesWithUnits: TileWithUnit[]) => void
+    setUnits?: (units: Unit[]) => void
+    setPlayers?: (players: Participant[]) => void
     setOpponentsHoveredTiles?: (hoveringTiles: Coordinate2D[] | null) => void
+    setLastSynced?: (lastSynced: string) => void
   } = {}
 
   public setCallbacks = (callbacks: typeof this.callbacks) => {
     this.callbacks = { ...this.callbacks, ...callbacks }
   }
+
   public connectToMatch = (userId: string, matchId: string) => {
-    console.log("ENTER: connectToMatch")
     this._isConnecting = true
     this.socket = io("http://localhost:3000", {
       query: { userId, matchId },
       autoConnect: false,
     })
-
-    this.socket.on("connect", () => {})
-
     this.socket.on(
       ServerEvent.PLAYER_CONNECTED_TO_MATCH,
-      (match: MatchRich) => {
-        this.callbacks.setMatch?.(match)
-        if (match.gameSettings) {
-          this.callbacks.setGameSettings?.(match.gameSettings)
-        }
-        this.lastUpdatedAt = new Date().toISOString()
+      (data: Parameters<typeof this.onPlayerConnectedToMatch>[number]) => {
+        this.onPlayerConnectedToMatch(data)
       }
     )
-
+    this.socket.on(
+      ServerEvent.UPDATED_GAME_SETTINGS,
+      (data: Parameters<typeof this.onUpdatedGameSettings>[number]) => {
+        this.onUpdatedGameSettings(data)
+      }
+    )
+    this.socket.on(
+      ServerEvent.HOVERED,
+      (data: Parameters<typeof this.onHovered>[number]) => {
+        this.onHovered(data)
+      }
+    )
+    this.socket.on(
+      ServerEvent.MADE_MOVE,
+      (data: Parameters<typeof this.onMadeMove>[number]) => {
+        this.onMadeMove(data)
+      }
+    )
     this.socket.on(ServerEvent.DISCONNECTED_FROM_MATCH, () => {
       console.log("connectToMatch:disconnectedFromMatch")
     })
-
-    this.socket.on("TIME_REMAINING", (data) => {
-      console.log("timer", data)
-    })
-
-    this.socket.on(
-      ServerEvent.UPDATED_GAME_SETTINGS,
-      (gameSettings: GameSettings) => {
-        this.callbacks.setGameSettings?.(gameSettings)
-      }
-    )
-
-    this.socket.on(
-      ServerEvent.HOVERED,
-      (hoveredCoordinates: Coordinate2D[] | null) => {
-        this.callbacks.setOpponentsHoveredTiles?.(hoveredCoordinates)
-      }
-    )
 
     this.socket.on("connect_error", (error: Error) => {
       console.error("connect error", error)
@@ -82,6 +80,46 @@ export class SocketIOApi {
     })
 
     this.socket.connect()
+  }
+
+  private onPlayerConnectedToMatch = (payload: {
+    match: Match
+    gameSettings?: GameSettings
+    map?: Map
+    tilesWithUnits?: TileWithUnit[]
+    players?: Participant[]
+  }) => {
+    this.callbacks.setMatch?.(payload.match)
+    if (payload.gameSettings) {
+      this.callbacks.setGameSettings?.(payload.gameSettings)
+    }
+    if (payload.players) {
+      this.callbacks.setPlayers?.(payload.players)
+    }
+    if (payload.tilesWithUnits) {
+      this.callbacks.setTilesWithUnits?.(payload.tilesWithUnits)
+    }
+    if (payload.map) {
+      this.callbacks.setMap?.(payload.map)
+    }
+  }
+
+  private onUpdatedGameSettings = (gameSettings: GameSettings) => {
+    this.callbacks.setGameSettings?.(gameSettings)
+  }
+
+  private onHovered = (hoveredCoordinates: Coordinate2D[] | null) => {
+    this.callbacks.setOpponentsHoveredTiles?.(hoveredCoordinates)
+  }
+
+  private onMadeMove = (payload: {
+    updatedMatch: MatchRich
+    updatedTilesWithUnits: TileWithUnit[]
+    updatedPlayers: Participant[]
+  }) => {
+    this.callbacks.setMatch?.(payload.updatedMatch)
+    this.callbacks.setUpdatedTilesWithUnits?.(payload.updatedTilesWithUnits)
+    this.callbacks.setPlayers?.(payload.updatedPlayers)
   }
 
   public sendRequest = async (request: { event: string; data: any }) => {
@@ -129,6 +167,21 @@ export class SocketIOApi {
     await socketApi.sendRequest({
       event: ClientEvent.UPDATE_GAME_SETTINGS,
       data: gameSettings,
+    })
+  }
+
+  async makeMove(payload: {
+    matchId: string
+    row: number
+    col: number
+    participantId: string
+    unitConstellation: IUnitConstellation
+    ignoredRules?: PlacementRuleName[]
+    specials?: Special[]
+  }) {
+    await socketApi.sendRequest({
+      event: ClientEvent.MAKE_MOVE,
+      data: payload,
     })
   }
 

@@ -1,16 +1,16 @@
 import { Box, BoxProps, Center } from "@chakra-ui/react"
+import { Map, Match } from "@prisma/client"
 import { RenderSettings } from "../../services/SettingsService"
-import { MatchRich } from "../../types/Match"
 
 interface MapContainerProps extends BoxProps {
-  match: MatchRich
+  map: Map
 }
 export const MapContainer = (props: MapContainerProps) => {
-  const { match, ...boxProps } = props
-  if (!match.map) {
+  const { map, ...boxProps } = props
+  if (!map) {
     return null
   }
-  const { rowCount, colCount } = match.map
+  const { rowCount, colCount } = map
   const mapWidth = RenderSettings.tileSize * rowCount
   const mapHeight = RenderSettings.tileSize * colCount
   return (

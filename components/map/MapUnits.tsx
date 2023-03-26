@@ -1,12 +1,15 @@
 import { Flex } from "@chakra-ui/react"
 import { Participant } from "@prisma/client"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 import { RenderSettings } from "../../services/SettingsService"
-import { TileWithUnits } from "../../types/Tile"
+import { TileWithUnit } from "../../types/Tile"
+import { coordinatesAreEqual } from "../../utils/coordinateUtils"
 
 export const MapUnits = (props: {
   players: Participant[]
-  unitTiles: TileWithUnits[]
+  unitTiles: TileWithUnit[]
+  updatedUnitTiles: TileWithUnit[]
 }) => {
   return (
     <>
@@ -27,7 +30,13 @@ export const MapUnits = (props: {
             height={RenderSettings.tileSize + "px"}
             pointerEvents="none"
             // bg={color}
-            bg={"rgba(0,0,0,0.1)"}
+            bg={
+              props.updatedUnitTiles.find((ut) =>
+                coordinatesAreEqual([ut.row, ut.col], [tile.row, tile.col])
+              )
+                ? "rgba(0,0,0,0.2)"
+                : "rgba(0,0,0,0.1)"
+            }
           >
             <Image src={unit} height="100%" width="100%" />
             {/* <MapObject object={unit} /> */}

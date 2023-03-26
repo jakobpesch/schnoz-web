@@ -5,9 +5,9 @@ import terrainStone from "../../assets/sprites/terrain_stone.png"
 import terrainTree from "../../assets/sprites/terrain_tree.png"
 import terrainWater from "../../assets/sprites/terrain_water.png"
 import { RenderSettings } from "../../services/SettingsService"
-import { TileWithUnits } from "../../types/Tile"
+import { TileWithUnit } from "../../types/Tile"
 
-export const MapTerrains = (props: { terrainTiles: TileWithUnits[] }) => {
+export const MapTerrains = (props: { terrainTiles: TileWithUnit[] }) => {
   let terrain: StaticImageData
   return (
     <>

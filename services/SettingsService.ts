@@ -1,4 +1,4 @@
-import { GameSettings, Participant, Rule, Terrain } from "@prisma/client"
+import { Participant, Rule, Terrain } from "@prisma/client"
 import { StaticImageData } from "next/image"
 import bob from "../assets/sprites/bob.png"
 import background from "../assets/sprites/grass.png"
@@ -11,8 +11,6 @@ import ruleWater from "../assets/sprites/rule_water.png"
 import terrainStone from "../assets/sprites/terrain_stone.png"
 import terrainTree from "../assets/sprites/terrain_tree.png"
 import terrainWater from "../assets/sprites/terrain_water.png"
-import { ClientEvent } from "../shared-server/client-event.enum"
-import { socketApi, UpdateGameSettingsPayload } from "./SocketService"
 
 export const RenderSettings = {
   tileSize: 50,
@@ -68,36 +66,4 @@ export const RenderSettings = {
     }
     return name
   },
-}
-
-/** Update game settings for the current match
- * @param settings - The settings to update
- */
-export async function updateGameSettings(
-  settings: Omit<UpdateGameSettingsPayload, "matchId">
-) {
-  const gameSettings: UpdateGameSettingsPayload = {}
-  if (settings.mapSize) {
-    gameSettings.mapSize = settings.mapSize
-  }
-  if (settings.rules) {
-    gameSettings.rules = settings.rules
-  }
-  if (settings.maxTurns != null) {
-    gameSettings.maxTurns = settings.maxTurns
-  }
-  if (settings.waterRatio != null) {
-    gameSettings.waterRatio = settings.waterRatio
-  }
-  if (settings.treeRatio != null) {
-    gameSettings.treeRatio = settings.treeRatio
-  }
-  if (settings.stoneRatio != null) {
-    gameSettings.stoneRatio = settings.stoneRatio
-  }
-
-  await socketApi.sendRequest({
-    event: ClientEvent.UPDATE_GAME_SETTINGS,
-    data: gameSettings,
-  })
 }
