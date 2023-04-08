@@ -2,8 +2,11 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "../../prisma/client"
 import bcrypt from "bcrypt"
+import { faker } from "@faker-js/faker"
 const saltRounds = 10
-
+function capitalize(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1)
+}
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -13,8 +16,15 @@ export default async function handler(
     case "POST":
       const { name, email, password } = body
       if (!name && !email && !password) {
+        const adjective = capitalize(
+          faker.word.adjective({ length: { min: 3, max: 6 } })
+        )
+        const noun = capitalize(faker.word.noun({ length: { min: 3, max: 6 } }))
+
         // sign in anonymously
-        const user = await prisma.user.create({ data: {} })
+        const user = await prisma.user.create({
+          data: { name: adjective + " " + noun },
+        })
         res.status(201).json(user)
       } else if (name && email && password) {
         const salt = await bcrypt.genSalt(saltRounds)

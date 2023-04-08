@@ -7,6 +7,7 @@ import {
 } from "@prisma/client"
 import { useEffect, useState } from "react"
 import { socketApi } from "../services/SocketService"
+import { ParticipantWithUser } from "../types/Participant"
 import { TileWithUnit } from "../types/Tile"
 import { coordinatesAreEqual } from "../utils/coordinateUtils"
 
@@ -17,7 +18,9 @@ export function useMatch(userId: User["id"], matchId: Match["id"]) {
   const [updatedTilesWithUnits, setUpdatedTilesWithUnits] =
     useState<TileWithUnit[]>()
   const [tilesWithUnits, setTilesWithUnits] = useState<TileWithUnit[]>()
-  const [players, setPlayers] = useState<Participant[]>()
+  const [participants, setParticipants] = useState<ParticipantWithUser[]>()
+  const [connectedParticipants, setConnectedParticipants] =
+    useState<ParticipantWithUser[]>()
 
   useEffect(() => {
     if (!updatedTilesWithUnits || !tilesWithUnits) {
@@ -62,7 +65,8 @@ export function useMatch(userId: User["id"], matchId: Match["id"]) {
       setMap,
       setTilesWithUnits,
       setUpdatedTilesWithUnits,
-      setPlayers,
+      setParticipants,
+      setConnectedParticipants,
     })
     socketApi.connectToMatch(userId, matchId)
 
@@ -76,6 +80,7 @@ export function useMatch(userId: User["id"], matchId: Match["id"]) {
     map,
     tilesWithUnits,
     updatedTilesWithUnits,
-    players,
+    participants,
+    connectedParticipants,
   }
 }

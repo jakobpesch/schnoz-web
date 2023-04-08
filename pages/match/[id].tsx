@@ -7,9 +7,10 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react"
-import { UnitType } from "@prisma/client"
+import { Participant, UnitType } from "@prisma/client"
+import Link from "next/link"
 import { useRouter } from "next/router"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { MapContainer } from "../../components/map/MapContainer"
 import { MapFog } from "../../components/map/MapFog"
 import { MapHoveredHighlights } from "../../components/map/MapHoveredHighlights"
@@ -40,7 +41,6 @@ import {
   createMap,
   expandBuildRadiusByOne,
   Special,
-  startMatch,
 } from "../../services/GameManagerService"
 import {
   socketApi,
@@ -73,14 +73,15 @@ const MatchView = () => {
   const {
     match,
     gameSettings,
-    players,
+    participants,
     map,
     tilesWithUnits,
     updatedTilesWithUnits,
+    connectedParticipants,
   } = useMatch(userId ?? "", matchId)
 
-  const you = players?.find((player) => player.userId === userId)
-  const activePlayer = players?.find(
+  const you = participants?.find((player) => player.userId === userId)
+  const activePlayer = participants?.find(
     (player) => player.id === match?.activePlayerId
   )
   const yourTurn = userId === activePlayer?.userId
@@ -102,7 +103,7 @@ const MatchView = () => {
   const { placeableCoordinates } = usePlaceableCoordinates(
     match,
     tilesWithUnits,
-    players,
+    participants,
     yourTurn,
     selectedCard,
     activatedSpecials
@@ -112,11 +113,26 @@ const MatchView = () => {
     match?.status
   )
 
+  if (!you) {
+    // you are not a participant of this match
+    return (
+      <Center height="100vh">
+        <VStack>
+          <Heading>Not a participant</Heading>
+          <Text>You are no participant of this match.</Text>
+          <Link href="/">
+            <Button>Back to menu</Button>
+          </Link>
+        </VStack>
+      </Center>
+    )
+  }
+
   if (
     !you ||
     !userId ||
     !match ||
-    !players ||
+    !participants ||
     (!isPreMatch && !map) ||
     (!isPreMatch && !tilesWithUnits) ||
     (!isPreMatch && !activePlayer) ||
@@ -127,7 +143,7 @@ const MatchView = () => {
       userId,
       match,
       map,
-      players,
+      players: participants,
       tilesWithUnits,
       activePlayer,
     })
@@ -152,8 +168,6 @@ const MatchView = () => {
       </Center>
     )
   }
-
-  const isMatchFull = players.filter((player) => player !== null).length === 2
 
   const onTileClick = async (
     row: number,
@@ -328,19 +342,30 @@ const MatchView = () => {
     }
   }
 
+  const handleKick = async (participant: Participant) => {
+    try {
+      await socketApi.kickParticipant(participant)
+      setStatus("Kicked Participant")
+    } catch (e: any) {
+      setStatus(e.message)
+    }
+  }
+
   return (
     <Container height="100vh" color="white">
       {isPreMatch && (
         <UIPreMatchView
           py="16"
+          participants={participants}
+          connectedParticipants={connectedParticipants ?? []}
           isLoading={isUpdatingMatch /*|| isValidating*/}
           settings={gameSettings ?? null}
           onSettingsChange={handleSettingsChange}
           onStartGameClick={handleStartGameClick}
           userId={userId}
           createdById={match.createdById}
-          isGameFull={isMatchFull}
           matchId={match.id}
+          onKick={handleKick}
         />
       )}
       {wasStarted && map && tilesWithUnits && activePlayer && (
@@ -356,7 +381,7 @@ const MatchView = () => {
 
             <MapUnits
               unitTiles={unitTiles}
-              players={players}
+              players={participants}
               updatedUnitTiles={updatedTilesWithUnits ?? []}
             />
             {showRuleEvaluationHighlights && (
@@ -389,7 +414,8 @@ const MatchView = () => {
           </MapContainer>
 
           <UIScoreView
-            players={players}
+            participants={participants}
+            connectedParticipants={connectedParticipants ?? []}
             tilesWithUnits={tilesWithUnits}
             rules={gameSettings?.rules ?? []}
             onRuleHover={(coordinates) => {
@@ -401,7 +427,7 @@ const MatchView = () => {
       {isFinished && (
         <UIPostMatchView
           winner={
-            players.find((player) => player.id === match.winnerId) ?? null
+            participants.find((player) => player.id === match.winnerId) ?? null
           }
         />
       )}
@@ -409,7 +435,7 @@ const MatchView = () => {
         <>
           <UITurnsView
             match={match}
-            players={players}
+            players={participants}
             gameSettings={gameSettings}
           />
           {/* {you?.bonusPoints != null && (

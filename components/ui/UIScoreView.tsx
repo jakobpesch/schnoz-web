@@ -10,6 +10,7 @@ import {
 } from "@chakra-ui/react"
 import { GameSettings, Participant, Rule, Terrain } from "@prisma/client"
 import assert from "assert"
+import { NotAllowedIcon } from "@chakra-ui/icons"
 import Image from "next/image"
 import { ReactNode } from "react"
 import { createCustomGame } from "../../gameLogic/GameVariants"
@@ -597,23 +598,29 @@ const ruleExplainations = new Map<Rule, ReactNode>([
 ])
 
 export const UIScoreView = (props: {
-  players: Participant[]
+  participants: Participant[]
+  connectedParticipants: Participant[]
   tilesWithUnits: TileWithUnit[]
   rules: GameSettings["rules"]
   onRuleHover: (coordinates: Coordinate2D[]) => void
 }) => {
-  const player1 = props.players.find((player) => player.playerNumber === 0)
+  const player1 = props.participants.find((player) => player.playerNumber === 0)
   assert(player1)
 
-  const player2 = props.players.find((player) => player.playerNumber === 1)
+  const player2 = props.participants.find((player) => player.playerNumber === 1)
   assert(player2)
 
   const rulesMap = props.tilesWithUnits
-    ? getEvaluationsMap(props.tilesWithUnits, props.players, props.rules)
+    ? getEvaluationsMap(props.tilesWithUnits, props.participants, props.rules)
     : null
-
+  const player1Connected = props.connectedParticipants.find(
+    (p) => player1.id === p.id
+  )
+  const player2Connected = props.connectedParticipants.find(
+    (p) => player2.id === p.id
+  )
   return (
-    <Flex position="fixed" top="0" right="0">
+    <VStack position="fixed" top="0" right="0">
       <VStack
         bg="gray.700"
         borderWidth={viewFactorWidth(1)}
@@ -629,13 +636,24 @@ export const UIScoreView = (props: {
             justify="center"
             gap={viewFactorWidth(16)}
           >
-            <Image
-              src={
-                RenderSettings.getPlayerAppearance(player1.playerNumber).unit
-              }
-              width={viewFactorWidth(300)}
-              height={viewFactorWidth(300)}
-            />
+            <Box position="relative">
+              <Image
+                src={
+                  RenderSettings.getPlayerAppearance(player1.playerNumber).unit
+                }
+                width={viewFactorWidth(300)}
+                height={viewFactorWidth(300)}
+              />
+              {!player1Connected && (
+                <NotAllowedIcon
+                  position="absolute"
+                  left="0"
+                  top="0"
+                  color="red"
+                  boxSize={viewFactorWidth(45)}
+                />
+              )}
+            </Box>
             <Heading fontSize={viewFactorWidth(25)}>{player1.score}</Heading>
           </Flex>
           <Divider orientation="vertical"></Divider>
@@ -646,13 +664,24 @@ export const UIScoreView = (props: {
             gap={viewFactorWidth(16)}
           >
             <Heading fontSize={viewFactorWidth(25)}>{player2.score}</Heading>
-            <Image
-              src={
-                RenderSettings.getPlayerAppearance(player2.playerNumber).unit
-              }
-              width={viewFactorWidth(300)}
-              height={viewFactorWidth(300)}
-            />
+            <Box position="relative">
+              <Image
+                src={
+                  RenderSettings.getPlayerAppearance(player2.playerNumber).unit
+                }
+                width={viewFactorWidth(300)}
+                height={viewFactorWidth(300)}
+              />
+              {!player2Connected && (
+                <NotAllowedIcon
+                  position="absolute"
+                  left="0"
+                  top="0"
+                  color="red"
+                  boxSize={viewFactorWidth(45)}
+                />
+              )}
+            </Box>
           </Flex>
         </HStack>
         <Divider />
@@ -756,6 +785,6 @@ export const UIScoreView = (props: {
           </Stack>
         )}
       </VStack>
-    </Flex>
+    </VStack>
   )
 }

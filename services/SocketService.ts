@@ -15,6 +15,7 @@ import {
 import { ClientEvent } from "../shared-server/client-event.enum"
 import { ServerEvent } from "../shared-server/server-event.enum"
 import { MatchRich } from "../types/Match"
+import { ParticipantWithUser } from "../types/Participant"
 import { TileWithUnit } from "../types/Tile"
 import { Special } from "./GameManagerService"
 
@@ -40,7 +41,8 @@ export class SocketIOApi {
     setTilesWithUnits?: (tilesWithUnits: TileWithUnit[]) => void
     setUpdatedTilesWithUnits?: (updatedTilesWithUnits: TileWithUnit[]) => void
     setUnits?: (units: Unit[]) => void
-    setPlayers?: (players: Participant[]) => void
+    setParticipants?: (players: ParticipantWithUser[]) => void
+    setConnectedParticipants?: (players: ParticipantWithUser[]) => void
     setOpponentsHoveredTiles?: (hoveringTiles: Coordinate2D[] | null) => void
     setLastSynced?: (lastSynced: string) => void
   } = {}
@@ -65,9 +67,21 @@ export class SocketIOApi {
       }
     )
     this.socket.on(
+      ServerEvent.PLAYER_DISCONNECTED_FROM_MATCH,
+      (data: Parameters<typeof this.onPlayerDisconnectedFromMatch>[number]) => {
+        this.onPlayerDisconnectedFromMatch(data)
+      }
+    )
+    this.socket.on(
       ServerEvent.STARTED_MATCH,
       (data: Parameters<typeof this.onStartedMatch>[number]) => {
         this.onStartedMatch(data)
+      }
+    )
+    this.socket.on(
+      ServerEvent.KICKED_PARTICIPANT,
+      (data: Parameters<typeof this.onKickedParticipant>[number]) => {
+        this.onKickedParticipant(data)
       }
     )
     this.socket.on(
@@ -88,9 +102,9 @@ export class SocketIOApi {
         this.onMadeMove(data)
       }
     )
-    this.socket.on(ServerEvent.DISCONNECTED_FROM_MATCH, () => {
-      this.isConnecting = false
-      console.log("connectToMatch:disconnectedFromMatch")
+
+    this.socket.on("disconnect", () => {
+      console.log("disconnected")
     })
 
     this.socket.on("connect_error", (error: Error) => {
@@ -107,14 +121,18 @@ export class SocketIOApi {
     gameSettings?: GameSettings
     map?: Map
     tilesWithUnits?: TileWithUnit[]
-    players?: Participant[]
+    players?: ParticipantWithUser[]
+    connectedPlayers?: ParticipantWithUser[]
   }) => {
     this.callbacks.setMatch?.(payload.match)
     if (payload.gameSettings) {
       this.callbacks.setGameSettings?.(payload.gameSettings)
     }
     if (payload.players) {
-      this.callbacks.setPlayers?.(payload.players)
+      this.callbacks.setParticipants?.(payload.players)
+    }
+    if (payload.connectedPlayers) {
+      this.callbacks.setConnectedParticipants?.(payload.connectedPlayers)
     }
     if (payload.tilesWithUnits) {
       this.callbacks.setTilesWithUnits?.(payload.tilesWithUnits)
@@ -124,6 +142,12 @@ export class SocketIOApi {
     }
   }
 
+  private onPlayerDisconnectedFromMatch = (
+    participants: ParticipantWithUser[]
+  ) => {
+    this.callbacks.setConnectedParticipants?.(participants)
+  }
+
   private onUpdatedGameSettings = (gameSettings: GameSettings) => {
     this.callbacks.setGameSettings?.(gameSettings)
   }
@@ -131,16 +155,22 @@ export class SocketIOApi {
     match: Match
     map: Map
     tilesWithUnits: TileWithUnit[]
-    players: Participant[]
+    players: ParticipantWithUser[]
   }) => {
     console.log("onStartedMatch", payload)
 
     this.callbacks.setMatch?.(payload.match)
-    this.callbacks.setPlayers?.(payload.players)
+    this.callbacks.setParticipants?.(payload.players)
     this.callbacks.setTilesWithUnits?.(payload.tilesWithUnits)
     this.callbacks.setMap?.(payload.map)
   }
 
+  private onKickedParticipant = (
+    remainingParticipants: ParticipantWithUser[]
+  ) => {
+    this.callbacks.setParticipants?.(remainingParticipants)
+    this.callbacks.setConnectedParticipants?.(remainingParticipants)
+  }
   private onHovered = (hoveredCoordinates: Coordinate2D[] | null) => {
     this.callbacks.setOpponentsHoveredTiles?.(hoveredCoordinates)
   }
@@ -148,16 +178,18 @@ export class SocketIOApi {
   private onMadeMove = (payload: {
     updatedMatch: Match
     updatedTilesWithUnits: TileWithUnit[]
-    updatedPlayers: Participant[]
+    updatedPlayers: ParticipantWithUser[]
   }) => {
     this.callbacks.setMatch?.(payload.updatedMatch)
     this.callbacks.setUpdatedTilesWithUnits?.(payload.updatedTilesWithUnits)
-    this.callbacks.setPlayers?.(payload.updatedPlayers)
+    this.callbacks.setParticipants?.(payload.updatedPlayers)
   }
 
-  public sendRequest = async (request: { event: string; data: any }) => {
+  public sendRequest = async (request: { event: string; data?: any }) => {
     try {
       if (!this.socket?.connected) {
+        console.log(request)
+
         console.error(new Error("Socket not connected"))
         return
       }
@@ -170,7 +202,6 @@ export class SocketIOApi {
 
   public async disconnect() {
     this.isConnecting = false
-    console.log("disconnect")
     this.socket?.disconnect()
   }
 
@@ -178,6 +209,13 @@ export class SocketIOApi {
     socketApi.sendRequest({
       event: ClientEvent.START_MATCH,
       data: { userId },
+    })
+  }
+
+  async kickParticipant(participant: Participant) {
+    socketApi.sendRequest({
+      event: ClientEvent.KICK_PARTICIPANT,
+      data: { participant },
     })
   }
 

@@ -1,10 +1,11 @@
-import { CheckIcon, LinkIcon } from "@chakra-ui/icons"
+import { CheckIcon, CloseIcon, LinkIcon } from "@chakra-ui/icons"
 import {
   Box,
   Button,
   ButtonGroup,
   Checkbox,
   CheckboxGroup,
+  CloseButton,
   Grid,
   GridItem,
   Heading,
@@ -13,25 +14,42 @@ import {
   SliderFilledTrack,
   SliderThumb,
   SliderTrack,
+  Spacer,
   Stack,
   StackProps,
   Text,
   useClipboard,
   VStack,
 } from "@chakra-ui/react"
-import { GameSettings, Match, Rule, Terrain } from "@prisma/client"
+import { GameSettings, Match, Participant, Rule, Terrain } from "@prisma/client"
 import { Fragment, useEffect, useState } from "react"
 import { UpdateGameSettingsPayload } from "../../services/SocketService"
+import { ParticipantWithUser } from "../../types/Participant"
+
+const getReadableRuleNames = (rule: Rule) => {
+  switch (rule) {
+    case Rule.DIAGONAL_NORTHEAST:
+      return "Diagon-Alley"
+    case Rule.TERRAIN_STONE_NEGATIVE:
+      return "Stoned"
+    case Rule.TERRAIN_WATER_POSITIVE:
+      return "Water D. Law"
+    case Rule.HOLE:
+      return "Glorious Holes"
+  }
+}
 
 interface UIPreMatchViewProps extends StackProps {
   matchId: Match["id"]
   settings: GameSettings | null
   userId: string
   createdById: string
-  isGameFull: boolean
+  participants: ParticipantWithUser[]
+  connectedParticipants: ParticipantWithUser[]
   isLoading: boolean
   onSettingsChange: (settings: UpdateGameSettingsPayload) => void
   onStartGameClick: () => void
+  onKick: (participant: ParticipantWithUser) => void
 }
 
 export const UIPreMatchView = (props: UIPreMatchViewProps) => {
@@ -40,10 +58,12 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
     settings,
     userId,
     createdById,
-    isGameFull,
+    participants,
+    connectedParticipants,
     isLoading,
     onSettingsChange,
     onStartGameClick,
+    onKick,
     ...stackProps
   } = props
 
@@ -71,17 +91,79 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
     return <Box>No Settings</Box>
   }
 
+  const handleOnKick = (participant: ParticipantWithUser) => {
+    onKick(participant)
+  }
+
+  const isGameFull = participants.length === 2
   const isHost = userId === createdById
+  const slots =
+    participants.length === 1 ? [...participants, null] : participants
+  const allConnected = connectedParticipants.length === 2
   return (
-    <VStack spacing="8" maxWidth="sm" {...stackProps}>
-      <Heading>Not Started</Heading>
-      {!isHost ? (
-        <Text>Waiting for creator to start the game</Text>
-      ) : isGameFull ? (
-        <Text>Game is full. Ready to start game.</Text>
-      ) : (
-        <Text color="gray.300">Waiting for other player to join</Text>
-      )}
+    <VStack align="start" spacing="8" maxWidth="md" {...stackProps}>
+      <Heading>Game Settings</Heading>
+      <Stack width="full">
+        <Text fontWeight="bold">Participants</Text>
+        <HStack width="full">
+          {slots.map((participant, index) => {
+            if (!participant) {
+              return (
+                <>
+                  <HStack
+                    width="full"
+                    borderWidth={2}
+                    borderRadius="lg"
+                    borderStyle="dashed"
+                    borderColor="gray.600"
+                    paddingX="4"
+                    minHeight="16"
+                    key="empty"
+                  >
+                    <Text fontWeight="bold" fontStyle="italic" color="gray.600">
+                      Empty
+                    </Text>
+                  </HStack>
+                  {index === 0 && <Text fontWeight="bold">vs.</Text>}
+                </>
+              )
+            }
+            const isConnected = connectedParticipants.some(
+              (p) => p.id === participant.id
+            )
+            return (
+              <>
+                <HStack
+                  width="full"
+                  borderWidth={2}
+                  borderRadius="lg"
+                  borderColor={isConnected ? "green.500" : "gray.600"}
+                  backgroundColor={isConnected ? "green.900" : "gray.800"}
+                  paddingX="4"
+                  minHeight="16"
+                  key={participant.id}
+                >
+                  <Text
+                    fontWeight="bold"
+                    color={isConnected ? "gray.200" : "gray.600"}
+                  >
+                    {participant.user.name}
+                  </Text>
+                  <Spacer />
+                  {isHost && participant.userId !== props.userId && (
+                    <CloseButton
+                      color="gray.400"
+                      onClick={() => handleOnKick(participant)}
+                    />
+                  )}
+                </HStack>
+                {index === 0 && <Text fontWeight="bold">vs.</Text>}
+              </>
+            )
+          })}
+        </HStack>
+      </Stack>
+
       <Stack width="full" spacing="8">
         <Stack width="full">
           <Text fontWeight="bold">Map size</Text>
@@ -182,16 +264,14 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
                   }
                 }}
               >
-                {rule}
+                {getReadableRuleNames(rule)}
               </Checkbox>
             ))}
           </CheckboxGroup>
         </Stack>
       </Stack>
       <Stack width="full">
-        <Text fontWeight="bold" pb="4">
-          Terrain
-        </Text>
+        <Text fontWeight="bold">Terrain</Text>
         <Grid templateColumns="repeat(5, 1fr)" alignItems="center">
           {Object.values(Terrain).map((terrain) => {
             const ratio =
@@ -250,23 +330,28 @@ export const UIPreMatchView = (props: UIPreMatchViewProps) => {
           </Text>
         </VStack> */}
 
-      {userId === createdById && (
+      {isHost && (
         <HStack>
           <Button
             size="lg"
             colorScheme="blue"
-            disabled={!isGameFull || isLoading}
+            disabled={!isGameFull || !allConnected || isLoading}
             isLoading={isLoading}
             onClick={() => {
               onStartGameClick()
             }}
           >
-            {isGameFull ? "Start Game" : "Waiting for opponent..."}
+            {!isGameFull
+              ? "Waiting for opponent..."
+              : !allConnected
+              ? "Opponent disconnected..."
+              : "Start Game"}
           </Button>
 
           <Button
             size="lg"
             colorScheme="blue"
+            variant="outline"
             isLoading={isLoading}
             onClick={() => {
               onCopy()
