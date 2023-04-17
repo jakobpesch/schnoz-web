@@ -123,33 +123,63 @@ export default async function handler(
       const { colCount, rowCount, tiles } = getInitialiseMapPayload(
         match.gameSettings
       )
-
-      const map = await prisma.map.create({
-        data: {
-          match: {
-            connect: {
-              id: matchId,
-            },
-          },
-          rowCount,
-          colCount,
-          tiles: {
-            createMany: {
-              data: tiles,
-            },
-          },
-        },
-      })
-
       const halfMapSize = Math.floor(match.gameSettings.mapSize / 2)
-      await prisma.tile.update({
-        where: {
-          mapId_row_col: { mapId: map.id, row: halfMapSize, col: halfMapSize },
-        },
-        data: {
-          unit: { create: { type: "MAIN_BUILDING" } },
-        },
+      const map = await prisma.$transaction(async (tx) => {
+        const map = await tx.map.create({
+          data: {
+            match: {
+              connect: {
+                id: matchId,
+              },
+            },
+            rowCount,
+            colCount,
+            tiles: {
+              createMany: {
+                data: tiles,
+              },
+            },
+          },
+        })
+        await tx.tile.update({
+          where: {
+            mapId_row_col: {
+              mapId: map.id,
+              row: halfMapSize,
+              col: halfMapSize,
+            },
+          },
+          data: {
+            unit: { create: { type: "MAIN_BUILDING" } },
+          },
+        })
+        const updatedTiles = await tx.tile.findMany({
+          where: { mapId: map.id },
+          select: {
+            row: true,
+            visible: true,
+            col: true,
+            terrain: true,
+            unit: true,
+          },
+        })
+        await tx.matchLog.createMany({
+          data: [
+            {
+              matchId: match.id,
+              message: "Map created",
+              data: JSON.stringify(map),
+            },
+            {
+              matchId: match.id,
+              message: "Tiles created",
+              data: JSON.stringify(updatedTiles),
+            },
+          ],
+        })
+        return map
       })
+
       res.status(201).json(map)
       break
     case "GET":

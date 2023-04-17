@@ -98,6 +98,11 @@ export default async function handler(
             data: {
               players: { create: { userId: body.userId, playerNumber: 1 } },
               updatedAt: new Date(),
+              logs: {
+                create: {
+                  message: `Player ${body.userId} joined the match`,
+                },
+              },
             },
             include: matchRichInclude,
           })

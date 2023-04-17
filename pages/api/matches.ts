@@ -23,6 +23,11 @@ export default async function handler(
               playerNumber: 0,
             },
           },
+          logs: {
+            create: {
+              message: "Match created by " + body.userId,
+            },
+          },
         },
         include: matchRichInclude,
       })
